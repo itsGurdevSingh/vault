@@ -24,8 +24,12 @@ export default class KeyLoader {
             public: new Map(),    // kid → string (pem)
             jwk: new Map()        // kid → JWK object
         };
-
-        this._ensureDirectories();
+    }
+    /** STATIC ASYNC INITIALIZER */
+    static async create(domain) {
+        const loader = new KeyLoader(domain);
+        await loader._ensureDirectories();
+        return loader;
     }
 
     async _ensureDirectories() {
