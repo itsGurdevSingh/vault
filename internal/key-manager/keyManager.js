@@ -52,7 +52,7 @@ class KeyManager {
     async setActiveKid(domain, kid) {
         const loader = await this.#resolveLoader(domain);
 
-        // Optional but **should** be added
+        // check is kid exists
         const kids = await loader.getAllKids();
         if (!kids.includes(kid)) {
             throw new Error(`KID '${kid}' does not exist for domain '${domain}'.`);
