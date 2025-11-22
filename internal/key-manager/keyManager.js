@@ -1,4 +1,6 @@
 import { KeyLoader } from './keyLoader.js';
+import { JWKSBuilder } from '../../src/core/rsa/jwks-builder.js';
+import { KeyPairGenerator } from '../../src/core/rsa/generator.js';
 
 const _INSTANCE_TOKEN = Symbol('KeyManager.instance');
 
@@ -8,7 +10,12 @@ class KeyManager {
             throw new Error('Use KeyManager.getInstance() instead.');
         }
 
-        this.loaders = new Map(); // domain -> KeyLoader
+        this.cache = {
+            generator: new Map(), // domain -> KeyPairGenerator
+            loaders: new Map(), // domain -> KeyLoader
+            builders: new Map() // domain -> JWKSBuilder
+        }
+
     }
 
     static getInstance() {
@@ -27,38 +34,64 @@ class KeyManager {
     async #resolveLoader(domain) {
         const d = this._normalizeDomain(domain);
 
-        if (this.loaders.has(d)) {
+        if (this.cache.loaders.has(d)) {
             return this.loaders.get(d);
         }
 
         const loader = await KeyLoader.create(d);
-        this.loaders.set(d, loader);
+        this.cache.loaders.set(d, loader);
 
         return loader;
     }
 
+    async #resolveBuilder(domain) {
+        const d = this._normalizeDomain(domain);
+
+        if (this.cache.builders.has(d)) {
+            return this.builders.get(d);
+        }
+
+        const builder = new JWKSBuilder(d);
+        this.cache.builders.set(d, builder);
+        return builder;
+    }
+
+    async #resolveGenerator(domain) {
+        const d = this._normalizeDomain(domain);
+
+        if (this.generator.has(d)) {
+            return this.cache.generator.get(d);
+        }
+        const generator = await KeyPairGenerator.create(d);
+        this.cache.generator.set(d, generator);
+        return generator;
+    }
+
     // High-level API ----
 
-    async getJWKS(domain) {
+    async generateKeyPair(domain) {
+        const generator = await this.#resolveGenerator(domain);
+        return await generator.generateRSAKeyPair();
+    }
+
+    async getJwks(domain) {
+        const builder = await this.#resolveBuilder(domain);
+        return await builder.getJwks();
+    }
+
+    async getPublicKeys(domain) {
         const loader = await this.#resolveLoader(domain);
-        return loader.getJWKS();
+        return await loader.getPublicKeyMap();
     }
 
     async getSigningKey(domain) {
         const loader = await this.#resolveLoader(domain);
-        return loader.getSigningKey();
+        return await loader.getSigningKey();
     }
 
     async setActiveKid(domain, kid) {
         const loader = await this.#resolveLoader(domain);
-
-        // check is kid exists
-        const kids = await loader.getAllKids();
-        if (!kids.includes(kid)) {
-            throw new Error(`KID '${kid}' does not exist for domain '${domain}'.`);
-        }
-
-        loader.setActiveKid(kid);
+        await loader.setActiveKid(kid);
     }
 
     async getActiveKid(domain) {
@@ -69,6 +102,24 @@ class KeyManager {
     // Rotation placeholder (to be implemented in next task)
     async rotateKeys(domain) {
         throw new Error("rotateKeys() not implemented yet.");
+    }
+
+    clearCache() {
+        
+        // clear individual caches first
+        for (const loader of this.cache.loaders.values()) {
+            loader.clearCache();
+        }
+        for (const builder of this.cache.builders.values()) {
+            builder.clearCache();
+        }
+
+        // clear main caches
+        this.cache.generator.clear();
+        this.cache.loaders.clear();
+        this.cache.builders.clear();
+
+        
     }
 }
 
