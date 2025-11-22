@@ -2,61 +2,77 @@ import crypto from 'crypto';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
-const KEYS_DIR = join(process.cwd(), 'internal/keys');
-const PRIVATE_DIR = join(KEYS_DIR, 'private');
-const PUBLIC_DIR = join(KEYS_DIR, 'public');
+const BASE_KEYS_DIR = join(process.cwd(), 'internal/keys');
 
-async function ensureDirectories() {
-    await mkdir(PRIVATE_DIR, { recursive: true });
-    await mkdir(PUBLIC_DIR, { recursive: true });
-}
+export default class KeyPairGenerator {
 
-function createKeyPair() {
-    return new Promise((resolve, reject) => {
-        crypto.generateKeyPair(
-            'rsa',
-            {
-                modulusLength: 2048,
-                publicKeyEncoding: { type: 'spki', format: 'pem' },
-                privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
-            },
-            (err, publicKey, privateKey) => {
-                if (err) return reject(err);
-                resolve({ publicKey, privateKey });
-            }
-        );
-    });
-}
+    constructor(domain) {
+        if (!domain || typeof domain !== 'string')
+            throw new Error("KeyPairGenerator requires a domain string.");
 
-export async function generateRSAKeyPair(kid) {
-    if (!kid || typeof kid !== 'string') {
-        throw new Error('A valid kid must be a non-empty string.');
+        this.domain = domain.toUpperCase().trim();
+        this.domainDir = join(BASE_KEYS_DIR, this.domain);
+        this.privateDir = join(this.domainDir, 'private');
+        this.publicDir = join(this.domainDir, 'public');
     }
 
-    kid = kid.trim();
-
-    await ensureDirectories();
-
-    const { publicKey, privateKey } = await createKeyPair();
-
-    const privatePath = join(PRIVATE_DIR, `${kid}.pem`);
-    const publicPath = join(PUBLIC_DIR, `${kid}.pem`);
-
-    try {
-        await Promise.all([
-            writeFile(privatePath, privateKey),
-            writeFile(publicPath, publicKey)
-        ]);
-    } catch (err) {
-        console.error(`Error saving generated keys for kid ${kid}:`, err);
-        throw err;
+    static async create(domain) {
+        const inst = new KeyPairGenerator(domain);
+        await inst.#ensureDirectories();
+        return inst;
     }
 
-    return {
-        kid,
-        privateKeyPath: privatePath,
-        publicKeyPath: publicPath
-    };
-}
+    async #ensureDirectories() {
+        await mkdir(this.privateDir, { recursive: true });
+        await mkdir(this.publicDir, { recursive: true });
+    }
 
-export default generateRSAKeyPair;
+    #generateKid() {
+        // KID format: DOMAIN-YYYYMMDD-HHMMSS-RANDOMHEX
+        const now = new Date();
+        const date = now.toISOString().slice(0, 10).replace(/-/g, '');
+        const time = now.toTimeString().slice(0, 8).replace(/:/g, '');
+        const hex = crypto.randomBytes(4).toString('hex');
+
+        return `${this.domain}-${date}-${time}-${hex}`;
+    }
+
+    createKeyPair() {
+        return new Promise((resolve, reject) => {
+            crypto.generateKeyPair(
+                'rsa',
+                {
+                    modulusLength: 4096,
+                    publicKeyEncoding: { type: 'spki', format: 'pem' }, 
+                    privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+                },
+                (err, publicKey, privateKey) => {
+                    if (err) return reject(err);
+                    resolve({ publicKey, privateKey });
+                }
+            );
+        });
+    }
+
+    async generateRSAKeyPair() {
+        const kid = this.#generateKid();
+        const { publicKey, privateKey } = await this.createKeyPair();
+
+        const privatePath = join(this.privateDir, `${kid}.pem`);
+        const publicPath = join(this.publicDir, `${kid}.pem`);
+
+        try {
+            await writeFile(privatePath, privateKey, { mode: 0o600 });
+            await writeFile(publicPath, publicKey, { mode: 0o644 });
+        } catch (err) {
+            console.error(`Failed to save keys for KID ${kid}:`, err);
+            throw err;
+        }
+
+        return {
+            kid,
+            privateKeyPath: privatePath,
+            publicKeyPath: publicPath
+        };
+    }
+}
