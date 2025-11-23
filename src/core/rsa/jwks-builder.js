@@ -1,5 +1,5 @@
 import { importSPKI, exportJWK } from 'jose';
-import { keyManager } from '../../../internal/key-manager/keyManager';
+import { keyManager } from '../../../internal/key-manager/keyManager.js';
 
 export class JWKSBuilder {
     constructor(domain) {

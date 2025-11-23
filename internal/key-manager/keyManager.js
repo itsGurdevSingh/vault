@@ -35,7 +35,7 @@ class KeyManager {
         const d = this._normalizeDomain(domain);
 
         if (this.cache.loaders.has(d)) {
-            return this.loaders.get(d);
+            return this.cache.loaders.get(d);
         }
 
         const loader = await KeyLoader.create(d);
@@ -48,7 +48,7 @@ class KeyManager {
         const d = this._normalizeDomain(domain);
 
         if (this.cache.builders.has(d)) {
-            return this.builders.get(d);
+            return this.cache.builders.get(d);
         }
 
         const builder = new JWKSBuilder(d);
@@ -59,7 +59,7 @@ class KeyManager {
     async #resolveGenerator(domain) {
         const d = this._normalizeDomain(domain);
 
-        if (this.generator.has(d)) {
+        if (this.cache.generator.has(d)) {
             return this.cache.generator.get(d);
         }
         const generator = await KeyPairGenerator.create(d);

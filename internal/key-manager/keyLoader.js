@@ -3,7 +3,7 @@ import { readFile, readdir, mkdir } from 'fs/promises';
 
 const BASE_KEYS_DIR = join(process.cwd(), 'internal/keys');
 
-class KeyLoader {
+export class KeyLoader {
     constructor(domain) {
         if (!domain) throw new Error("KeyLoader requires a domain.");
 
@@ -115,5 +115,3 @@ class KeyLoader {
         this.cache.public.clear();
     }
 }
-
-export const KeyLoader = KeyLoader;
