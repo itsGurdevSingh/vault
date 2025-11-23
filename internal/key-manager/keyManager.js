@@ -27,7 +27,7 @@ class KeyManager {
 
     _normalizeDomain(domain) {
         if (!domain) throw new Error("Domain is required.");
-        return domain.toLowerCase().trim();
+        return domain.toUpperCase().trim();
     }
 
     // PRIVATE: get or create loader
