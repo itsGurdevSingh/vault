@@ -1,18 +1,12 @@
 import { join } from 'path';
 import { readFile, readdir, mkdir } from 'fs/promises';
-
-const BASE_KEYS_DIR = join(process.cwd(), 'internal/keys');
+import { KeyPaths } from './keyPaths';
 
 export class KeyLoader {
     constructor(domain) {
         if (!domain) throw new Error("KeyLoader requires a domain.");
 
         this.domain = domain;
-
-        // Folder isolation per domain
-        this.domainDir = join(BASE_KEYS_DIR, domain);
-        this.privateDir = join(this.domainDir, 'private');
-        this.publicDir = join(this.domainDir, 'public');
 
         this.activeKid = null;
 
@@ -29,8 +23,8 @@ export class KeyLoader {
     }
 
     async _ensureDirectories() {
-        await mkdir(this.privateDir, { recursive: true });
-        await mkdir(this.publicDir, { recursive: true });
+        await mkdir(KeyPaths.privateDir(this.domain), { recursive: true });
+        await mkdir(KeyPaths.publicDir(this.domain), { recursive: true });
     }
 
     async setActiveKid(kid) {
@@ -52,7 +46,7 @@ export class KeyLoader {
             return this.cache.private.get(kid);
         }
 
-        const file = join(this.privateDir, `${kid}.pem`);
+        const file = KeyPaths.privateKey(this.domain, kid);
         const pem = await readFile(file, 'utf8');
 
         this.cache.private.set(kid, pem);
@@ -65,7 +59,7 @@ export class KeyLoader {
             return this.cache.public.get(kid);
         }
 
-        const file = join(this.publicDir, `${kid}.pem`);
+        const file = KeyPaths.publicKey(this.domain, kid);
         const pem = await readFile(file, 'utf8');
 
         this.cache.public.set(kid, pem);
@@ -74,7 +68,7 @@ export class KeyLoader {
 
     /** Public KIDs only */
     async getAllPublicKids() {
-        const files = await readdir(this.publicDir);
+        const files = await readdir(KeyPaths.publicDir(this.domain));
         return files
             .filter(f => f.endsWith('.pem'))
             .map(f => f.replace('.pem', ''));
@@ -82,7 +76,7 @@ export class KeyLoader {
 
     /** Private KIDs only */
     async getAllPrivateKids() {
-        const files = await readdir(this.privateDir);
+        const files = await readdir(KeyPaths.privateDir(this.domain));
         return files
             .filter(f => f.endsWith('.pem'))
             .map(f => f.replace('.pem', ''));

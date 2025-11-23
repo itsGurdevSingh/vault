@@ -1,23 +1,14 @@
 import crypto from 'crypto';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-
-const BASE_KEYS_DIR = join(process.cwd(), 'internal/keys');
-const BASE_KEYS_META_DIR = join(process.cwd(), 'internal/metadata/keys');
+import { KeyPaths } from '../../../internal/key-manager/keyPaths';
 
 export class KeyPairGenerator {
 
     constructor(domain) {
         if (!domain || typeof domain !== 'string')
             throw new Error("KeyPairGenerator requires a domain string.");
-
-        this.domain = domain.toUpperCase().trim();
-        this.domainDir = join(BASE_KEYS_DIR, this.domain);
-        this.privateDir = join(this.domainDir, 'private');
-        this.publicDir = join(this.domainDir, 'public');
-
-        // metadata paths
-        this.metadomainDir = join(BASE_KEYS_META_DIR, this.domain);
+        this.domain = domain;
     }
 
     static async create(domain) {
@@ -27,9 +18,9 @@ export class KeyPairGenerator {
     }
 
     async #ensureDirectories() {
-        await mkdir(this.privateDir, { recursive: true });
-        await mkdir(this.publicDir, { recursive: true });
-        await mkdir(this.metadomainDir, { recursive: true });
+        await mkdir(KeyPaths.privateDir(this.domain), { recursive: true });
+        await mkdir(KeyPaths.publicDir(this.domain), { recursive: true });
+        await mkdir(KeyPaths.metaKeyDir(this.domain), { recursive: true });
     }
 
     #generateKid() {
@@ -44,7 +35,7 @@ export class KeyPairGenerator {
 
     async #writeMetadata(kid) {
         const metadataContent = `KID: ${kid}\nDomain: ${this.domain}\nGeneratedAt: ${new Date().toISOString()}\n`;
-        const metadataPath = join(this.metadomainDir, `${kid}.meta`);
+        const metadataPath = KeyPaths.metaKeyFile(this.domain, kid);
         await writeFile(metadataPath, metadataContent, { mode: 0o644 });
     }
 
@@ -54,7 +45,7 @@ export class KeyPairGenerator {
                 'rsa',
                 {
                     modulusLength: 4096,
-                    publicKeyEncoding: { type: 'spki', format: 'pem' }, 
+                    publicKeyEncoding: { type: 'spki', format: 'pem' },
                     privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
                 },
                 (err, publicKey, privateKey) => {
@@ -69,8 +60,8 @@ export class KeyPairGenerator {
         const kid = this.#generateKid();
         const { publicKey, privateKey } = await this.createKeyPair();
 
-        const privatePath = join(this.privateDir, `${kid}.pem`);
-        const publicPath = join(this.publicDir, `${kid}.pem`);
+        const privatePath = KeyPaths.privateKey(this.domain, kid);
+        const publicPath = KeyPaths.publicKey(this.domain, kid);
 
         try {
             await writeFile(privatePath, privateKey, { mode: 0o600 });
@@ -83,10 +74,6 @@ export class KeyPairGenerator {
             throw err;
         }
 
-        return {
-            kid,
-            privateKeyPath: privatePath,
-            publicKeyPath: publicPath
-        };
+        return kid;
     }
 }
