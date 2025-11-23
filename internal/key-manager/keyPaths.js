@@ -25,6 +25,6 @@ export const KeyPaths = {
         return join(BASE_KEYS_META_DIR, domain.toUpperCase());
     },
     metaKeyFile(domain, kid) {
-        return join(this.metadataDir(domain), `${kid}.meta`);
+        return join(this.metaKeyDir(domain), `${kid}.meta`);
     }
 };
