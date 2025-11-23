@@ -3,6 +3,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
 const BASE_KEYS_DIR = join(process.cwd(), 'internal/keys');
+const BASE_KEYS_META_DIR = join(process.cwd(), 'internal/metadata/keys');
 
 export class KeyPairGenerator {
 
@@ -14,6 +15,9 @@ export class KeyPairGenerator {
         this.domainDir = join(BASE_KEYS_DIR, this.domain);
         this.privateDir = join(this.domainDir, 'private');
         this.publicDir = join(this.domainDir, 'public');
+
+        // metadata paths
+        this.metadomainDir = join(BASE_KEYS_META_DIR, this.domain);
     }
 
     static async create(domain) {
@@ -25,6 +29,7 @@ export class KeyPairGenerator {
     async #ensureDirectories() {
         await mkdir(this.privateDir, { recursive: true });
         await mkdir(this.publicDir, { recursive: true });
+        await mkdir(this.metadomainDir, { recursive: true });
     }
 
     #generateKid() {
@@ -35,6 +40,12 @@ export class KeyPairGenerator {
         const hex = crypto.randomBytes(4).toString('hex');
 
         return `${this.domain}-${date}-${time}-${hex}`;
+    }
+
+    async #writeMetadata(kid) {
+        const metadataContent = `KID: ${kid}\nDomain: ${this.domain}\nGeneratedAt: ${new Date().toISOString()}\n`;
+        const metadataPath = join(this.metadomainDir, `${kid}.meta`);
+        await writeFile(metadataPath, metadataContent, { mode: 0o644 });
     }
 
     createKeyPair() {
@@ -64,6 +75,9 @@ export class KeyPairGenerator {
         try {
             await writeFile(privatePath, privateKey, { mode: 0o600 });
             await writeFile(publicPath, publicKey, { mode: 0o644 });
+
+            // write metadata files
+            await this.#writeMetadata(kid);
         } catch (err) {
             console.error(`Failed to save keys for KID ${kid}:`, err);
             throw err;
