@@ -3,6 +3,7 @@ import { JWKSBuilder } from '../../src/core/rsa/jwks-builder.js';
 import { KeyPairGenerator } from '../../src/core/rsa/generator.js';
 
 const _INSTANCE_TOKEN = Symbol('KeyManager.instance');
+const _internal = new WeakMap();
 
 class KeyManager {
     constructor(token) {
@@ -23,6 +24,20 @@ class KeyManager {
             this._instance = new KeyManager(_INSTANCE_TOKEN);
         }
         return this._instance;
+    }
+
+    grantAccess(friend) {
+        _internal.set(friend, {
+            loader: this.#resolveLoader.bind(this),
+            builder: this.#resolveBuilder.bind(this),
+            generator: this.#resolveGenerator.bind(this),
+        });
+    }
+
+    _getResolvers(friend) {
+        const resolvers = _internal.get(friend);
+        if (!resolvers) throw new Error("Unauthorized");
+        return resolvers;
     }
 
     _normalizeDomain(domain) {
@@ -101,11 +116,19 @@ class KeyManager {
 
     // Rotation placeholder (to be implemented in next task)
     async rotateKeys(domain) {
-        throw new Error("rotateKeys() not implemented yet.");
+        // generate a new key pair
+        const newKeys = await this.generateKeyPair(domain);
+
+        // set the new key as active
+        await this.setActiveKid(domain, newKeys.kid);
+
+        // delete old private key 
+
+        return newKeys;
     }
 
     clearCache() {
-        
+
         // clear individual caches first
         for (const loader of this.cache.loaders.values()) {
             loader.clearCache();
@@ -119,7 +142,7 @@ class KeyManager {
         this.cache.loaders.clear();
         this.cache.builders.clear();
 
-        
+
     }
 }
 

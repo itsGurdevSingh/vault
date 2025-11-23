@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { KeyPaths } from '../../../internal/key-manager/keyPaths';
 
 export class KeyPairGenerator {

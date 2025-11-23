@@ -41,4 +41,8 @@ export class JWKSBuilder {
     clearCache() {
         this.jwkCache.clear();
     }
+
+    clearKeyFromCache(kid) {
+        this.jwkCache.delete(kid);
+    }
 }
