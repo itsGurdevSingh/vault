@@ -4,7 +4,7 @@ import { join } from 'path';
 
 const BASE_KEYS_DIR = join(process.cwd(), 'internal/keys');
 
-export default class KeyPairGenerator {
+export class KeyPairGenerator {
 
     constructor(domain) {
         if (!domain || typeof domain !== 'string')

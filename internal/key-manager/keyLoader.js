@@ -1,10 +1,9 @@
 import { join } from 'path';
 import { readFile, readdir, mkdir } from 'fs/promises';
-import { importSPKI, exportJWK } from 'jose';
 
 const BASE_KEYS_DIR = join(process.cwd(), 'internal/keys');
 
-export default class KeyLoader {
+export class KeyLoader {
     constructor(domain) {
         if (!domain) throw new Error("KeyLoader requires a domain.");
 
@@ -15,17 +14,14 @@ export default class KeyLoader {
         this.privateDir = join(this.domainDir, 'private');
         this.publicDir = join(this.domainDir, 'public');
 
-        // Must be set externally
         this.activeKid = null;
 
-        // Caches
         this.cache = {
-            private: new Map(),   // kid → string (pem)
-            public: new Map(),    // kid → string (pem)
-            jwk: new Map()        // kid → JWK object
+            private: new Map(),  // kid → pem
+            public: new Map(),   // kid → pem
         };
     }
-    /** STATIC ASYNC INITIALIZER */
+
     static async create(domain) {
         const loader = new KeyLoader(domain);
         await loader._ensureDirectories();
@@ -37,89 +33,85 @@ export default class KeyLoader {
         await mkdir(this.publicDir, { recursive: true });
     }
 
-    /** set active key ID */
-    setActiveKid(kid) {
+    async setActiveKid(kid) {
         if (!kid) throw new Error("Kid cannot be empty.");
+
+        const privateKids = await this.getAllPrivateKids();
+
+        if (!privateKids.includes(kid)) {
+            throw new Error(`Active kid '${kid}' does not exist in private keys for domain: ${this.domain}`);
+        }
+
         this.activeKid = kid;
     }
 
-    /** PRIVATE KEY LOADING */
+
+    /** Load private key */
     async loadPrivateKey(kid) {
         if (this.cache.private.has(kid)) {
             return this.cache.private.get(kid);
         }
 
         const file = join(this.privateDir, `${kid}.pem`);
-        const key = await readFile(file, 'utf8');
+        const pem = await readFile(file, 'utf8');
 
-        this.cache.private.set(kid, key);
-        return key;
+        this.cache.private.set(kid, pem);
+        return pem;
     }
 
-    /** PUBLIC KEY LOADING */
+    /** Load public key */
     async loadPublicKey(kid) {
         if (this.cache.public.has(kid)) {
             return this.cache.public.get(kid);
         }
 
         const file = join(this.publicDir, `${kid}.pem`);
-        const key = await readFile(file, 'utf8');
+        const pem = await readFile(file, 'utf8');
 
-        this.cache.public.set(kid, key);
-        return key;
+        this.cache.public.set(kid, pem);
+        return pem;
     }
 
-    /** LOAD ALL KIDs FROM PUBLIC FOLDER */
-    async getAllKids() {
+    /** Public KIDs only */
+    async getAllPublicKids() {
         const files = await readdir(this.publicDir);
         return files
             .filter(f => f.endsWith('.pem'))
-            .map(f => f.replace('.pem', '')); // kid = filename
+            .map(f => f.replace('.pem', ''));
     }
 
-    /** GET CURRENT SIGNING KEY */
+    /** Private KIDs only */
+    async getAllPrivateKids() {
+        const files = await readdir(this.privateDir);
+        return files
+            .filter(f => f.endsWith('.pem'))
+            .map(f => f.replace('.pem', ''));
+    }
+
+    /** Current private signing key */
     async getSigningKey() {
         if (!this.activeKid) {
             throw new Error("Active kid is not set.");
         }
-
-        const privateKeyPem = await this.loadPrivateKey(this.activeKid);
-
-        return {
-            kid: this.activeKid,
-            privateKey: privateKeyPem
-        };
+        const pem = await this.loadPrivateKey(this.activeKid);
+        return { kid: this.activeKid, privateKey: pem };
     }
 
-    /** JWK BUILDER (PUBLIC ONLY) */
-    async _getPublicJWK(kid) {
-        if (this.cache.jwk.has(kid)) {
-            return this.cache.jwk.get(kid);
-        }
-
-        const publicKeyPem = await this.loadPublicKey(kid);
-        const keyObj = await importSPKI(publicKeyPem, 'RS256');
-        const jwk = await exportJWK(keyObj);
-
-        // Add required fields
-        jwk.kid = kid;
-        jwk.use = 'sig';
-        jwk.alg = 'RS256';
-
-        this.cache.jwk.set(kid, jwk);
-        return jwk;
-    }
-
-    /** GENERATE JWKS FOR THIS DOMAIN */
-    async getJWKS() {
-        const kids = await this.getAllKids();
-        const keys = [];
+    /** Map of kid → publicKeyPem */
+    async getPublicKeyMap() {
+        const kids = await this.getAllPublicKids();
+        const map = {};
 
         for (const kid of kids) {
-            const jwk = await this._getPublicJWK(kid);
-            keys.push(jwk);
+            map[kid] = await this.loadPublicKey(kid);
         }
 
-        return { keys };
+        return map;
+    }
+
+    /** Clear cache */
+    clearCache() {
+        this.cache.private.clear();
+        this.cache.public.clear();
     }
 }
