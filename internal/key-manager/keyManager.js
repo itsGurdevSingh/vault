@@ -119,7 +119,6 @@ class KeyManager {
         return loader.activeKid;
     }
 
-    // Rotation placeholder (to be implemented in next task)
     async rotateKeys(domain) {
         // Queue-based locking mechanism (FIFO)
         // 1. Get the last task in the queue for this domain
