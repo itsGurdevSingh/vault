@@ -18,6 +18,8 @@ class KeyManager {
             builders: new Map() // domain -> JWKSBuilder
         }
 
+        this.locks = new Map();
+
         keyJanitor.init(this);
 
     }
@@ -119,22 +121,45 @@ class KeyManager {
 
     // Rotation placeholder (to be implemented in next task)
     async rotateKeys(domain) {
-        // generate a new key pair
-        const newKid = await this.generateKeyPair(domain);
-
-        // get old active kid
-        const oldKid = await this.getActiveKid(domain);
-
-        // set the new key as active
-        await this.setActiveKid(domain, newKid);
-
-        // delete old private key 
-        if (oldKid) {
-            await keyJanitor.retirePrivateKey(domain, oldKid);
+        // check if already rotation happening for this domain
+        while (this.locks.get(domain)) {
+            //if locked, wait for previous rotation to finish
+            await this.locks.get(domain);
         }
 
-        // it return new kid 
-        return newKid;
+        // Create a lock promise
+        let resolveLock;
+        const lockPromise = new Promise((resolve) => {
+            resolveLock = resolve;
+        });
+        this.locks.set(domain, lockPromise);
+
+        try {
+            // generate a new key pair
+            const newKid = await this.generateKeyPair(domain);
+
+            // get old active kid
+            const oldKid = await this.getActiveKid(domain);
+
+            // set the new key as active
+            await this.setActiveKid(domain, newKid);
+
+            // delete old private key 
+            if (oldKid) {
+                await keyJanitor.retirePrivateKey(domain, oldKid);
+            }
+
+            // it return new kid 
+            return newKid;
+
+        } catch (err) {
+            console.error(`Error rotating keys for domain: ${domain}`, err);
+            throw err;
+        } finally {
+            // Release the lock
+            this.locks.delete(domain);
+            resolveLock();
+        }
     }
 
     clearCache() {
