@@ -121,19 +121,22 @@ class KeyManager {
 
     // Rotation placeholder (to be implemented in next task)
     async rotateKeys(domain) {
-        // check if already rotation happening for this domain
-        while (this.locks.get(domain)) {
-            //if locked, wait for previous rotation to finish
-            await this.locks.get(domain);
-        }
+        // Queue-based locking mechanism (FIFO)
+        // 1. Get the last task in the queue for this domain
+        const previousTask = this.locks.get(domain) || Promise.resolve();
 
-        // Create a lock promise
-        let resolveLock;
-        const lockPromise = new Promise((resolve) => {
-            resolveLock = resolve;
-        });
-        this.locks.set(domain, lockPromise);
+        // 2. Chain our rotation task to run AFTER the previous one finishes
+        const currentTask = previousTask.then(() => this.#performRotation(domain));
 
+        // 3. Update the queue tail. 
+        // We use .catch() to ensure the chain continues even if this task fails.
+        this.locks.set(domain, currentTask.catch(() => { }));
+
+        // 4. Return the task so the caller can await the result/error
+        return currentTask;
+    }
+
+    async #performRotation(domain) {
         try {
             // generate a new key pair
             const newKid = await this.generateKeyPair(domain);
@@ -149,16 +152,11 @@ class KeyManager {
                 await keyJanitor.retirePrivateKey(domain, oldKid);
             }
 
-            // it return new kid 
             return newKid;
 
         } catch (err) {
             console.error(`Error rotating keys for domain: ${domain}`, err);
             throw err;
-        } finally {
-            // Release the lock
-            this.locks.delete(domain);
-            resolveLock();
         }
     }
 
