@@ -1,19 +1,14 @@
 import crypto from 'crypto';
 import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-
-const BASE_KEYS_DIR = join(process.cwd(), 'internal/keys');
+import { KeyPaths } from '../../../internal/key-manager/keyPaths.js';
+import { metadataManager } from '../../../internal/metadata-manager/metadataManager.js';
 
 export class KeyPairGenerator {
 
     constructor(domain) {
         if (!domain || typeof domain !== 'string')
             throw new Error("KeyPairGenerator requires a domain string.");
-
-        this.domain = domain.toUpperCase().trim();
-        this.domainDir = join(BASE_KEYS_DIR, this.domain);
-        this.privateDir = join(this.domainDir, 'private');
-        this.publicDir = join(this.domainDir, 'public');
+        this.domain = domain;
     }
 
     static async create(domain) {
@@ -23,8 +18,9 @@ export class KeyPairGenerator {
     }
 
     async #ensureDirectories() {
-        await mkdir(this.privateDir, { recursive: true });
-        await mkdir(this.publicDir, { recursive: true });
+        await mkdir(KeyPaths.privateDir(this.domain), { recursive: true });
+        await mkdir(KeyPaths.publicDir(this.domain), { recursive: true });
+        await mkdir(KeyPaths.metaKeyDir(this.domain), { recursive: true });
     }
 
     #generateKid() {
@@ -37,13 +33,14 @@ export class KeyPairGenerator {
         return `${this.domain}-${date}-${time}-${hex}`;
     }
 
+
     createKeyPair() {
         return new Promise((resolve, reject) => {
             crypto.generateKeyPair(
                 'rsa',
                 {
                     modulusLength: 4096,
-                    publicKeyEncoding: { type: 'spki', format: 'pem' }, 
+                    publicKeyEncoding: { type: 'spki', format: 'pem' },
                     privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
                 },
                 (err, publicKey, privateKey) => {
@@ -58,21 +55,21 @@ export class KeyPairGenerator {
         const kid = this.#generateKid();
         const { publicKey, privateKey } = await this.createKeyPair();
 
-        const privatePath = join(this.privateDir, `${kid}.pem`);
-        const publicPath = join(this.publicDir, `${kid}.pem`);
+        const privatePath = KeyPaths.privateKey(this.domain, kid);
+        const publicPath = KeyPaths.publicKey(this.domain, kid);
 
         try {
             await writeFile(privatePath, privateKey, { mode: 0o600 });
             await writeFile(publicPath, publicKey, { mode: 0o644 });
+
+            // write metadata files
+            await metadataManager.create(this.domain, kid, new Date());
+
         } catch (err) {
             console.error(`Failed to save keys for KID ${kid}:`, err);
             throw err;
         }
 
-        return {
-            kid,
-            privateKeyPath: privatePath,
-            publicKeyPath: publicPath
-        };
+        return kid;
     }
 }

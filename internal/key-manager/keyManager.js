@@ -1,8 +1,10 @@
 import { KeyLoader } from './keyLoader.js';
 import { JWKSBuilder } from '../../src/core/rsa/jwks-builder.js';
 import { KeyPairGenerator } from '../../src/core/rsa/generator.js';
+import { keyJanitor } from './KeyJanitor.js';
 
 const _INSTANCE_TOKEN = Symbol('KeyManager.instance');
+const _internal = new WeakMap();
 
 class KeyManager {
     constructor(token) {
@@ -16,6 +18,10 @@ class KeyManager {
             builders: new Map() // domain -> JWKSBuilder
         }
 
+        this.locks = new Map();
+
+        keyJanitor.init(this);
+
     }
 
     static getInstance() {
@@ -25,9 +31,23 @@ class KeyManager {
         return this._instance;
     }
 
+    grantAccess(friend) {
+        _internal.set(friend, {
+            loader: this.#resolveLoader.bind(this),
+            builder: this.#resolveBuilder.bind(this),
+            generator: this.#resolveGenerator.bind(this),
+        });
+    }
+
+    _getResolvers(friend) {
+        const resolvers = _internal.get(friend);
+        if (!resolvers) throw new Error("Unauthorized");
+        return resolvers;
+    }
+
     _normalizeDomain(domain) {
         if (!domain) throw new Error("Domain is required.");
-        return domain.toLowerCase().trim();
+        return domain.toUpperCase().trim();
     }
 
     // PRIVATE: get or create loader
@@ -99,13 +119,48 @@ class KeyManager {
         return loader.activeKid;
     }
 
-    // Rotation placeholder (to be implemented in next task)
     async rotateKeys(domain) {
-        throw new Error("rotateKeys() not implemented yet.");
+        // Queue-based locking mechanism (FIFO)
+        // 1. Get the last task in the queue for this domain
+        const previousTask = this.locks.get(domain) || Promise.resolve();
+
+        // 2. Chain our rotation task to run AFTER the previous one finishes
+        const currentTask = previousTask.then(() => this.#performRotation(domain));
+
+        // 3. Update the queue tail. 
+        // We use .catch() to ensure the chain continues even if this task fails.
+        this.locks.set(domain, currentTask.catch(() => { }));
+
+        // 4. Return the task so the caller can await the result/error
+        return currentTask;
+    }
+
+    async #performRotation(domain) {
+        try {
+            // generate a new key pair
+            const newKid = await this.generateKeyPair(domain);
+
+            // get old active kid
+            const oldKid = await this.getActiveKid(domain);
+
+            // set the new key as active
+            await this.setActiveKid(domain, newKid);
+
+            // delete old private key 
+            if (oldKid) {
+                await keyJanitor.retirePrivateKey(domain, oldKid);
+            }
+
+            return newKid;
+
+        } catch (err) {
+            console.error(`Error rotating keys for domain: ${domain}`, err);
+            throw err;
+        }
     }
 
     clearCache() {
-        
+
         // clear individual caches first
         for (const loader of this.cache.loaders.values()) {
             loader.clearCache();
@@ -119,7 +174,7 @@ class KeyManager {
         this.cache.loaders.clear();
         this.cache.builders.clear();
 
-        
+
     }
 }
 
