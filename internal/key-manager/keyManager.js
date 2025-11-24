@@ -1,6 +1,7 @@
 import { KeyLoader } from './keyLoader.js';
 import { JWKSBuilder } from '../../src/core/rsa/jwks-builder.js';
 import { KeyPairGenerator } from '../../src/core/rsa/generator.js';
+import { keyJanitor } from './KeyJanitor.js';
 
 const _INSTANCE_TOKEN = Symbol('KeyManager.instance');
 const _internal = new WeakMap();
@@ -16,6 +17,8 @@ class KeyManager {
             loaders: new Map(), // domain -> KeyLoader
             builders: new Map() // domain -> JWKSBuilder
         }
+
+        keyJanitor.init(this);
 
     }
 
@@ -117,14 +120,21 @@ class KeyManager {
     // Rotation placeholder (to be implemented in next task)
     async rotateKeys(domain) {
         // generate a new key pair
-        const newKeys = await this.generateKeyPair(domain);
+        const newKid = await this.generateKeyPair(domain);
+
+        // get old active kid
+        const oldKid = await this.getActiveKid(domain);
 
         // set the new key as active
-        await this.setActiveKid(domain, newKeys.kid);
+        await this.setActiveKid(domain, newKid);
 
         // delete old private key 
+        if (oldKid) {
+            await keyJanitor.retirePrivateKey(domain, oldKid);
+        }
 
-        return newKeys;
+        // it return new kid 
+        return newKid;
     }
 
     clearCache() {

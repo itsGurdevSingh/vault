@@ -26,5 +26,14 @@ export const KeyPaths = {
     },
     metaKeyFile(domain, kid) {
         return join(this.metaKeyDir(domain), `${kid}.meta`);
+    },
+
+    /** archived folder is not domain specific */
+    metaArchivedDir() {
+        return join(BASE_KEYS_META_DIR, 'archived');
+    },
+
+    metaArchivedKeyFile(kid) {
+        return join(this.metaArchivedDir(), `${kid}.meta`);
     }
 };

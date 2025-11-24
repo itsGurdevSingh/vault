@@ -1,5 +1,5 @@
 import { readFile, readdir, mkdir, unlink } from 'fs/promises';
-import { KeyPaths } from './keyPaths';
+import { KeyPaths } from './keyPaths.js';
 
 export class KeyLoader {
     constructor(domain) {
@@ -38,6 +38,9 @@ export class KeyLoader {
         this.activeKid = kid;
     }
 
+    getActiveKid() {
+        return this.activeKid;
+    }
 
     /** Load private key */
     async loadPrivateKey(kid) {
@@ -106,6 +109,9 @@ export class KeyLoader {
     async deletePrivateKey(kid) {
         const filePath = KeyPaths.privateKey(this.domain, kid);
         await unlink(filePath);
+
+        // Also remove from cache
+        this.deletePvtKeyFromCache(kid);
     }
 
     /** Delete Public Key */
@@ -114,7 +120,7 @@ export class KeyLoader {
         await unlink(filePath);
 
         // Also remove from cache
-        this.deleteKeyFromCache(kid);
+        this.deletePubKeyFromCache(kid);
     }
 
     /** Clear cache */
@@ -123,9 +129,13 @@ export class KeyLoader {
         this.cache.public.clear();
     }
 
-    /**Delete cache for kid */
-    deleteKeyFromCache(kid) {
+    /**Delete cache for private kid */
+    deletePvtKeyFromCache(kid) {
         this.cache.private.delete(kid);
+    }
+
+    /**Delete cache for public kid */
+    deletePubKeyFromCache(kid) {
         this.cache.public.delete(kid);
     }
 }

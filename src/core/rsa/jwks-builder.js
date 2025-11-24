@@ -30,7 +30,7 @@ export class JWKSBuilder {
             keys: []
         };
 
-        for (const [kid, pem] of publicKeys.entries()) {
+        for (const [kid, pem] of Object.entries(publicKeys)) {
             const jwk = await this._pemToJWK(kid, pem);
             jwks.keys.push(jwk);
         }

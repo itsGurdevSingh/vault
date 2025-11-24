@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { writeFile, mkdir } from 'fs/promises';
-import { KeyPaths } from '../../../internal/key-manager/keyPaths';
+import { KeyPaths } from '../../../internal/key-manager/keyPaths.js';
+import { metadataManager } from '../../../internal/metadata-manager/metadataManager.js';
 
 export class KeyPairGenerator {
 
@@ -32,11 +33,6 @@ export class KeyPairGenerator {
         return `${this.domain}-${date}-${time}-${hex}`;
     }
 
-    async #writeMetadata(kid) {
-        const metadataContent = `KID: ${kid}\nDomain: ${this.domain}\nGeneratedAt: ${new Date().toISOString()}\n`;
-        const metadataPath = KeyPaths.metaKeyFile(this.domain, kid);
-        await writeFile(metadataPath, metadataContent, { mode: 0o644 });
-    }
 
     createKeyPair() {
         return new Promise((resolve, reject) => {
@@ -67,7 +63,8 @@ export class KeyPairGenerator {
             await writeFile(publicPath, publicKey, { mode: 0o644 });
 
             // write metadata files
-            await this.#writeMetadata(kid);
+            await metadataManager.create(this.domain, kid, new Date());
+
         } catch (err) {
             console.error(`Failed to save keys for KID ${kid}:`, err);
             throw err;
