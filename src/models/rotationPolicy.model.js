@@ -24,4 +24,4 @@ const rotationPolicySchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-export const RotationPolicy = mongoose.model("RotationPolicy", rotationPolicySchema);
+export const rotationPolicy = mongoose.model("RotationPolicy", rotationPolicySchema);
