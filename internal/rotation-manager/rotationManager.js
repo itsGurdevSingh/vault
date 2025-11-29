@@ -3,7 +3,7 @@ import { rotationPolicyRepo } from "../../src/repositories/rotationPolicy.repo";
 import { keyManager } from "../key-manager/keyManager";
 
 class RotationManager {
-    
+
     // constraints for retryIntervalMs and maxRetries
     #constraints = {
         retryIntervalMs: developerRotationConfig.RETRY_INTERVAL_LIMIT,
@@ -30,7 +30,7 @@ class RotationManager {
         }
         // further check min and max values
         if (
-            (typeof retryIntervalMs.minInterval !== 'number' && retryIntervalMs < 0 ) ||
+            (typeof retryIntervalMs.minInterval !== 'number' && retryIntervalMs < 0) ||
             typeof retryIntervalMs.maxInterval !== 'number' ||
             (typeof maxRetries.minRetries !== 'number' && maxRetries < 0) ||
             typeof maxRetries.maxRetries !== 'number'
@@ -63,9 +63,19 @@ class RotationManager {
     }
 
     /** Update rotation timestamps in DB */
-    async #updatePolicy(domain, rotatedAt, nextRotationAt) {
+    async #updatePolicy(domain, rotationInterval, session = null) {
         try {
-            await rotationPolicyRepo.updateRotationDates(domain, rotatedAt, nextRotationAt);
+
+            const rotatedAt = new Date();
+            const nextRotationAt = this.#calcNextRotationDate(rotatedAt, rotationInterval);
+
+            const updationData = {
+                domain,
+                rotatedAt,
+                nextRotationAt
+            }
+
+            await rotationPolicyRepo.updateRotationDates(updationData, session);
         } catch (err) {
             console.error(`Failed updating policy for domain "${domain}":`, err);
             throw err;
@@ -116,12 +126,8 @@ class RotationManager {
                 const { domain, rotationInterval } = policy;
 
                 try {
-                    await this.#rotateDomain(domain);
 
-                    const rotatedAt = new Date();
-                    const nextRotationAt = this.#calcNextRotationDate(rotatedAt, rotationInterval);
-
-                    await this.#updatePolicy(domain, rotatedAt, nextRotationAt);
+                    await keyManager.rotateKeys(domain, async(session) => await this.#updatePolicy(domain, rotationInterval, session));
 
                     summary.success++;
                     console.log(`Rotated domain: ${domain}`);

@@ -49,12 +49,13 @@ class RotationPolicyRepo {
         return this.model.find({ nextRotationAt: { $lte: currentDate }, enabled: true });
     }
 
-    async updateRotationDates(domain, rotatedAt, nextRotationAt) {
+    async updateRotationDates({domain, rotatedAt, nextRotationAt}, session) {
         const d = domain.toUpperCase().trim();
         return this.model.findOneAndUpdate(
             { domain: d },
             { rotatedAt, nextRotationAt },
-            { new: true }
+            { new: true },
+            { session }
         );
     }
 
