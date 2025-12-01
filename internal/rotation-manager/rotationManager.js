@@ -55,7 +55,17 @@ class RotationManager {
     /** Run key rotation using the KeyManager */
     async #rotateDomain(domain) {
         try {
-            await keyManager.rotateKeys(domain);
+
+            const policy = await this.#getDomainPolicy(domain);
+
+            if (!policy) {
+                throw new Error(`No rotation policy found for domain: ${domain}`);
+            }
+
+            const { rotationInterval } = policy;
+
+            await keyManager.rotateKeys(domain, async (session) => await this.#updatePolicy(domain, rotationInterval, session));
+
         } catch (err) {
             console.error(`Rotation failed for domain "${domain}":`, err);
             throw err;
@@ -97,6 +107,11 @@ class RotationManager {
         return rotationPolicyRepo.getDueForRotation();
     }
 
+    /** Get domain policy */
+    async #getDomainPolicy(domain) {
+        return rotationPolicyRepo.findByDomain(domain);
+    }
+
     // ======================================================
     // CORE ROTATION LOGIC
     // ======================================================
@@ -106,13 +121,8 @@ class RotationManager {
      * This DOES the real work.
      */
     async #rotateDueDomains() {
-        if (this.isRotating) {
-            console.warn("Rotation already running — skipping trigger.");
-            return null;
-        }
 
-        this.isRotating = true;
-        const summary = { success: 0, failed: 0 };
+        const summary = { success: 0, failed: 0 , skipped: 0};
 
         try {
             const duePolicies = await this.#getDuePolicies();
@@ -126,9 +136,15 @@ class RotationManager {
                 const { domain, rotationInterval } = policy;
 
                 try {
+                    // Rotate keys
+                    const rotationRes = await keyManager.rotateKeys(domain, async (session) => await this.#updatePolicy(domain, rotationInterval, session));
 
-                    await keyManager.rotateKeys(domain, async(session) => await this.#updatePolicy(domain, rotationInterval, session));
-
+                    // If rotationRes is null, it means rotation was skipped due to lock
+                    if (!rotationRes) {
+                        summary.skipped++;
+                        console.log(`Skipped domain: ${domain} as it is already being rotated.`);
+                        continue; // skip to next domain
+                    }
                     summary.success++;
                     console.log(`Rotated domain: ${domain}`);
                 } catch {
@@ -138,8 +154,9 @@ class RotationManager {
 
             return summary;
 
-        } finally {
-            this.isRotating = false;
+        } catch (err) {
+            console.error("Error during rotation of due domains:", err);
+            return summary;
         }
     }
 
@@ -151,11 +168,14 @@ class RotationManager {
         for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
             const summary = await this.#rotateDueDomains();
 
-            if (!summary) return; // rotation skipped because already running
 
             if (summary.failed === 0) {
                 console.log("All due domains rotated successfully.");
                 return;
+            }
+
+            if(summary.skipped > 0) {
+                console.log(`${summary.skipped} domains were skipped as they are already being rotated.`);
             }
 
             if (attempt < this.maxRetries) {
@@ -232,6 +252,18 @@ class RotationManager {
             console.log("Immediate rotation completed.");
         } catch (err) {
             console.error("Immediate rotation failed:", err);
+            throw err;
+        }
+    }
+
+    /** Trigger domain specific rotation */
+    async triggerDomainRotation(domain) {
+        try {
+            console.log(`Immediate rotation triggered by admin for domain: ${domain}`);
+            await this.#rotateDomain(domain);
+            console.log(`Immediate rotation completed for domain: ${domain}`);
+        } catch (err) {
+            console.error(`Immediate rotation failed for domain "${domain}":`, err);
             throw err;
         }
     }

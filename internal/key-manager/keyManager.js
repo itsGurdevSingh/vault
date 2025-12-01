@@ -3,6 +3,7 @@ import { JWKSBuilder } from '../../src/core/rsa/jwks-builder.js';
 import { KeyPairGenerator } from '../../src/core/rsa/generator.js';
 import { keyJanitor } from './KeyJanitor.js';
 import mongoose from 'mongoose';
+import { rotationLockRepo } from '../../src/repositories/rotationLockRepo.js';
 
 const _INSTANCE_TOKEN = Symbol('KeyManager.instance');
 const _internal = new WeakMap();
@@ -125,25 +126,28 @@ class KeyManager {
     }
 
     async rotateKeys(domain, updateRotationDatesCB) {
-        // Queue-based locking mechanism (FIFO)
-        // 1. Get the last task in the queue for this domain
-        const previousTask = this.locks.get(domain) || Promise.resolve();
+        const d = this._normalizeDomain(domain);
 
-        // 2. Chain our rotation task to run AFTER the previous one finishes
-        const currentTask = previousTask.then(() => this.#performRotation(domain, updateRotationDatesCB));
+        // acquire lock
+        const token = await rotationLockRepo.acquire(d, 300);
+        if (!token) {
+            console.log(`Domain "${d}" is already being rotated.`);
+            return null;
+        }
 
-        // 3. Update the queue tail. 
-        // We use .catch() to ensure the chain continues even if this task fails.
-        this.locks.set(domain, currentTask.catch(() => { }));
-
-        // 4. Return the task so the caller can await the result/error
-        return currentTask;
+        try {
+            // perform rotation
+            return await this.#performRotation(domain, updateRotationDatesCB);
+        } finally {
+            // release only if *we* hold the lock
+            await rotationLockRepo.release(d, token);
+        }
     }
 
     async #performRotation(domain, updateRotationDatesCB) {
 
         if (!updateRotationDatesCB || !domain || typeof updateRotationDatesCB !== 'function') {
-            // we need to update rotation dates in db transaction thow error
+            // we need to update rotation dates in db transaction throw error
             throw new Error("Invalid parameters for key rotation.");
         }
 
@@ -186,7 +190,7 @@ class KeyManager {
         }
     }
 
-    /** initl setup for rotation  */
+    /** initial setup for rotation  */
     async #prepareRotation(domain) {
         // generate a new key pair
         const newKid = await this.generateKeyPair(domain);
@@ -243,7 +247,7 @@ class KeyManager {
 
     /** rollback key rotation  */
     async #rollbackRotation(domain) {
-        // delte upcoming kid's private key
+        // delete upcoming kid's private key
         if (!this.#upcomingKid) {
             // this is crucial , should not happen
             throw new Error("No upcoming kid found for rollback.");
