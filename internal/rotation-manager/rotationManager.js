@@ -2,6 +2,9 @@ import { defaultRotationConfig, developerRotationConfig } from "../../src/config
 import { rotationPolicyRepo } from "../../src/repositories/rotationPolicy.repo";
 import { keyManager } from "../key-manager/keyManager";
 
+const _INSTANCE_TOKEN = Symbol('KeyManager.instance');
+
+
 class RotationManager {
 
     // constraints for retryIntervalMs and maxRetries
