@@ -11,7 +11,6 @@ class RotationManager {
     };
 
     constructor() {
-        this.isRotating = false;
         this.retryIntervalMs = defaultRotationConfig.RETRY_INTERVAL_MS;
         this.maxRetries = defaultRotationConfig.MAX_RETRIES;
 
