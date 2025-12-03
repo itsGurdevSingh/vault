@@ -36,6 +36,7 @@ export class KeyLoader {
         }
 
         this.activeKid = kid;
+        return this.activeKid;
     }
 
     getActiveKid() {
@@ -108,7 +109,13 @@ export class KeyLoader {
     /** Delete Private Key */
     async deletePrivateKey(kid) {
         const filePath = KeyPaths.privateKey(this.domain, kid);
-        await unlink(filePath);
+
+        try {
+            await unlink(filePath);
+        } catch (err) {
+            if (err.code === 'ENOENT') return;
+            else throw err;
+        }
 
         // Also remove from cache
         this.deletePvtKeyFromCache(kid);
@@ -117,8 +124,12 @@ export class KeyLoader {
     /** Delete Public Key */
     async deletePublicKey(kid) {
         const filePath = KeyPaths.publicKey(this.domain, kid);
-        await unlink(filePath);
-
+        try {
+            await unlink(filePath);
+        } catch (err) {
+            if (err.code === 'ENOENT') return;
+            else throw err;
+        }
         // Also remove from cache
         this.deletePubKeyFromCache(kid);
     }

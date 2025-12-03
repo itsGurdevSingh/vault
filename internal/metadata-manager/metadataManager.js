@@ -32,6 +32,8 @@ class MetadataManager {
         }
     }
 
+
+    /** add arvchive meta with TTL for public key deletion at expiry */
     async addExpiry(domain, kid, expiresAt) {
         const meta = await this.read(domain, kid);
         if (!meta) return null;
@@ -40,26 +42,36 @@ class MetadataManager {
 
         // Write to archive
         const archivePath = KeyPaths.metaArchivedKeyFile(kid);
-        
+
         // Ensure archive directory exists
         await fs.mkdir(KeyPaths.metaArchivedDir(), { recursive: true });
 
         await writeFile(archivePath, JSON.stringify(meta, null, 2), { mode: 0o644 });
 
-        // Remove original
-        await this.delete(domain, kid);
-
         return meta;
     }
 
-    async delete(domain, kid) {
-        const p = KeyPaths.metaKeyFile(domain, kid);
-        await unlink(p).catch(() => {}); // ignore not found
+    /**delete origin on sucessfull key rotation */
+    async deleteOrigin(domain, kid) {
+        const filePath = KeyPaths.metaKeyFile(domain, kid);
+        try {
+            await unlink(filePath);
+        } catch (err) {
+            // ignore if file does not exist
+            if (err.code === 'ENOENT') return;
+            else throw err;
+        }
     }
 
+    /**delete archived on sucessfull expiry or rollback */
     async deleteArchived(kid) {
-        const p = KeyPaths.metaArchivedKeyFile(kid);
-        await unlink(p).catch(() => {}); // ignore not found
+        const filePath = KeyPaths.metaArchivedKeyFile(kid);
+        try {
+            await unlink(filePath);
+        } catch (err) {
+            if (err.code === 'ENOENT') return;
+            else throw err;
+        }
     }
 
     async #readArchived(kid) {

@@ -33,9 +33,6 @@ class KeyJanitor {
     async retirePrivateKey(domain, kid) {
 
         try {
-            // add expiration metadata
-            await this.#addKeyExpiry(domain, kid);
-
             // delete private key file
             const loader = await this.resolveLoader(domain);
             await loader.deletePrivateKey(kid);
@@ -63,13 +60,38 @@ class KeyJanitor {
         }
     }
 
-    /** add expiry to metadata and move meta to archive */
-    async #addKeyExpiry(domain, kid) {
+    /** add archive meta with TTL for public keys*/
+    async addKeyExpiry(domain, kid) {
 
         const expirationDate = new Date(Date.now() + KEY_PUBLIC_TTL_MS + KEY_GRACE_MS);
 
         await metadataManager.addExpiry(domain, kid, expirationDate);
     }
+    
+    /** 
+     * delete origin metadate
+     * on sucessfull rotation (commit rotation) delete origin meta for previous active kid
+     * on rollback delete origin meta for upcoming kid (generated for rotation)
+    */
+    async deleteOriginMetadata(domain, kid) {
+        try {
+            await metadataManager.deleteOrigin(domain, kid);
+        } catch (err) {
+            console.error(`Error deleting origin metadata for domain: ${domain}, kid: ${kid}`, err);
+            throw err;
+        }
+    }
+
+    /**delete archived key on rollback remove TTL from public key */
+    async deleteArchivedMetadata(kid) {
+        try {
+            await metadataManager.deleteArchived(kid);
+        } catch (err) {
+            console.error(`Error deleting archived metadata for kid: ${kid}`, err);
+            throw err;
+        }
+    }
+
 
     /**
      *  delete expired public keys 

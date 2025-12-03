@@ -2,11 +2,17 @@ import { KeyLoader } from './keyLoader.js';
 import { JWKSBuilder } from '../../src/core/rsa/jwks-builder.js';
 import { KeyPairGenerator } from '../../src/core/rsa/generator.js';
 import { keyJanitor } from './KeyJanitor.js';
+import mongoose from 'mongoose';
+import { rotationLockRepo } from '../../src/repositories/rotationLockRepo.js';
 
 const _INSTANCE_TOKEN = Symbol('KeyManager.instance');
 const _internal = new WeakMap();
 
 class KeyManager {
+
+    #upcomingKid = null;
+    #previousKid = null;
+
     constructor(token) {
         if (token !== _INSTANCE_TOKEN) {
             throw new Error('Use KeyManager.getInstance() instead.');
@@ -119,44 +125,155 @@ class KeyManager {
         return loader.activeKid;
     }
 
-    async rotateKeys(domain) {
-        // Queue-based locking mechanism (FIFO)
-        // 1. Get the last task in the queue for this domain
-        const previousTask = this.locks.get(domain) || Promise.resolve();
+    async rotateKeys(domain, updateRotationDatesCB) {
+        const d = this._normalizeDomain(domain);
 
-        // 2. Chain our rotation task to run AFTER the previous one finishes
-        const currentTask = previousTask.then(() => this.#performRotation(domain));
+        // acquire lock
+        const token = await rotationLockRepo.acquire(d, 300);
+        if (!token) {
+            console.log(`Domain "${d}" is already being rotated.`);
+            return null;
+        }
 
-        // 3. Update the queue tail. 
-        // We use .catch() to ensure the chain continues even if this task fails.
-        this.locks.set(domain, currentTask.catch(() => { }));
-
-        // 4. Return the task so the caller can await the result/error
-        return currentTask;
+        try {
+            // perform rotation
+            return await this.#performRotation(domain, updateRotationDatesCB);
+        } finally {
+            // release only if *we* hold the lock
+            await rotationLockRepo.release(d, token);
+        }
     }
 
-    async #performRotation(domain) {
+    async #performRotation(domain, updateRotationDatesCB) {
+
+        if (!updateRotationDatesCB || !domain || typeof updateRotationDatesCB !== 'function') {
+            // we need to update rotation dates in db transaction throw error
+            throw new Error("Invalid parameters for key rotation.");
+        }
+
+        const session = await mongoose.startSession();
+
         try {
-            // generate a new key pair
-            const newKid = await this.generateKeyPair(domain);
+            // prepare rotation
+            await this.#prepareRotation(domain);
 
-            // get old active kid
-            const oldKid = await this.getActiveKid(domain);
+            // start db transaction
+            session.startTransaction();
 
-            // set the new key as active
-            await this.setActiveKid(domain, newKid);
+            // run db transaction if provided
+            await updateRotationDatesCB(session);
+            // commit rotation
+            const newActiveKid = await this.#commitRotation(domain);
 
-            // delete old private key 
-            if (oldKid) {
-                await keyJanitor.retirePrivateKey(domain, oldKid);
-            }
+            // commit db transaction
+            await session.commitTransaction();
 
-            return newKid;
+            return newActiveKid;
 
         } catch (err) {
-            console.error(`Error rotating keys for domain: ${domain}`, err);
-            throw err;
+
+            // rollback rotation on error
+            const activeKid = await this.#rollbackRotation(domain);
+
+            if (!activeKid) {
+                // this is crucial , should not happen
+                throw new Error("No active kid found after rollback.");
+            }
+
+            // abort db transaction
+            await session.abortTransaction();
+
+            console.error(`Key rotation failed for domain "${domain}". Rolled back to active kid "${activeKid}". Error:`, err);
+            return null;
+        } finally {
+            session.endSession();
         }
+    }
+
+    /** initial setup for rotation  */
+    async #prepareRotation(domain) {
+        // generate a new key pair
+        const newKid = await this.generateKeyPair(domain);
+
+        // set upcoming kid
+        this.#upcomingKid = newKid;
+
+        // store archived meta for current active key
+        const activeKid = await this.getActiveKid(domain);
+
+        if (!activeKid) {
+            // we rotate only if there is an active kid
+            // this is crucial , should not happen
+            // we use generation only (not rotation) for first time setup
+            throw new Error("No active kid found for prepare.");
+        }
+
+        await keyJanitor.addKeyExpiry(domain, activeKid);
+
+        return newKid;
+
+    }
+
+    async #commitRotation(domain) {
+        // set previous kid
+        this.#previousKid = await this.getActiveKid(domain);
+
+        if (!this.#previousKid) {
+            // we not use rotation for first time setup we use generation only 
+            throw new Error("No previous kid found for commit.");
+        }
+
+        // set upcoming kid to active
+        const activeKid = await this.setActiveKid(domain, this.#upcomingKid);
+
+        if (!activeKid) {
+            // this is crucial , should not happen
+            throw new Error("No upcoming kid set for commit.");
+        }
+
+        // clear upcoming kid
+        this.#upcomingKid = null;
+
+        // delate private key
+        await keyJanitor.retirePrivateKey(domain, this.#previousKid);
+
+        // delete origin metadata for previous active kid
+        await keyJanitor.deleteOriginMetadata(domain, this.#previousKid);
+
+        // new active kid
+        return activeKid;
+
+    }
+
+    /** rollback key rotation  */
+    async #rollbackRotation(domain) {
+        // delete upcoming kid's private key
+        if (!this.#upcomingKid) {
+            // this is crucial , should not happen
+            throw new Error("No upcoming kid found for rollback.");
+        }
+        await keyJanitor.retirePrivateKey(domain, this.#upcomingKid);
+        // also delete public key
+        await keyJanitor.deletePublicKey(domain, this.#upcomingKid);
+
+        // remove metadata for upcoming kid
+        await keyJanitor.deleteOriginMetadata(domain, this.#upcomingKid);
+
+        // remove meta from archive for active kid
+        const activeKid = await this.getActiveKid(domain);
+
+        if (!activeKid) {
+            // this is crucial , should not happen
+            throw new Error("No active kid found for rollback.");
+        }
+
+        await keyJanitor.deleteArchivedMetadata(activeKid);
+
+        // clear upcoming kid
+        this.#upcomingKid = null;
+
+        // return active kid
+        return activeKid;
     }
 
     clearCache() {
