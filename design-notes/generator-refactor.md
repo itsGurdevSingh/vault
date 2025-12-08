@@ -28,7 +28,7 @@ They only perform isolated operations when invoked.
 | `DirManager` | Ensures filesystem directories exist for domain keys |
 | `KIDFactory` | Generates KIDs in `DOMAIN-YYYYMMDD-HHMMSS-RANDOMHEX` format |
 | `RSAKeyGen` | Generates RSA keypair using crypto |
-| `KeyWriter` | Writes private/public PEM files to disk |
+| `KeyWriter` | Writes private/public PEM files to disk (get paths from keyPath repo ) |
 
 Each insider module is independent and side-effect aware.
 
@@ -69,7 +69,7 @@ It knows *the order*, modules do not.
 
 ## Architecture Diagram
 
-![generator digram](./digrams/generator.png)
+![generator digram](./digrams/generator.svg)
 
 ---
 
