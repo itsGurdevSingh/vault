@@ -1,20 +1,20 @@
 import { writeFile, readFile, unlink, readdir, mkdir } from "fs/promises";
 import path from "path";
-import { KeyPaths } from "../../infrastructure/filesystem/index.js";
+import { pathsRepo } from "../../infrastructure/filesystem/index.js";
 
 export class MetaFileStore {
 
     /* ---------- Origin Metadata ---------- */
 
     async writeOrigin(domain, kid, meta) {
-        const filePath = KeyPaths.metaKeyFile(domain, kid);
+        const filePath = pathsRepo.metaKeyFile(domain, kid);
         await writeFile(filePath, JSON.stringify(meta, null, 2), { mode: 0o644 });
         return meta;
     }
 
     async readOrigin(domain, kid) {
         try {
-            const filePath = KeyPaths.metaKeyFile(domain, kid);
+            const filePath = pathsRepo.metaKeyFile(domain, kid);
             const data = await readFile(filePath, "utf8");
             return JSON.parse(data);
         } catch (err) {
@@ -25,7 +25,7 @@ export class MetaFileStore {
 
     async deleteOrigin(domain, kid) {
         try {
-            const filePath = KeyPaths.metaKeyFile(domain, kid);
+            const filePath = pathsRepo.metaKeyFile(domain, kid);
             await unlink(filePath);
         } catch (err) {
             if (err.code !== "ENOENT") throw err;
@@ -35,17 +35,17 @@ export class MetaFileStore {
     /* ---------- Archived Metadata ---------- */
 
     async writeArchive(kid, meta) {
-        const archiveDir = KeyPaths.metaArchivedDir();
+        const archiveDir = pathsRepo.metaArchivedDir();
         await mkdir(archiveDir, { recursive: true });
 
-        const filePath = KeyPaths.metaArchivedKeyFile(kid);
+        const filePath = pathsRepo.metaArchivedKeyFile(kid);
         await writeFile(filePath, JSON.stringify(meta, null, 2), { mode: 0o644 });
         return meta;
     }
 
     async readArchive(kid) {
         try {
-            const filePath = KeyPaths.metaArchivedKeyFile(kid);
+            const filePath = pathsRepo.metaArchivedKeyFile(kid);
             const data = await readFile(filePath, "utf8");
             return JSON.parse(data);
         } catch (err) {
@@ -56,7 +56,7 @@ export class MetaFileStore {
 
     async deleteArchive(kid) {
         try {
-            const filePath = KeyPaths.metaArchivedKeyFile(kid);
+            const filePath = pathsRepo.metaArchivedKeyFile(kid);
             await unlink(filePath);
         } catch (err) {
             if (err.code !== "ENOENT") throw err;
@@ -64,7 +64,7 @@ export class MetaFileStore {
     }
 
     async readAllArchives() {
-        const archiveDir = KeyPaths.metaArchivedDir();
+        const archiveDir = pathsRepo.metaArchivedDir();
         let files = [];
         try {
             files = await readdir(archiveDir);
