@@ -1,0 +1,92 @@
+﻿Folder PATH listing for volume OS
+Volume serial number is 9840-6B9B
+C:.
+|   .env
+|   .gitignore
+|   journey.md
+|   package-lock.json
+|   package.json
+|   structure.md
+|   structure.txt
+|   
++---certs
++---design-notes
+|       rotationSystem.md
+|       
++---src
+|   |   app.js
+|   |   
+|   +---config
+|   |       envConfig.js
+|   |       keys.js
+|   |       rotationConfig.js
+|   |       
+|   +---domain
+|   |   +---key-manager
+|   |   |       index.js
+|   |   |       KeyJanitor.js
+|   |   |       KeyLoader.js
+|   |   |       KeyManager.js
+|   |   |       
+|   |   +---metadata-manager
+|   |   |       index.js
+|   |   |       MetadataManager.js
+|   |   |       
+|   |   +---rotation-manager
+|   |   |       index.js
+|   |   |       RotationManager.js
+|   |   |       
+|   |   \---signer
+|   |           cache.js
+|   |           error.js
+|   |           index.js
+|   |           Signer.js
+|   |           
+|   +---infrastructure
+|   |   +---cache
+|   |   |       index.js
+|   |   |       redisClient.js
+|   |   |       rotationLockRepo.js
+|   |   |       
+|   |   +---crypto
+|   |   |       crypto-utils.js
+|   |   |       generator.js
+|   |   |       index.js
+|   |   |       jwks-builder.js
+|   |   |       jwt.js
+|   |   |       
+|   |   +---db
+|   |   |   |   index.js
+|   |   |   |   mongoClient.js
+|   |   |   |   
+|   |   |   +---models
+|   |   |   |       RotationPolicy.model.js
+|   |   |   |       
+|   |   |   \---repositories
+|   |   |           rotationPolicy.repo.js
+|   |   |           
+|   |   +---filesystem
+|   |   |       index.js
+|   |   |       KeyPaths.js
+|   |   |       
+|   |   \---logging
+|   |           index.js
+|   |           logger.js
+|   |           
+|   +---transport
+|   |   +---grpc
+|   |   \---http
+|   |           index.js
+|   |           
+|   \---utils
+|           index.js
+|           
++---storage
+|   +---jwks
+|   +---keys
+|   \---metadata
+|       \---keys
+\---tests
+    +---fixtures
+    +---integration
+    \---unit
