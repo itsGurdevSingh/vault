@@ -4,8 +4,8 @@ import { isExpired } from "./utils.js";
 
 export class MetadataService {
 
-    constructor() {
-        this.store = new MetaFileStore();
+    constructor(metaPaths = null) {
+        this.store = new MetaFileStore(metaPaths);
         this.builder = new MetaBuilder();
     }
 
