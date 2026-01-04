@@ -1,20 +1,19 @@
-import { readdir, mkdir } from "fs/promises";
-import { normalizeDomain } from "../utils/normalizer.js";
-import { pathsRepo } from "../../../infrastructure/filesystem/index.js";
+import { readdir } from "fs/promises";
 
 export class KeyDirectory {
-    constructor(domain) {
+    constructor(domain, paths) {
         if (!domain) throw new Error("KeyDirectory requires a domain.");
-        this.domain = normalizeDomain(domain);
+        this.domain = domain;
+        this.paths = paths;
     }
 
     /** Ensure the folder structure exists */
     async ensureDirectories() {
 
         //check directories exist, if not thow error
-        const privateDir = pathsRepo.privateDir(this.domain);
-        const publicDir = pathsRepo.publicDir(this.domain);
-        const metaDir = pathsRepo.metaKeyDir(this.domain);
+        const privateDir = this.paths.privateDir(this.domain);
+        const publicDir = this.paths.publicDir(this.domain);
+        const metaDir = this.paths.metaKeyDir(this.domain);
         try {
             await readdir(privateDir);
             await readdir(publicDir);
@@ -30,7 +29,7 @@ export class KeyDirectory {
 
     /** List all private key files (*.pem → kid) */
     async listPrivateKids() {
-        const files = await readdir(pathsRepo.privateDir(this.domain));
+        const files = await readdir(this.paths.privateDir(this.domain));
         return files
             .filter(f => f.endsWith(".pem"))
             .map(f => f.replace(".pem", ""));
@@ -38,7 +37,7 @@ export class KeyDirectory {
 
     /** List all public key files (*.pem → kid) */
     async listPublicKids() {
-        const files = await readdir(pathsRepo.publicDir(this.domain));
+        const files = await readdir(this.paths.publicDir(this.domain));
         return files
             .filter(f => f.endsWith(".pem"))
             .map(f => f.replace(".pem", ""));
@@ -46,7 +45,7 @@ export class KeyDirectory {
 
     /** List metadata KIDs (useful for debugging, optional) */
     async listMetadataKids() {
-        const files = await readdir(pathsRepo.metaKeyDir(this.domain));
+        const files = await readdir(this.paths.metaKeyDir(this.domain));
         return files
             .filter(f => f.endsWith(".json"))
             .map(f => f.replace(".json", ""));

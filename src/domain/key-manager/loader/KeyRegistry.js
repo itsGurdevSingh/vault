@@ -1,26 +1,8 @@
-import { KeyReader } from "./KeyReader.js";
-import { KeyDirectory } from "./KeyDirectory.js";
-import { activeKIDState } from "../../state/ActiveKIDState.js";
-import { normalizeDomain } from "../utils/normalizer.js";
-
 export class KeyRegistry {
 
-    static #instances = new Map();
-
-    constructor(domain) {
-        this.domain = domain;
-        this.reader = new KeyReader(domain);
-        this.directory = new KeyDirectory(domain);
-    }
-
-    static getInstance(domain) {
-        if (!domain) throw new Error("Domain required");
-        const d = normalizeDomain(domain);
-
-        if (!this.#instances.has(d)) {
-            this.#instances.set(d, new KeyRegistry(d));
-        }
-        return this.#instances.get(d);
+constructor({reader, directory}) {
+        this.reader = reader;
+        this.directory = directory;
     }
 
     async getAllPubKids() {
@@ -41,14 +23,21 @@ export class KeyRegistry {
         return keys;
     }
 
-    /** Current private signing key */
-    async getSigningKey() {
-        const kid = await activeKIDState.getActiveKID(this.domain);
-        if (!kid) {
-            throw new Error(`No active KID set for domain: ${this.domain}`);
+    async getPvtKeyMap() {
+        const kids = await this.getAllPvtKids();
+        const keys = {};
+        for (const kid of kids) {
+            keys[kid] = await this.reader.privateKey(kid);
         }
-        const privateKey = await this.reader.privateKey(kid);
-        return { kid, pvtKey };
+        return keys;
     }
 
+    async getPubKey(kid) {
+        return await this.reader.publicKey(kid);
+    }
+
+    async getPvtKey(kid) {
+        return await this.reader.privateKey(kid);
+    }
+    
 }

@@ -1,7 +1,5 @@
-import { Cache } from "../../../utils/cache";
-
 export class KeyCache {
-    constructor() {
+    constructor({ Cache }) {
         this.private = new Cache();
         this.public = new Cache();
     }
