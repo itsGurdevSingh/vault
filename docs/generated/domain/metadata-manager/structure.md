@@ -9,6 +9,7 @@ classDiagram
     classDef violation stroke:#ff0000,stroke-width:4px,stroke-dasharray: 5 5;
 
     class MetadataService {
+        +constructor(store)
         +create(domain, kid, createdAt)
         +read(domain, kid)
         +addExpiry(domain, kid, expiresAt)
@@ -17,6 +18,7 @@ classDiagram
         +getExpiredMetadata()
     }
     class MetaFileStore {
+        +constructor(metaPaths)
         +writeOrigin(domain, kid, meta)
         +readOrigin(domain, kid)
         +deleteOrigin(domain, kid)
@@ -29,20 +31,22 @@ classDiagram
         +createMeta(domain, kid, createdAt)
         +applyExpiry(meta, expiresAt)
     }
+    class Utils {
+        +isExpired(meta, now)
+    }
     class Paths {
+        <<Injected Interface>>
         +metaKeyDir(domain)
         +metaKeyFile(domain, kid)
         +metaArchivedDir()
         +metaArchivedKeyFile(kid)
     }
-    class Utils {
-        +isExpired(meta, now)
-    }
 
-    MetadataService o-- MetaFileStore : creates
-    MetadataService o-- MetaBuilder : creates
+    %% Relationships
+    MetadataService o-- MetaFileStore : injected
+    MetadataService *-- MetaBuilder : composes
     MetadataService ..> Utils : uses
-    MetaFileStore ..> Paths : uses
 
-    
+    MetaFileStore o-- Paths : injected
+
 ```

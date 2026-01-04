@@ -1,11 +1,10 @@
-import { MetaFileStore } from "./metaFileStore.js";
 import { MetaBuilder } from "./metaBuilder.js";
 import { isExpired } from "./utils.js";
 
 export class MetadataService {
 
-    constructor(metaPaths = null) {
-        this.store = new MetaFileStore(metaPaths);
+    constructor(store) {
+        this.store = store;
         this.builder = new MetaBuilder();
     }
 
