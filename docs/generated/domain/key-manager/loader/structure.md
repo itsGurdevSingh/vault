@@ -14,55 +14,52 @@ graph TB
     subgraph "Domain Layer"
         Factory[LoaderFactory<br/><<Singleton>>]
         Registry[KeyRegistry<br/><<Aggregate Root>>]
-        Reader[KeyReader]
-        Directory[KeyDirectory]
-        Cache[KeyCache<br/><<Public Facade>>]
+        Reader[KeyReader<br/><<Stateless>>]
+        Directory[KeyDirectory<br/><<Stateless>>]
+    end
+
+    subgraph "Utilities"
+        Cache[KeyCache<br/><<Singleton>>]
     end
 
     subgraph "Infrastructure Layer"
-        Paths[Paths Interface<br/>File System]
-        CacheImpl[Cache Interface<br/>Memory Store]
-        Normalizer[Domain Normalizer]
+        Paths[PathsRepo<br/>File System]
     end
 
     %% --- RELATIONSHIPS ---
-    %% Bootstrap injects dependencies
-    Bootstrap -->|injects| Factory
+    %% Bootstrap creates singletons
+    Bootstrap -->|creates singleton| Factory
+    Bootstrap -->|gets singleton| Cache
     Bootstrap -.->|provides| Paths
-    Bootstrap -.->|provides| CacheImpl
-    Bootstrap -.->|provides| Normalizer
 
-    %% Factory creation logic (Thick lines for creation)
+    %% Factory creates and injects
     Factory ==>|creates| Registry
-    Factory -->|uses| Cache
-    Factory -->|uses| Reader
-    Factory -->|uses| Directory
+    Factory -->|injects cache, paths| Reader
+    Factory -->|injects paths| Directory
 
-    %% Registry Composition
-    Registry -.->|delegates to| Reader
-    Registry -.->|delegates to| Directory
+    %% Registry delegates
+    Registry -.->|delegates| Reader
+    Registry -.->|delegates| Directory
 
-    %% Internal Dependencies
-    Reader -->|reads via| Cache
-    Reader -->|accesses| Paths
-    Directory -->|accesses| Paths
-    Cache -->|wraps| CacheImpl
+    %% Reader dependencies
+    Reader -->|uses| Cache
+    Reader -->|uses| Paths
 
-    %% External & Return
-    Registry -.->|returned to| Bootstrap
-    Cache -.->|exported for| Janitor[Janitor Service]
+    %% Directory dependencies
+    Directory -->|uses| Paths
 
-    %% --- STYLING (Custom Palette) ---
+    %% --- STYLING ---
     classDef factory fill:#fff3e0,stroke:#e65100,stroke-width:3px,color:black
     classDef domain fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:black
+    classDef util fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:black
     classDef infra fill:#f1f8e9,stroke:#558b2f,stroke-width:2px,color:black
     classDef external fill:#ffebee,stroke:#c62828,stroke-width:2px,color:black
 
-    %% Apply Styles
     class Factory factory
-    class Registry,Reader,Directory,Cache domain
-    class Paths,CacheImpl,Normalizer infra
-    class Bootstrap,Janitor external
+    class Registry,Reader,Directory domain
+    class Cache util
+    class Paths infra
+    class Bootstrap external
 ```
 
 ## Architecture Explanation
@@ -73,11 +70,12 @@ The Key-Manager Loader follows a **three-layer architecture** that enforces sepa
 
 #### 1. **Entry Point Layer** (Bootstrap/Main)
 
-- Defined in `index.js`, serves as the single entry point for the loader system
-- Injects dependencies into `LoaderFactory`: `Cache`, `pathsRepo`, and `normalizeDomain`
-- Exports `KeyCache` for use by other services (e.g., Janitor)
-- Creates and maintains a singleton `LoaderFactory` instance
-- Acts as the composition root, wiring together the entire loader system
+- Defined in `managerFactory.js`, serves as the composition root
+- Imports `KeyCache` from `utils/KeyCache.js` - independent singleton utility
+- Gets singleton `KeyCache` instance via `KeyCache.getInstance()`
+- Creates `LoaderFactory` singleton via `LoaderFactory.getInstance(keyCache, pathsRepo)`
+- Factory creates single `KeyRegistry` that serves all domains
+- KeyCache shared across Janitor, Builder, and other services
 
 #### 2. **Domain Layer** (Core Business Logic)
 
@@ -85,59 +83,61 @@ The domain layer contains the core loader logic and is isolated from infrastruct
 
 - **LoaderFactory** (Singleton Pattern)
 
-  - Static Map `#instances` stores KeyRegistry instances per domain
-  - Constructor accepts injected dependencies: `Cache`, `pathsRepo`, `normalizer`
-  - `createRegistry(domain)` method instantiates and wires KeyReader, KeyDirectory, and KeyCache
-  - `create(domain)` static method normalizes domain names and caches registry instances per domain
-  - Ensures a single KeyRegistry instance exists for each domain throughout the application
+  - Constructor accepts: `cache` (KeyCache singleton) and `pathsRepo`
+  - `create()` method instantiates KeyReader and KeyDirectory, returns KeyRegistry
+  - Injects cache and paths into Reader; only paths into Directory
+  - `getInstance(cache, pathsRepo)` ensures single factory instance
+  - Returns single domain-independent KeyRegistry
 
 - **KeyRegistry** (Aggregate Root)
 
-  - Constructor receives injected `reader` and `directory` instances
-  - Provides four key-retrieval methods: `getPubKey(kid)`, `getPvtKey(kid)`, `getPubKeyMap()`, `getPvtKeyMap()`
-  - Provides two directory-listing methods: `getAllPubKids()`, `getAllPvtKids()`
-  - Delegates all key reading operations to `KeyReader`
-  - Delegates all directory operations to `KeyDirectory`
-  - Returned to the caller as the primary public interface for registry operations
+  - Constructor receives `reader` and `directory` via object destructuring
+  - Single-key methods: `getPubKey(kid)`, `getPvtKey(kid)` - delegates to Reader
+  - Map methods: `getPubKeyMap(domain)`, `getPvtKeyMap(domain)` - combines Directory + Reader
+  - List methods: `getAllPubKids(domain)`, `getAllPvtKids(domain)` - delegates to Directory
+  - Stateless - domain passed as parameter or extracted from kid string
 
-- **KeyReader**
+- **KeyReader** (Stateless Service)
 
-  - Constructor receives injected `domain`, `cache`, and `paths` instances
-  - Implements two core methods: `privateKey(kid)` and `publicKey(kid)`
-  - Checks cache before file I/O to optimize performance
-  - Uses native `fs/promises.readFile()` to read PEM files from storage
-  - Automatically populates cache after successful file reads
-  - Decouples key reading logic from infrastructure (file paths, cache mechanism)
+  - Constructor: `cache` (KeyCache) and `paths` (pathsRepo)
+  - Methods: `privateKey(kid)` and `publicKey(kid)`
+  - Cache-first: checks `cache.getPrivate(kid)` / `cache.getPublic(kid)`
+  - On miss: extracts domain via `kid.getDomain()`, reads file, caches result
+  - Uses `fs/promises.readFile()` with path from `paths.privateKey(domain, kid)`
+  - Stateless - no stored state
 
-- **KeyDirectory**
+- **KeyDirectory** (Stateless Service)
 
-  - Constructor requires `domain` parameter (throws error if missing)
-  - Provides directory validation via `ensureDirectories()` method
-  - Lists keys via three methods: `listPrivateKids()`, `listPublicKids()`, `listMetadataKids()`
-  - Parses `.pem` filenames to extract KID (key ID) identifiers
-  - Parses `.json` filenames for metadata KID retrieval
-  - Throws error if expected directories don't exist (generator's responsibility to create them)
-  - Abstracts file system operations and naming conventions
+  - Constructor: `paths` (pathsRepo) only
+  - Validation: `ensureDirectories(domain)` - checks 3 dirs exist, throws if missing
+  - Listing: `listPrivateKids(domain)`, `listPublicKids(domain)`, `listMetadataKids(domain)`
+  - Uses `fs/promises.readdir()`, filters `.pem` / `.json` files, strips extensions
+  - Returns array of KID strings
+  - Stateless - domain parameter per call
 
-- **KeyCache** (Public Facade)
-  - Constructor accepts injected `Cache` class (not instance)
+#### 3. **Infrastructure Layer** (Technical Implementation)
+
+These are concrete implementations providing technical capabilities to the domain:
+
+- **KeyCache** (Singleton Facade)
+
+  - Located in `src/infrastructure/cache/KeyCache.js` (NOT domain layer)
+  - **Singleton pattern** via `getInstance({ Cache })` static method
+  - Constructor accepts injected `Cache` class and creates two instances
   - Maintains two separate Cache instances: `private` and `public`
   - Methods for private keys: `getPrivate(kid)`, `setPrivate(kid, pem)`, `deletePrivate(kid)`
   - Methods for public keys: `getPublic(kid)`, `setPublic(kid, pem)`, `deletePublic(kid)`
   - Provides `clear()` method to wipe both cache stores
-  - Separates private and public key caching concerns for security
-  - Prevents domain layer leakage of cache implementation details
-  - Exported from index.js for use by other services (e.g., Janitor Service)
-
-#### 3. **Infrastructure Layer** (Technical Implementation)
-
-These are abstractions providing technical capabilities to the domain:
+  - **Shared singleton instance** injected into KeyReader, Janitor, and other services
+  - Uses kid string (with properties) as cache key
+  - Infrastructure component, not part of domain layer
 
 - **Cache Class** (Memory Store)
 
   - Injected from `src/utils/cache.js`
   - Used by KeyCache to create separate instances for private and public keys
   - Provides `get(key)`, `set(key, value)`, `delete(key)`, `clear()` interface
+  - Simple in-memory Map-based storage
 
 - **pathsRepo** (File System Abstraction)
 
@@ -145,39 +145,46 @@ These are abstractions providing technical capabilities to the domain:
   - Methods: `privateKey(domain, kid)`, `publicKey(domain, kid)`, `privateDir(domain)`, `publicDir(domain)`, `metaKeyDir(domain)`
   - Abstracts file path resolution and directory naming conventions
   - Decouples domain logic from file system specifics
+  - Accepts domain as parameter for each invocation
 
-- **normalizeDomain** (Normalizer Function)
-  - Imported from `src/utils/normalizer.js`
-  - Used by LoaderFactory to normalize domain names before caching
-  - Ensures consistent domain naming across the system
+- **KID String** (Enhanced String with Properties)
+  - Format: `{domain}-{YYYYMMDD}-{HHMMSS}-{HEX}` (generated externally)
+  - **Not a class/object** - plain string with attached properties via `Object.defineProperties()`
+  - Properties: `getDomain()`, `getDate()`, `getTime()`, `getTimestamp()`
+  - Properties are non-enumerable, non-writable, non-configurable
+  - Acts as both cache key and domain identifier
+  - Used throughout loader as string, with domain extraction capability via `kid.getDomain()`
 
 ### Key Architectural Patterns
 
-1. **Dependency Injection**: All dependencies flow from Bootstrap downward
-2. **Abstraction Boundaries**: Domain layer depends on interfaces, not concrete infrastructure
-3. **Facade Pattern**: KeyCache shields domain from cache implementation details
-4. **Aggregate Root**: KeyRegistry is the single point of entry for registry operations
-5. **Separation of Concerns**: Each component has a single, well-defined responsibility
+1. **Dependency Injection**: Dependencies flow from Bootstrap into Factory, then into domain components
+2. **Singleton Pattern**: KeyCache (utilities) and LoaderFactory ensure single shared instances
+3. **Stateless Services**: KeyReader and KeyDirectory store no state
+4. **Domain Independence**: Domain resolved at runtime from parameters or kid.getDomain()
+5. **Aggregate Root**: KeyRegistry orchestrates Reader and Directory
+6. **Separation of Concerns**: Clear boundaries between domain, utilities, and infrastructure
 
 ### Data Flow
 
-1. **Initialization**: `index.js` injects `Cache`, `pathsRepo`, and `normalizeDomain` into LoaderFactory singleton
-2. **Registry Creation**: `LoaderFactory.create(domain)` normalizes domain and checks instance cache
-3. **Component Wiring**: If new domain, factory creates KeyReader, KeyDirectory, and KeyCache with injected dependencies
-4. **Registry Return**: Factory returns KeyRegistry aggregating the reader and directory
-5. **Key Retrieval**: Caller invokes `registry.getPubKey(kid)` or `registry.getPvtKey(kid)`
-6. **Cache Check**: KeyReader checks KeyCache before file I/O
-7. **File Read**: If cache miss, KeyReader reads PEM file via pathsRepo
-8. **Cache Store**: KeyReader populates cache with PEM content
-9. **Return**: Key content returned to caller
-10. **Directory Ops**: Caller can also invoke `registry.getAllPubKids()` which delegates to KeyDirectory
+1. **Bootstrap** imports KeyCache from `utils/KeyCache.js`
+2. **KeyCache** singleton created: `KeyCache.getInstance()`
+3. **LoaderFactory** singleton created: `LoaderFactory.getInstance(keyCache, pathsRepo)`
+4. **Registry** created by factory: `factory.create()`
+5. **Reader & Directory** instantiated with injected dependencies
+6. **Key retrieval**: `registry.getPubKey(kid)` → delegates to Reader
+7. **Cache check**: Reader checks `cache.getPublic(kid)`
+8. **Domain extraction**: On miss, `kid.getDomain()` extracts domain
+9. **File read**: `readFile(paths.publicKey(domain, kid))`
+10. **Cache update**: `cache.setPublic(kid, pem)`
 
 ### Design Benefits
 
-- **Testability**: Each layer can be tested independently with mocks
-- **Maintainability**: Clear separation makes changes localized
-- **Flexibility**: Infrastructure swaps don't affect domain logic
-- **Scalability**: New loader strategies can be added without modifying existing code
+- **Testability**: Each component easily mocked and tested independently
+- **Simplicity**: Clear, minimal dependencies between layers
+- **Performance**: Singleton KeyCache shared across all operations
+- **Flexibility**: Domain-independent components work with any domain
+- **Maintainability**: Stateless services, single responsibilities
+- **Reusability**: KeyCache utility used by multiple services
 
 ## Class Diagram
 
@@ -185,84 +192,79 @@ This detailed class diagram shows the exact structure of each class, including p
 
 ```mermaid
 classDiagram
-    %% Entry Point / Bootstrap
+    %% Entry Point
     class Bootstrap {
         <<module>>
-        +Cache Cache
+        +keyCache KeyCache
         +pathsRepo PathsRepo
-        +normalizeDomain Function
         +loaderFactory LoaderFactory
-        +KeyCache KeyCache
+        +loader KeyRegistry
     }
 
-    %% Factory (Singleton)
+    %% Factory
     class LoaderFactory {
-        -Map~string, KeyRegistry~ #instances$
-        -Cache Chache
+        -LoaderFactory _instance$
+        -KeyCache KeyCache
         -PathsRepo pathsRepo
-        -Function normalizer
-        +constructor(cache, pathsRepo, normalizer)
-        +createRegistry(domain) Promise~KeyRegistry~
-        +create(domain)$ KeyRegistry
+        +constructor(cache, pathsRepo)
+        +create() KeyRegistry
+        +getInstance(cache, pathsRepo)$ LoaderFactory
     }
 
-    %% Aggregate Root
+    %% Domain - Aggregate Root
     class KeyRegistry {
         -KeyReader reader
         -KeyDirectory directory
         +constructor(reader, directory)
-        +getAllPubKids() Promise~Array~
-        +getAllPvtKids() Promise~Array~
-        +getPubKeyMap() Promise~Object~
-        +getPvtKeyMap() Promise~Object~
-        +getPubKey(kid) Promise~string~
-        +getPvtKey(kid) Promise~string~
+        +getPubKey(kid) string
+        +getPvtKey(kid) string
+        +getPubKeyMap(domain) Object
+        +getPvtKeyMap(domain) Object
+        +getAllPubKids(domain) Array
+        +getAllPvtKids(domain) Array
     }
 
-    %% Domain Services
+    %% Domain - Services
     class KeyReader {
-        -string domain
+        <<stateless>>
         -KeyCache cache
         -PathsRepo paths
-        +constructor(domain, cache, paths)
-        +privateKey(kid) Promise~string~
-        +publicKey(kid) Promise~string~
+        +constructor(cache, paths)
+        +privateKey(kid) string
+        +publicKey(kid) string
     }
 
     class KeyDirectory {
-        -string domain
+        <<stateless>>
         -PathsRepo paths
-        +constructor(domain, paths)
-        +ensureDirectories() Promise~void~
-        +listPrivateKids() Promise~Array~
-        +listPublicKids() Promise~Array~
-        +listMetadataKids() Promise~Array~
+        +constructor(paths)
+        +ensureDirectories(domain) void
+        +listPrivateKids(domain) Array
+        +listPublicKids(domain) Array
+        +listMetadataKids(domain) Array
     }
 
+    %% Utilities
     class KeyCache {
-        -Cache private
-        -Cache public
-        +constructor(Cache)
+        <<singleton>>
+        -KeyCache instance$
+        -Map private
+        -Map public
+        +getInstance()$ KeyCache
         +getPrivate(kid) string
         +setPrivate(kid, pem) void
+        +hasPrivate(kid) boolean
         +deletePrivate(kid) void
         +getPublic(kid) string
         +setPublic(kid, pem) void
+        +hasPublic(kid) boolean
         +deletePublic(kid) void
         +clear() void
     }
 
-    %% Infrastructure Abstractions
-    class Cache {
-        <<interface>>
-        +get(key) any
-        +set(key, value) void
-        +delete(key) void
-        +clear() void
-    }
-
+    %% Infrastructure
     class PathsRepo {
-        <<interface>>
+        <<infrastructure>>
         +privateKey(domain, kid) string
         +publicKey(domain, kid) string
         +privateDir(domain) string
@@ -270,53 +272,42 @@ classDiagram
         +metaKeyDir(domain) string
     }
 
-    class Normalizer {
-        <<function>>
-        +normalize(domain) string
+    class KIDString {
+        <<string>>
+        +getDomain() string
+        +getDate() string
+        +getTime() string
+        +getTimestamp() string
     }
 
-    %% External Service
-    class JanitorService {
-        <<external>>
-        +KeyCache cache
-    }
-
-    %% Relationships - Dependency Injection
-    Bootstrap ..> LoaderFactory : injects dependencies
-    Bootstrap ..> Cache : provides
+    %% Relationships - Bootstrap Layer
+    Bootstrap --> KeyCache : gets singleton
+    Bootstrap --> LoaderFactory : gets singleton
     Bootstrap ..> PathsRepo : provides
-    Bootstrap ..> Normalizer : provides
-    Bootstrap --> KeyCache : exports
 
-    %% Factory creates domain objects
+    %% Relationships - Factory Layer (creates and wires)
     LoaderFactory ..> KeyRegistry : creates
     LoaderFactory ..> KeyReader : creates
     LoaderFactory ..> KeyDirectory : creates
-    LoaderFactory ..> KeyCache : creates
-    LoaderFactory o-- Cache : injected
-    LoaderFactory o-- PathsRepo : injected
-    LoaderFactory o-- Normalizer : injected
+    LoaderFactory --> KeyCache : injects
+    LoaderFactory --> PathsRepo : injects
 
-    %% Registry aggregates
-    KeyRegistry *-- KeyReader : composed
-    KeyRegistry *-- KeyDirectory : composed
+    %% Relationships - Registry Layer (delegates)
+    KeyRegistry ..> KeyReader : delegates to
+    KeyRegistry ..> KeyDirectory : delegates to
 
-    %% Domain dependencies on infrastructure
-    KeyReader o-- KeyCache : injected
-    KeyDirectory o-- PathsRepo : injected
-    KeyReader o-- PathsRepo : injected
+    %% Relationships - Service Layer (uses dependencies)
+    KeyReader --> KeyCache : uses
+    KeyReader --> PathsRepo : path resolution
+    KeyReader --> KIDString : extracts domain
 
-    %% Cache wraps low-level cache
-    KeyCache o-- Cache : wraps 2 instances
-
-    %% External integration
-    JanitorService ..> KeyCache : uses
+    KeyDirectory --> PathsRepo : path resolution
 
     %% Styling
     classDef factory fill:#fff3e0,stroke:#e65100,stroke-width:3px
     classDef domain fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef util fill:#fff9c4,stroke:#f57f17,stroke-width:2px
     classDef infra fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
-    classDef external fill:#ffebee,stroke:#c62828,stroke-width:2px
 ```
 
 ---
@@ -337,64 +328,52 @@ The loader system has **5 distinct execution flows** identified from the actual 
 
 ### Flow 1: Registry Creation Flow
 
-**Source:** `loaderFactory.js` → `createRegistry(domain)`  
-**Trigger:** First-time domain access through loader factory
+**Source:** `loaderFactory.js` → `create()`  
+**Trigger:** Loader initialization at application startup
 
 ```mermaid
 sequenceDiagram
-    actor Client
+    actor Bootstrap
+    participant Cache as KeyCache (utils)
     participant Factory as LoaderFactory
-    participant Cache as KeyCache
     participant Reader as KeyReader
     participant Directory as KeyDirectory
     participant Registry as KeyRegistry
 
-    Client->>Factory: createRegistry("auth")
+    Bootstrap->>Cache: getInstance()
+    Cache-->>Bootstrap: keyCache singleton
+
+    Bootstrap->>Factory: getInstance(keyCache, pathsRepo)
+    Factory-->>Bootstrap: factory singleton
+
+    Bootstrap->>Factory: create()
     activate Factory
 
-    Note over Factory: Dependencies injected:<br/>Cache, pathsRepo, normalizer
+    Factory->>Reader: new KeyReader(cache, paths)
+    Reader-->>Factory: reader
 
-    Factory->>Cache: new KeyCache(this.Cache)
-    activate Cache
-    Note over Cache: Creates 2 Cache instances<br/>(private & public)
-    Cache-->>Factory: keyCache instance
-    deactivate Cache
-
-    Factory->>Reader: new KeyReader(domain, keyCache, pathsRepo)
-    activate Reader
-    Note over Reader: Stores domain="auth"
-    Reader-->>Factory: reader instance
-    deactivate Reader
-
-    Factory->>Directory: new KeyDirectory(domain, pathsRepo)
-    activate Directory
-    Note over Directory: Validates domain exists<br/>Stores domain="auth"
-    Directory-->>Factory: directory instance
-    deactivate Directory
+    Factory->>Directory: new KeyDirectory(paths)
+    Directory-->>Factory: directory
 
     Factory->>Registry: new KeyRegistry({reader, directory})
-    activate Registry
-    Registry-->>Factory: registry instance
-    deactivate Registry
+    Registry-->>Factory: registry
 
-    Factory-->>Client: KeyRegistry
+    Factory-->>Bootstrap: KeyRegistry
     deactivate Factory
 ```
 
-**Implementation Details:**
+**Implementation:**
 
-- Factory instantiates KeyCache passing Cache class (not instance)
-- KeyCache creates two separate cache instances internally
-- KeyReader and KeyDirectory both receive domain string and pathsRepo
-- KeyRegistry receives composed reader and directory via object destructuring
-- No static caching happens in this flow (that's in `create()` static method)
+- KeyCache from `utils/KeyCache.js` - singleton with two Maps (private/public)
+- LoaderFactory singleton pattern - stores cache and pathsRepo
+- Factory `create()` instantiates Reader (cache + paths) and Directory (paths only)
+- Returns single KeyRegistry serving all domains
 
 ---
 
 ### Flow 2: Single Key Retrieval Flow
 
-**Source:** `KeyRegistry.js` → `getPubKey(kid)` delegates to `KeyReader.js` → `publicKey(kid)`  
-**Trigger:** Application needs one specific key
+**Source:** `KeyRegistry.js` → `getPubKey(kid)` → `KeyReader.js` → `publicKey(kid)`
 
 ```mermaid
 sequenceDiagram
@@ -402,208 +381,108 @@ sequenceDiagram
     participant Registry as KeyRegistry
     participant Reader as KeyReader
     participant Cache as KeyCache
-    participant Paths as PathsRepo
     participant FS as fs/promises
 
-    Client->>Registry: getPubKey("key-2024-01")
-    activate Registry
+    Client->>Registry: getPubKey(kidString)
+    Registry->>Reader: publicKey(kidString)
 
-    Registry->>Reader: publicKey("key-2024-01")
-    activate Reader
+    Reader->>Cache: getPublic(kidString)
+    alt Cache Hit
+        Cache-->>Reader: pem
+    else Cache Miss
+        Cache-->>Reader: undefined
+        Note over Reader: kid.getDomain() → "auth"
+        Reader->>FS: readFile(path, 'utf8')
+        FS-->>Reader: pem
+        Reader->>Cache: setPublic(kidString, pem)
+    end
 
-    Note over Reader: Cache-first strategy
-    Reader->>Cache: getPublic("key-2024-01")
-    activate Cache
-    Cache->>Cache: this.public.get(kid)
-    Cache-->>Reader: null (cache miss)
-    deactivate Cache
-
-    Note over Reader: Cache miss - disk read
-
-    Reader->>Paths: publicKey(this.domain, kid)
-    activate Paths
-    Paths-->>Reader: "/storage/keys/auth/public/key-2024-01.pem"
-    deactivate Paths
-
-    Reader->>FS: readFile(path, 'utf8')
-    activate FS
-    FS-->>Reader: "-----BEGIN PUBLIC KEY-----\nMIIBIjANB..."
-    deactivate FS
-
-    Reader->>Cache: setPublic("key-2024-01", pem)
-    activate Cache
-    Cache->>Cache: this.public.set(kid, pem)
-    Cache-->>Reader: void
-    deactivate Cache
-
-    Reader-->>Registry: pem content
-    deactivate Reader
-
-    Registry-->>Client: pem content
-    deactivate Registry
-```
----
-
-**Cache Hit Scenario:**
-
-```mermaid
-sequenceDiagram
-    actor Client
-    participant Registry as KeyRegistry
-    participant Reader as KeyReader
-    participant Cache as KeyCache
-
-    Client->>Registry: getPubKey("key-2024-01")
-    Registry->>Reader: publicKey("key-2024-01")
-    Reader->>Cache: getPublic("key-2024-01")
-    Cache->>Cache: this.public.get(kid)
-    Cache-->>Reader: "-----BEGIN PUBLIC KEY..." (cached)
-    Reader-->>Registry: pem content
-    Registry-->>Client: pem content
-
-    Note over Client,Cache: Fast path - no I/O
+    Reader-->>Registry: pem
+    Registry-->>Client: pem
 ```
 
-**Implementation Notes:**
+**Implementation:**
 
-- `KeyReader` checks cache synchronously before async file read
-- Uses `fs/promises.readFile()` for non-blocking I/O
-- Cache is populated immediately after successful read
-- Private keys follow identical flow via `privateKey(kid)` method
+- Cache-first strategy: checks Map before file I/O
+- On miss: extracts domain via `kid.getDomain()`, reads file, caches result
+- Kid string format: `auth-20260105-143022-A1B2C3D4`
 
 ---
 
 ### Flow 3: Key Map Generation Flow
 
-**Source:** `KeyRegistry.js` → `getPubKeyMap()` orchestrates directory + reader  
-**Trigger:** Bulk key loading for JWKS or batch operations
+**Source:** `KeyRegistry.js` → `getPubKeyMap(domain)`
 
 ```mermaid
 sequenceDiagram
     actor Client
     participant Registry as KeyRegistry
     participant Directory as KeyDirectory
-    participant Paths as PathsRepo
-    participant FS as fs/promises
     participant Reader as KeyReader
     participant Cache as KeyCache
 
-    Client->>Registry: getPubKeyMap()
-    activate Registry
+    Client->>Registry: getPubKeyMap("auth")
 
-    Registry->>Registry: getAllPubKids()
-    activate Registry
+    Registry->>Directory: listPublicKids("auth")
+    Directory-->>Registry: ["auth-20260105-143022-A1B2", ...]
 
-    Registry->>Directory: listPublicKids()
-    activate Directory
-
-    Directory->>Paths: publicDir(this.domain)
-    activate Paths
-    Paths-->>Directory: "/storage/keys/auth/public"
-    deactivate Paths
-
-    Directory->>FS: readdir(publicDir)
-    activate FS
-    FS-->>Directory: ["key-2024-01.pem", "key-2024-02.pem", "old.txt"]
-    deactivate FS
-
-    Note over Directory: Filter: f.endsWith(".pem")<br/>Map: f.replace(".pem", "")
-
-    Directory-->>Registry: ["key-2024-01", "key-2024-02"]
-    deactivate Directory
-    deactivate Registry
-
-    Note over Registry: Initialize keys = {}
-
-    loop For each kid in kids
-        Registry->>Reader: publicKey(kid)
-        activate Reader
-
-        Reader->>Cache: getPublic(kid)
-        alt Cache Hit
-            Cache-->>Reader: pem (cached)
-        else Cache Miss
-            Reader->>Paths: publicKey(domain, kid)
-            Paths-->>Reader: path
-            Reader->>FS: readFile(path, 'utf8')
-            FS-->>Reader: pem content
-            Reader->>Cache: setPublic(kid, pem)
+    loop For each kidString
+        Registry->>Reader: publicKey(kidString)
+        Reader->>Cache: getPublic(kidString)
+        alt Hit
+            Cache-->>Reader: pem
+        else Miss
+            Note over Reader: kid.getDomain(), readFile, cache
+            Reader-->>Reader: pem
         end
-
-        Reader-->>Registry: pem content
-        deactivate Reader
-
-        Note over Registry: keys[kid] = pem
+        Reader-->>Registry: pem
     end
 
-    Registry-->>Client: {"key-2024-01": "...", "key-2024-02": "..."}
-    deactivate Registry
+    Registry-->>Client: {kidString: pem, ...}
 ```
 
-**Implementation Details:**
+**Implementation:**
 
-- Uses `getAllPubKids()` internally which delegates to `listPublicKids()`
-- Filters only `.pem` files, ignoring other file types
-- Iterates sequentially with `for (const kid of kids)`
-- Each iteration uses standard Key Retrieval Flow (benefits from caching)
-- Returns plain object map: `{ [kid]: pemContent }`
-- Private key map follows identical pattern via `getPvtKeyMap()`
+- Directory lists all `.pem` files, strips extensions
+- Registry loops through kids, retrieves each via Reader
+- Returns object map of kid → pem
 
 ---
 
 ### Flow 4: Directory Listing Flow
 
-**Source:** `KeyRegistry.js` → `getAllPubKids()` delegates to `KeyDirectory.js` → `listPublicKids()`  
-**Trigger:** List available key IDs without loading content
+**Source:** `KeyRegistry.js` → `getAllPubKids(domain)` → `KeyDirectory.js` → `listPublicKids(domain)`
 
 ```mermaid
 sequenceDiagram
     actor Client
     participant Registry as KeyRegistry
     participant Directory as KeyDirectory
-    participant Paths as PathsRepo
     participant FS as fs/promises
 
-    Client->>Registry: getAllPubKids()
-    activate Registry
-
-    Registry->>Directory: listPublicKids()
-    activate Directory
-
-    Directory->>Paths: publicDir(this.domain)
-    activate Paths
-    Paths-->>Directory: "/storage/keys/auth/public"
-    deactivate Paths
+    Client->>Registry: getAllPubKids("auth")
+    Registry->>Directory: listPublicKids("auth")
 
     Directory->>FS: readdir(publicDir)
-    activate FS
-    FS-->>Directory: ["key-2024-01.pem", "key-2024-02.pem", "key-2023-12.pem"]
-    deactivate FS
+    FS-->>Directory: ["auth-20260105-143022-A1B2.pem", ...]
 
-    Note over Directory: files.filter(f => f.endsWith(".pem"))<br/>     .map(f => f.replace(".pem", ""))
+    Note over Directory: Filter .pem, strip extension
 
-    Directory-->>Registry: ["key-2024-01", "key-2024-02", "key-2023-12"]
-    deactivate Directory
-
-    Registry-->>Client: ["key-2024-01", "key-2024-02", "key-2023-12"]
-    deactivate Registry
+    Directory-->>Registry: ["auth-20260105-143022-A1B2", ...]
+    Registry-->>Client: kid strings
 ```
 
-**Implementation Notes:**
+**Implementation:**
 
-- Direct file system scan via `readdir()`
-- No caching layer - always reads directory
-- File extension filtering: `.pem` for keys, `.json` for metadata
-- Returns array of KID strings (extensions stripped)
-- Used by Key Map Generation Flow as first step
-- Also available: `getAllPvtKids()` and `listMetadataKids()`
+- Direct filesystem scan, no caching
+- Filters `.pem` files, returns kid strings
+- Also available: `getAllPvtKids(domain)`, `listMetadataKids(domain)`
 
 ---
 
 ### Flow 5: Directory Validation Flow
 
-**Source:** `KeyDirectory.js` → `ensureDirectories()`  
-**Trigger:** Explicit validation that directory structure exists
+**Source:** `KeyDirectory.js` → `ensureDirectories(domain)`
 
 ```mermaid
 sequenceDiagram
@@ -612,85 +491,43 @@ sequenceDiagram
     participant Paths as PathsRepo
     participant FS as fs/promises
 
-    Client->>Directory: ensureDirectories()
-    activate Directory
+    Client->>Directory: ensureDirectories("auth")
 
-    Note over Directory: Get all required paths
+    Directory->>Paths: privateDir("auth")
+    Paths-->>Directory: path
 
-    Directory->>Paths: privateDir(this.domain)
-    activate Paths
-    Paths-->>Directory: "/storage/keys/auth/private"
-    deactivate Paths
-
-    Directory->>Paths: publicDir(this.domain)
-    activate Paths
-    Paths-->>Directory: "/storage/keys/auth/public"
-    deactivate Paths
-
-    Directory->>Paths: metaKeyDir(this.domain)
-    activate Paths
-    Paths-->>Directory: "/storage/metadata/keys/auth"
-    deactivate Paths
-
-    Note over Directory: Validate each directory
-
-    rect rgba(240, 248, 255, 0.45)
-        Note over Directory,FS: Try-catch block
-
-        Directory->>FS: readdir(privateDir)
-        alt Directory Exists
-            FS-->>Directory: [] or [files]
-        else ENOENT Error
-            FS-->>Directory: Error { code: "ENOENT" }
-            Directory-->>Client: Error("Key directories do not exist<br/>for domain: auth")
-        end
-
-        Directory->>FS: readdir(publicDir)
+    Directory->>FS: readdir(privateDir)
+    alt Exists
         FS-->>Directory: success
-
-        Directory->>FS: readdir(metaDir)
-        FS-->>Directory: success
+    else ENOENT
+        FS-->>Directory: Error
+        Directory-->>Client: Error("directories do not exist")
     end
 
-    Directory-->>Client: void (all checks passed)
-    deactivate Directory
+    Note over Directory: Repeats for public, metaKeyDir
 ```
 
-**Implementation Details:**
+**Implementation:**
 
-- Validates **3 required directories**: private, public, metadata
-- Uses `readdir()` as existence check (throws if not found)
-- Catches `ENOENT` specifically and wraps with descriptive error
-- Error message explicitly states: "it's generator's responsibility to create directories"
-- Does NOT create directories - read-only validation
-- Returns void on success
-- Called explicitly by consumers, not automatic
+- Validates 3 directories: private, public, metadata
+- Uses `readdir()` as existence check
+- Throws if missing - generator's responsibility to create
 
 ---
 
 ## Flow Patterns Summary
 
-| Flow                 | Entry Point              | Cache | Disk I/O         | Iteration  | Return Type   |
-| -------------------- | ------------------------ | ----- | ---------------- | ---------- | ------------- |
-| Registry Creation    | `createRegistry(domain)` | No    | No               | No         | KeyRegistry   |
-| Single Key Retrieval | `getPubKey(kid)`         | Yes   | Conditional      | No         | string (PEM)  |
-| Key Map Generation   | `getPubKeyMap()`         | Yes   | Conditional      | Sequential | Object        |
-| Directory Listing    | `getAllPubKids()`        | No    | Yes (readdir)    | No         | Array<string> |
-| Directory Validation | `ensureDirectories()`    | No    | Yes (3x readdir) | No         | void          |
+| Flow                 | Entry Point                 | Cache     | Returns       |
+| -------------------- | --------------------------- | --------- | ------------- |
+| Registry Creation    | `factory.create()`          | No        | KeyRegistry   |
+| Single Key Retrieval | `getPubKey(kid)`            | Yes (Map) | string        |
+| Key Map Generation   | `getPubKeyMap(domain)`      | Yes       | Object        |
+| Directory Listing    | `getAllPubKids(domain)`     | No        | Array<string> |
+| Directory Validation | `ensureDirectories(domain)` | No        | void          |
 
-**Performance Characteristics:**
+**Key Characteristics:**
 
-- **Registry Creation**: O(1) - simple object composition
-- **Single Key Retrieval**:
-  - Cache hit: O(1)
-  - Cache miss: O(file_size) with disk I/O
-- **Key Map Generation**: O(k × file_size) where k = key count in domain
-- **Directory Listing**: O(k) where k = files in directory
-- **Directory Validation**: O(1) - fixed 3 directory checks
-
-**Caching Strategy:**
-
-- Only KeyReader operations use cache (single/batch key retrieval)
-- Directory operations always hit filesystem (listings, validation)
-- Cache separation: private and public keys cached independently
-- No TTL or expiration - cache lives until manual clear or process restart
+- **Cache**: KeyCache singleton (Map-based) in utils layer
+- **Stateless**: All domain components store no state
+- **Domain Resolution**: Via parameters or `kid.getDomain()`
+- **Single Instances**: One factory, one registry, one cache for all domains

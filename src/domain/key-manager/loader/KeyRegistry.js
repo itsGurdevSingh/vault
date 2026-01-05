@@ -5,16 +5,16 @@ constructor({reader, directory}) {
         this.directory = directory;
     }
 
-    async getAllPubKids() {
-        return await this.directory.listPublicKids();
+    async getAllPubKids(domain) {
+        return await this.directory.listPublicKids(domain);
     }
 
-    async getAllPvtKids() {
-        return await this.directory.listPrivateKids();
+    async getAllPvtKids(domain) {
+        return await this.directory.listPrivateKids(domain);
     }
 
-    async getPubKeyMap() {
-        const kids = await this.getAllPubKids();
+    async getPubKeyMap(domain) {
+        const kids = await this.getAllPubKids(domain);
         const keys = {};
 
         for (const kid of kids) {
@@ -23,8 +23,8 @@ constructor({reader, directory}) {
         return keys;
     }
 
-    async getPvtKeyMap() {
-        const kids = await this.getAllPvtKids();
+    async getPvtKeyMap(domain) {
+        const kids = await this.getAllPvtKids(domain);
         const keys = {};
         for (const kid of kids) {
             keys[kid] = await this.reader.privateKey(kid);
