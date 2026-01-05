@@ -2,12 +2,16 @@ import { KEY_GRACE_MS, KEY_PUBLIC_TTL_MS } from "../../../config/keys";
 
 export class MetadataJanitor {
 
+    constructor(metadataManager) {
+        this.metadataManager = metadataManager;
+    }
+
     async deleteOrigin(domain, kid) {
-        return metadataManager.deleteOrigin(domain, kid);
+        return this.metadataManager.deleteOrigin(domain, kid);
     }
 
     async deleteArchived(kid) {
-        return metadataManager.deleteArchived(kid);
+        return this.metadataManager.deleteArchived(kid);
     }
 
     /** add archive meta with TTL for public keys*/
@@ -15,6 +19,6 @@ export class MetadataJanitor {
 
         const expirationDate = new Date(Date.now() + KEY_PUBLIC_TTL_MS + KEY_GRACE_MS);
 
-        await metadataManager.addExpiry(domain, kid, expirationDate);
+        await this.metadataManager.addExpiry(domain, kid, expirationDate);
     }
 }
