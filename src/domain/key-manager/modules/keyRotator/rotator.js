@@ -1,41 +1,40 @@
-import { normalizeDomain } from "../utils/normalizer.js";
-import { keyJanitor } from "../Janitor/index.js";
-import { RSAKeyGenerator } from "../../../infrastructure/crypto/index.js";
-import { rotationLockRepo } from "../../../infrastructure/cache";
-import { activeKidStore } from "../../state/ActiveKIDState.js";
+class Rotator {
 
-class RotationEngine {
-
-    #upcomingKid = null;
     #previousKid = null;
+    #upcomingKid = null;
 
-    async rotateKeys(domain, updateRotationDatesCB) {
-        const d = normalizeDomain(domain);
+    constructor({ keyGenerator, keyJanitor, keyResolver, metadataManager, LockRepo }) {
+        this.keyGenerator = keyGenerator;
+        this.keyJanitor = keyJanitor;
+        this.keyResolver = keyResolver;
+        this.metadataManager = metadataManager;
+        this.lockRepo = LockRepo;
+    }
 
-        // acquire lock
-        const token = await rotationLockRepo.acquire(d, 300);
+
+    async rotateKeys(domain, updateRotationDatesCB, session) {
+        // validate parameters
+        if (!updateRotationDatesCB || !domain || typeof updateRotationDatesCB !== 'function') {
+            // we need to update rotation dates in db transaction throw error
+            throw new Error("Invalid parameters for key rotation.");
+        }
+        // acquire lock for rotation 
+        const token = await this.lockRepo.acquire(domain, 300); // 5 minutes timeout
         if (!token) {
-            console.log(`Domain "${d}" is already being rotated.`);
+            console.log(`Domain "${domain}" is already being rotated.`);
             return null;
         }
 
         try {
             // perform rotation
-            return await this.#performRotation(domain, updateRotationDatesCB);
+            return await this.#performRotation(domain, updateRotationDatesCB, session);
         } finally {
             // release only if *we* hold the lock
-            await rotationLockRepo.release(d, token);
+            await rotationLockRepo.release(domain, token);
         }
     }
 
-    async #performRotation(domain, updateRotationDatesCB) {
-
-        if (!updateRotationDatesCB || !domain || typeof updateRotationDatesCB !== 'function') {
-            // we need to update rotation dates in db transaction throw error
-            throw new Error("Invalid parameters for key rotation.");
-        }
-
-        const session = await mongoose.startSession();
+    async #performRotation(domain, updateRotationDatesCB, session) {
 
         try {
             // prepare rotation
@@ -77,13 +76,13 @@ class RotationEngine {
     /** initial setup for rotation  */
     async #prepareRotation(domain) {
         // generate a new key pair
-        const newKid = await RSAKeyGenerator(domain);
+        const newKid = await this.keyGenerator.generate(domain);
 
         // set upcoming kid
         this.#upcomingKid = newKid;
 
         // store archived meta for current active key
-        const activeKid = await activeKidStore.getActiveKid(domain);
+        const activeKid = await this.keyResolver.getActiveKid(domain);
 
         if (!activeKid) {
             // we rotate only if there is an active kid
@@ -92,7 +91,7 @@ class RotationEngine {
             throw new Error("No active kid found for prepare.");
         }
 
-        await keyJanitor.addKeyExpiry(domain, activeKid);
+        await this.keyJanitor.addKeyExpiry(domain, activeKid);
 
         return newKid;
 
@@ -100,7 +99,7 @@ class RotationEngine {
 
     async #commitRotation(domain) {
         // set previous kid
-        this.#previousKid = await activeKidStore.getActiveKid(domain);
+        this.#previousKid = await this.keyResolver.getActiveKid(domain);
 
         if (!this.#previousKid) {
             // we not use rotation for first time setup we use generation only 
@@ -108,21 +107,21 @@ class RotationEngine {
         }
 
         // set upcoming kid to active
-        const activeKid = await activeKidStore.setActiveKid(domain, this.#upcomingKid);
+        const activeKid = await this.keyResolver.setActiveKid(domain, this.#upcomingKid);
 
         if (!activeKid) {
             // this is crucial , should not happen
             throw new Error("No upcoming kid set for commit.");
         }
 
-        // clear upcoming kid
-        this.#upcomingKid = null;
-
-        // delate private key
-        await keyJanitor.deletePrivate(domain, this.#previousKid);
+        // delete private key
+        await this.keyJanitor.deletePrivate(domain, this.#previousKid);
 
         // delete origin metadata for previous active kid
-        await keyJanitor.deleteOriginMetadata(domain, this.#previousKid);
+        await this.keyJanitor.deleteOriginMetadata(domain, this.#previousKid);
+
+        // clear upcoming kid
+        this.#upcomingKid = null;
 
         // new active kid
         return activeKid;
@@ -136,22 +135,22 @@ class RotationEngine {
             // this is crucial , should not happen
             throw new Error("No upcoming kid found for rollback.");
         }
-        await keyJanitor.deletePrivate(domain, this.#upcomingKid);
+        await this.keyJanitor.deletePrivate(domain, this.#upcomingKid);
         // also delete public key
-        await keyJanitor.deletePublic(domain, this.#upcomingKid);
+        await this.keyJanitor.deletePublic(domain, this.#upcomingKid);
 
         // remove metadata for upcoming kid
-        await keyJanitor.deleteOriginMetadata(domain, this.#upcomingKid);
+        await this.keyJanitor.deleteOriginMetadata(domain, this.#upcomingKid);
 
         // remove meta from archive for active kid
-        const activeKid = await activeKidStore.getActiveKid(domain);
+        const activeKid = await this.getActiveKid(domain);
 
         if (!activeKid) {
             // this is crucial , should not happen
             throw new Error("No active kid found for rollback.");
         }
 
-        await keyJanitor.deleteArchivedMetadata(activeKid);
+        await this.keyJanitor.deleteArchivedMetadata(activeKid);
 
         // clear upcoming kid
         this.#upcomingKid = null;
@@ -161,3 +160,5 @@ class RotationEngine {
     }
 
 }
+
+export { Rotator };
