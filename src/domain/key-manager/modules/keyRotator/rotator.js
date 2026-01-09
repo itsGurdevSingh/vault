@@ -30,7 +30,7 @@ class Rotator {
             return await this.#performRotation(domain, updateRotationDatesCB, session);
         } finally {
             // release only if *we* hold the lock
-            await rotationLockRepo.release(domain, token);
+            await this.lockRepo.release(domain, token);
         }
     }
 
@@ -143,7 +143,7 @@ class Rotator {
         await this.keyJanitor.deleteOriginMetadata(domain, this.#upcomingKid);
 
         // remove meta from archive for active kid
-        const activeKid = await this.getActiveKid(domain);
+        const activeKid = await this.keyResolver.getActiveKid(domain);
 
         if (!activeKid) {
             // this is crucial , should not happen

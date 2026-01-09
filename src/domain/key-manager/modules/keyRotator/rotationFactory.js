@@ -15,7 +15,13 @@ class RotationFactory {
     }
 
     create() {
-        const keyRotator = Rotator({ keyGenerator, keyJanitor, keyResolver, metadataManager, LockRepo });
+        const keyRotator = new Rotator({
+            keyGenerator: this.keyGenerator,
+            keyJanitor: this.keyJanitor,
+            keyResolver: this.keyResolver,
+            metadataManager: this.metadataManager,
+            LockRepo: this.LockRepo
+        });
         return new RotationScheduler(keyRotator, this.policyRepo, this.state);
     }
 
