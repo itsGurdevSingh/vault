@@ -1,6 +1,6 @@
-import KeyCache from '../../../../utils/KeyCache.js';
-import KeyReader from "./KeyReader.js";
-import KeyDirectory from "./KeyDirectory.js";
+import { KeyReader } from "./KeyReader.js";
+import { KeyDirectory } from "./KeyDirectory.js";
+import { KeyRegistry } from "./KeyRegistry.js";
 
 
 class LoaderFactory {
@@ -20,9 +20,9 @@ class LoaderFactory {
         return new KeyRegistry({ reader, directory });
     }
 
-    static getInstance(chache, pathsRepo) {
+    static getInstance(chache, pathsRepo, cryptoEngine) {
         if (!this._instance) {
-            this._instance = new LoaderFactory(chache, pathsRepo);
+            this._instance = new LoaderFactory(chache, pathsRepo, cryptoEngine);
         }
         return this._instance;
     };
