@@ -1,13 +1,32 @@
-// developers config for rotation manager
-// this is developers select how strict rotation manager should be
-// these values are used to validate admin(user of this service) input
-// this file is only updated by developers(owner of system) not by admins 
-export const developerRotationConfig = {
-    RETRY_INTERVAL_LIMIT: { minInterval: 100000, maxInterval: 3600000 }, // min 10 minutes , max 1 hour
-    RETRIES_LIMIT: { minRetries: 1, maxRetries: 20 }
+// src/config/rotationConfig.js
+
+/**
+ * 🔒 DEVELOPER CONSTRAINTS (IMMUTABLE)
+ * These are hard limits to protect the system stability.
+ * Admins cannot configure values outside these ranges.
+ */
+const developerRotationConfig = {
+    RETRY_INTERVAL_LIMIT: {
+        minInterval: 60 * 1000,      // 1 Minute (Safety floor)
+        maxInterval: 60 * 60 * 1000  // 1 Hour (Reasonable cap)
+    },
+    RETRIES_LIMIT: {
+        minRetries: 1,               // Must try at least once
+        maxRetries: 10               // Prevent infinite retry loops
+    }
 };
 
+// Freeze to prevent accidental modification
+Object.freeze(developerRotationConfig.RETRY_INTERVAL_LIMIT);
+Object.freeze(developerRotationConfig.RETRIES_LIMIT);
+
+export { developerRotationConfig };
+
+/**
+ * ⚙️ DEFAULT VALUES (MUTABLE STARTING POINT)
+ * These are the values the system starts with before any Admin overrides.
+ */
 export const defaultRotationConfig = {
-    RETRY_INTERVAL_MS: 600000, // default 10 minutes
-    MAX_RETRIES: 5            // default 5 retries
+    RETRY_INTERVAL_MS: 5 * 60 * 1000, // 5 Minutes
+    MAX_RETRIES: 3                    // 3 Attempts
 };
