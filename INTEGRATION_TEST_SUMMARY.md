@@ -87,15 +87,54 @@
 
 ---
 
-## 🔄 In Progress
+### 3. Key Rotation Flow (11 tests)
 
-### 3. Key Rotation Flow (~15-20 tests)
+**File:** `tests/integration/rotation-flow.test.js`  
+**Functionality:** Atomic key rotation with rollback, distributed locking, and multi-domain isolation
+
+**What's Tested:**
+
+- Complete rotation cycle (prepare → commit → cleanup)
+- State transitions with #upcomingKid and #previousKid tracking
+- Rollback mechanism on DB transaction failure
+- File cleanup on rollback (upcoming keys deleted)
+- Distributed locking (prevents concurrent rotation)
+- Lock release after success/failure
+- Multi-domain isolation (independent rotation)
+- Parallel rotation of different domains
+- Error handling (no active KID, invalid domain)
+- Old private key deletion after commit
+- Metadata archival with expiry dates
+
+**Real Dependencies:**
+
+- ✅ node:crypto (real RSA key generation)
+- ✅ fs/promises (real file operations)
+- ✅ Rotator (real - orchestrator)
+- ✅ Janitor facade (KeyFileJanitor + MetadataJanitor)
+- ✅ KeyPairGenerator, KeyResolver, MetadataService
+- ✅ MockLockRepo (in-memory Redis simulation)
+- ✅ MockSession (DB transaction simulation)
+
+**Test Count:** 11 tests (5 test suites)
+
+**Bugs Fixed:**
+
+- ✅ KeyResolver.getActiveKID → getActiveKid: Fixed method name inconsistency (Rotator was calling lowercase version but KeyResolver had uppercase)
+- ✅ Added backward-compatible alias getActiveKID() for existing code
+- ✅ Fixed internal KeyResolver calls to use consistent lowercase convention
+
+**Design Patterns Validated:**
+
+- ✅ Facade Pattern: Rotator → Janitor → KeyFileJanitor/MetadataJanitor → KeyDeleter
+- ✅ Atomic Operations: Prepare-Commit-Rollback pattern
+- ✅ Distributed Locking: Redis-based coordination
 
 ---
 
 ## 📋 Remaining (Priority 1)
 
-### 3. Key Rotation Flow (~15-20 tests)
+### 4. Janitor Cleanup Flow (~10-12 tests)
 
 - Complete rotation cycle with state transitions
 - Rollback mechanisms

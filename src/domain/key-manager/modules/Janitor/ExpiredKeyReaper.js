@@ -5,7 +5,7 @@ export class ExpiredKeyReaper {
     }
 
     async cleanup() {
-        const expired = await metadataManager.getExpiredMetadata();
+        const expired = await this.metadataJanitor.metadataManager.getExpiredMetadata();
         if (!expired.length) return;
 
         for (const { domain, kid } of expired) {
