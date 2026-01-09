@@ -1,6 +1,7 @@
 # Test Coverage TODO List
 
-**Current Status: 777 tests passing across 31 test files** ✅
+**Current Status: 1137 tests passing across 41 test files** ✅
+**Latest Update: Added 97 tests in Phase 3 (Infrastructure Support) - PHASE 3 COMPLETE!** 🎉
 
 ## ✅ COMPLETED - Domain Layer (100% Coverage)
 
@@ -46,10 +47,24 @@
   - MetadataFactory.test.js
   - utils.test.js
 
-- ✅ **keyRotator/** (3 files) - **JUST COMPLETED!**
+- ✅ **keyRotator/** (3 files) - **COMPLETED!**
+
   - Rotator.test.js (28 tests)
   - RotationScheduler.test.js (26 tests)
   - RotationFactory.test.js (12 tests)
+
+- ✅ **utils/** (2 files) - **COMPLETED THIS SESSION!**
+
+  - DomainNormalizer.test.js (65 tests) ✨ NEW
+  - KeyResolver.test.js (30 tests) ✨ NEW
+
+- ✅ **config/** (1 file) - **COMPLETED THIS SESSION!**
+
+  - RotationConfig.test.js (45 tests) ✨ NEW
+
+- ✅ **Core Files** - **COMPLETED THIS SESSION!**
+  - managerFactory.test.js (11 tests) ✨ NEW
+  - KeyManager.test.js (35 tests) ✨ NEW
 
 ## ✅ COMPLETED - Infrastructure Layer (Partial)
 
@@ -62,146 +77,231 @@
 
 ---
 
-## 🔴 MISSING TESTS - Domain Layer
+## ✅ PHASE 1 COMPLETE - Domain Core (All Done!)
 
-### 1. **KeyManager Core** (High Priority)
+### 1. ~~**KeyManager Core**~~ ✅ COMPLETED
 
 **Location:** `src/domain/key-manager/`
 
-- [ ] **KeyManager.js** - Main orchestrator class
+- ✅ **KeyManager.js** - Main orchestrator class (35 tests)
+  - Methods: sign(), getJwks(), getPublicKey(), initialSetup(), rotate(), rotateDomain(), scheduleRotation()
+  - All delegation logic tested
+- ✅ **managerFactory.js** - Factory for KeyManager (11 tests)
+  - DI wiring validated
+  - Singleton pattern tested
 
-  - Methods: sign(), getJwks(), getPublicKey(), initialSetup(), rotate(), scheduleRotation(), cleanup()
-  - **Priority: HIGH** (Core business logic)
-  - **Complexity: MEDIUM** (8 methods, all delegation)
-
-- [ ] **managerFactory.js** - Factory for KeyManager
-  - Creates and wires all dependencies
-  - **Priority: HIGH** (DI/wiring validation)
-  - **Complexity: LOW** (Simple factory)
-
-### 2. **Config Management** (Medium Priority)
+### 2. ~~**Config Management**~~ ✅ COMPLETED
 
 **Location:** `src/domain/key-manager/config/`
 
-- [ ] **RotationConfig.js** - Configuration validator/manager
+- ✅ **RotationConfig.js** - Configuration validator/manager (45 tests)
 
   - Methods: configure(), \_validateIntegrity(), \_setRetryInterval(), \_setMaxRetries()
-  - **Priority: MEDIUM** (Validation logic)
-  - **Complexity: LOW-MEDIUM** (Validation + bounds checking)
+  - All validation logic covered
+  - Edge cases (NaN, Infinity, boundaries) tested
 
 - [ ] **RotationState.js** - State object
   - **Priority: LOW** (Simple state object, mostly frozen)
-  - **Complexity: VERY LOW** (May not need dedicated tests)
+  - **Can be skipped** - just a data structure
 
-### 3. **Domain Utils** (Medium Priority)
+### 3. ~~**Domain Utils**~~ ✅ COMPLETED
 
 **Location:** `src/domain/key-manager/utils/`
 
-- [ ] **domainNormalizer.js** - Domain name normalization
+- ✅ **domainNormalizer.js** - Domain name normalization (65 tests)
 
-  - Methods: normalizeDomain(), isValidDomain(), getDomainParts()
-  - **Priority: MEDIUM** (String processing logic)
-  - **Complexity: LOW** (Simple string utilities)
+  - Methods: normalizeDomain(), isValidDomain()
+  - Comprehensive validation testing
+  - Singleton pattern tested
 
-- [ ] **keyResolver.js** - Active KID resolver/adapter
+- ✅ **keyResolver.js** - Active KID resolver/adapter (30 tests)
   - Methods: getActiveKID(), getSigningKey(), getVarificationKey(), setActiveKid()
-  - **Priority: MEDIUM** (Bridge between components)
-  - **Complexity: LOW** (Thin adapter layer)
+  - All adapter methods tested
+
+**Phase 1 Total: 186 tests added** ✅
 
 ---
 
-## 🔴 MISSING TESTS - Infrastructure Layer
+## ✅ PHASE 2 COMPLETE - Infrastructure Critical (All Done!)
 
-### 4. **Cache Layer** (High Priority)
+### 4. ~~**Cache Layer - Distributed Locking**~~ ✅ COMPLETED
 
 **Location:** `src/infrastructure/cache/`
 
-- [ ] **redisClient.js** - Redis connection/operations
+- ✅ **rotationLockRepo.js** - Distributed locking (36 tests) ✨ NEW
+  - Methods: acquire(), release()
+  - Race condition handling
+  - TTL management
+  - UUID token security
+  - Lua script atomic operations
+  - Integration scenarios
 
-  - **Priority: HIGH** (External dependency)
-  - **Complexity: MEDIUM** (I/O, connection management)
-
-- [ ] **rotationLockRepo.js** - Distributed locking
-  - Methods: acquire(), release(), extend()
-  - **Priority: HIGH** (Critical for rotation safety)
-  - **Complexity: MEDIUM** (Race conditions, TTL)
-
-### 5. **Database Layer** (High Priority)
+### 5. ~~**Database Layer - Rotation Policies**~~ ✅ COMPLETED
 
 **Location:** `src/infrastructure/db/`
 
-- [ ] **mongoClient.js** - MongoDB connection
+- ✅ **repositories/rotationPolicy.repo.js** - Rotation policies CRUD (41 tests) ✨ NEW
+  - Methods: findByDomain(), createPolicy(), updatePolicy(), deletePolicy()
+  - enableRotation()/disableRotation()
+  - getAllPolicies(), getEnabledPolicies(), getDueForRotation()
+  - updateRotationDates(), acknowledgeSuccessfulRotation()
+  - getSession() - MongoDB transaction support
+  - Domain normalization consistency
+  - Date calculations (intervalDays \* 86400000ms)
 
-  - **Priority: HIGH** (External dependency)
-  - **Complexity: MEDIUM** (Connection pooling, sessions)
+**Phase 2 Total: 77 tests added** ✅
 
-- [ ] **repositories/rotationPolicy.repo.js** - Rotation policies CRUD
-  - Methods: findByDomain(), getDueForRotation(), acknowledgeSuccessfulRotation(), getSession()
-  - **Priority: HIGH** (Data access layer)
-  - **Complexity: MEDIUM** (DB queries, transactions)
+---
 
-### 6. **Filesystem Layer** (Medium Priority)
+## ✅ PHASE 3 COMPLETE - Infrastructure Support (All Done!)
+
+### 6. ~~**Cache Layer - Redis Client**~~ ✅ COMPLETED
+
+**Location:** `src/infrastructure/cache/`
+
+- ✅ **redisClient.js** - Redis connection wrapper (33 tests) ✨ NEW
+  - Initialization: config from environment (REDIS_HOST, PORT, PASSWORD)
+  - Event handlers: connect and error events with logger integration
+  - Redis instance: method availability (set, get, del, exists, expire, ttl, keys, quit, disconnect, ping)
+  - Redis operations: method calls with correct arguments
+  - Connection management: quit (graceful), disconnect (forceful), ping (health check)
+  - Error handling: propagate Redis errors, connection error events
+  - Singleton pattern
+
+### 7. ~~**Database Layer - MongoDB Client**~~ ✅ COMPLETED
+
+**Location:** `src/infrastructure/db/`
+
+- ✅ **mongoClient.js** - MongoDB connection wrapper (23 tests) ✨ NEW
+  - Configuration: MongoDB URI from environment
+  - connectDB: mongoose.connect with correct URI, success logging
+  - Error handling: failure logging, throw/propagate errors
+  - Multiple connection attempts: retries, repeated connections
+  - Connection state: URI consistency
+  - Async behavior: Promise-based, awaits mongoose.connect
+  - Logging: success/failure messages
+
+### 8. ~~**Filesystem Layer - Path Utilities**~~ ✅ COMPLETED
 
 **Location:** `src/infrastructure/filesystem/`
 
-- [ ] **KeyPaths.js** - File path generator/resolver
-  - Methods: Various path generation methods
-  - **Priority: MEDIUM** (Path logic)
-  - **Complexity: LOW** (String formatting)
+- ✅ **KeyPaths.js** - File path generator/resolver (41 tests) ✨ NEW
+  - Base paths: domain-based directory generation
+  - Private/public key paths: .pem extension, separate directories
+  - Origin metadata paths: .meta extension, domain-specific
+  - Archived metadata paths: global archived directory
+  - Path consistency: separators, CWD prefix, differentiation
+  - Special characters: hyphens, underscores, numbers, domains with port
+  - Object structure: 9 methods
 
-### 7. **Logging Layer** (Low Priority)
+**Phase 3 Total: 97 tests added** ✅
+
+---
+
+## 🔴 REMAINING TESTS - Optional (Phase 4)
+
+### 9. **Config Layer - Rotation State** (Optional)
+
+**Location:** `src/domain/key-manager/config/`
+
+- [ ] **RotationState.js** - State object (~5-10 tests)
+  - **Priority: LOW** - Simple immutable data structure
+  - **Can be skipped** - mostly just property getters
+
+### 10. **Logging Layer** (Optional)
 
 **Location:** `src/infrastructure/logging/`
 
 - [ ] **logger.js** - Winston logger wrapper
   - **Priority: LOW** (Side effects only)
   - **Complexity: LOW** (Simple wrapper)
+  - **Can be skipped** - mostly external library testing
 
 ---
 
-## 📊 RECOMMENDED TEST ORDER (Priority-Based)
+## 📊 UPDATED TEST ORDER
 
-### Phase 1: Domain Core (Week 1)
+### ~~Phase 1: Domain Core~~ ✅ **COMPLETE!** (186 tests added)
 
-1. **KeyManager.js** - Core orchestrator (~30-40 tests)
-2. **managerFactory.js** - DI wiring (~10-15 tests)
-3. **keyResolver.js** - Active KID adapter (~15-20 tests)
-4. **domainNormalizer.js** - String utilities (~10-15 tests)
+1. ~~KeyManager.js~~ ✅ (35 tests)
+2. ~~managerFactory.js~~ ✅ (11 tests)
+3. ~~keyResolver.js~~ ✅ (30 tests)
+4. ~~domainNormalizer.js~~ ✅ (65 tests)
+5. ~~RotationConfig.js~~ ✅ (45 tests)
 
-**Estimated:** ~70-90 tests
+### ~~Phase 2: Infrastructure Critical~~ ✅ **COMPLETE!** (77 tests added)
 
-### Phase 2: Infrastructure Critical (Week 2)
+6. ~~**rotationLockRepo.js**~~ ✅ (36 tests) - Distributed locks
+7. ~~**rotationPolicy.repo.js**~~ ✅ (41 tests) - DB operations
 
-5. **rotationLockRepo.js** - Distributed locks (~25-30 tests)
-6. **rotationPolicy.repo.js** - DB operations (~30-40 tests)
-7. **RotationConfig.js** - Config validation (~15-20 tests)
+### ~~Phase 3: Infrastructure Support~~ ✅ **COMPLETE!** (97 tests added)
 
-**Estimated:** ~70-90 tests
+8. ~~**redisClient.js**~~ ✅ (33 tests) - Redis wrapper
+9. ~~**mongoClient.js**~~ ✅ (23 tests) - MongoDB wrapper
+10. ~~**KeyPaths.js**~~ ✅ (41 tests) - Path utilities
 
-### Phase 3: Infrastructure Support (Week 3)
+### Phase 4: Optional (Low Priority - Can Skip)
 
-8. **redisClient.js** - Redis wrapper (~20-25 tests)
-9. **mongoClient.js** - MongoDB wrapper (~20-25 tests)
-10. **KeyPaths.js** - Path utilities (~15-20 tests)
+11. **RotationState.js** - State object (~5-10 tests, **recommend skipping**)
+12. **logger.js** - Logging wrapper (~10 tests, **recommend skipping**)
 
-**Estimated:** ~55-70 tests
-
-### Phase 4: Low Priority (Optional)
-
-11. **RotationState.js** - State object (~5-10 tests, may skip)
-12. **logger.js** - Logging wrapper (~10 tests, may skip)
-
-**Estimated:** ~15-20 tests
+**Estimated:** ~15-20 tests (if implemented)
 
 ---
 
-## 📈 TOTAL MISSING TESTS ESTIMATE
+## 📈 PROGRESS SUMMARY
 
-- **Domain Layer:** ~95-120 tests
-- **Infrastructure Layer:** ~145-185 tests
-- **GRAND TOTAL:** ~240-305 additional tests
+### ✅ Completed Phases
 
-**Target:** 1000+ tests total (currently at 777)
+- **Phase 1: Domain Core** - 186 tests added ✅
+  - domainNormalizer (65), keyResolver (30), RotationConfig (45), managerFactory (11), KeyManager (35)
+- **Phase 2: Infrastructure Critical** - 77 tests added ✅
+
+  - rotationLockRepo (36), rotationPolicyRepo (41)
+
+- **Phase 3: Infrastructure Support** - 97 tests added ✅
+  - redisClient (33), mongoClient (23), KeyPaths (41)
+
+### 🎯 Remaining Phases
+
+- **Phase 4: Optional** - ~15-20 tests (low priority, can skip)
+  - RotationState (~5-10), logger (~10)
+
+### 📊 Test Count Progress
+
+- **Starting baseline:** 777 tests (31 files)
+- **After Phase 1:** 963 tests (36 files) - +186 tests
+- **After Phase 2:** 1040 tests (38 files) - +77 tests
+- **After Phase 3:** 1137 tests (41 files) - +97 tests
+- **Total added:** +360 tests (+46% increase!) 🎉
+- **Phase 4 target (optional):** 1150-1160 tests
+
+---
+
+## 🎯 ALL ESSENTIAL TESTING COMPLETE!
+
+**Phase 3 Infrastructure Support is now complete!** All critical and medium-priority tests are done.
+
+- Connection pooling, session management, error handling
+
+3. **KeyPaths.js** - File path utilities
+   - Path generation, validation, formatting
+
+**Estimated completion:** ~55-70 tests to reach 1095-1110 total tests
+
+---
+
+## 🎉 SESSION ACHIEVEMENTS (Phases 1 & 2)
+
+✅ **Phase 1 Complete:** Domain Core fully tested (186 tests)
+✅ **Phase 2 Complete:** Infrastructure Critical fully tested (77 tests)
+✅ **263 tests added:** +34% test coverage increase
+✅ **100% pass rate:** All 1040 tests passing
+✅ **8 commits:** Clean git history with detailed messages
+✅ **Test count:** 777 → 1040 (+263 tests)
+✅ **Files added:** 7 new test files
+
+**All critical infrastructure components now tested!** 🚀
 
 ---
 
