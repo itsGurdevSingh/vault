@@ -1,27 +1,29 @@
-import { writeFile, readFile, unlink, readdir, mkdir } from "fs/promises";
-
 export class MetaFileStore {
 
-    constructor(metaPaths = null) {
+    constructor(metaPaths = null, fsOps = null) {
 
-        if(!metaPaths) {
-             throw new Error("Meta paths must be provided"); 
+        if (!metaPaths) {
+            throw new Error("Meta paths must be provided");
+        }
+        if (!fsOps) {
+            throw new Error("Filesystem operations must be provided");
         }
         this.paths = metaPaths;
+        this.fs = fsOps;
     }
-    
+
     /* ---------- Origin Metadata ---------- */
 
     async writeOrigin(domain, kid, meta) {
         const filePath = this.paths.metaKeyFile(domain, kid);
-        await writeFile(filePath, JSON.stringify(meta, null, 2), { mode: 0o644 });
+        await this.fs.writeFile(filePath, JSON.stringify(meta, null, 2), { mode: 0o644 });
         return meta;
     }
 
     async readOrigin(domain, kid) {
         try {
             const filePath = this.paths.metaKeyFile(domain, kid);
-            const data = await readFile(filePath, "utf8");
+            const data = await this.fs.readFile(filePath, "utf8");
             return JSON.parse(data);
         } catch (err) {
             if (err.code === "ENOENT") return null;
@@ -32,7 +34,7 @@ export class MetaFileStore {
     async deleteOrigin(domain, kid) {
         try {
             const filePath = this.paths.metaKeyFile(domain, kid);
-            await unlink(filePath);
+            await this.fs.unlink(filePath);
         } catch (err) {
             if (err.code !== "ENOENT") throw err;
         }
@@ -42,17 +44,17 @@ export class MetaFileStore {
 
     async writeArchive(kid, meta) {
         const archiveDir = this.paths.metaArchivedDir();
-        await mkdir(archiveDir, { recursive: true });
+        await this.fs.mkdir(archiveDir, { recursive: true });
 
         const filePath = this.paths.metaArchivedKeyFile(kid);
-        await writeFile(filePath, JSON.stringify(meta, null, 2), { mode: 0o644 });
+        await this.fs.writeFile(filePath, JSON.stringify(meta, null, 2), { mode: 0o644 });
         return meta;
     }
 
     async readArchive(kid) {
         try {
             const filePath = this.paths.metaArchivedKeyFile(kid);
-            const data = await readFile(filePath, "utf8");
+            const data = await this.fs.readFile(filePath, "utf8");
             return JSON.parse(data);
         } catch (err) {
             if (err.code === "ENOENT") return null;
@@ -63,7 +65,7 @@ export class MetaFileStore {
     async deleteArchive(kid) {
         try {
             const filePath = this.paths.metaArchivedKeyFile(kid);
-            await unlink(filePath);
+            await this.fs.unlink(filePath);
         } catch (err) {
             if (err.code !== "ENOENT") throw err;
         }
@@ -73,7 +75,7 @@ export class MetaFileStore {
         const archiveDir = this.paths.metaArchivedDir();
         let files = [];
         try {
-            files = await readdir(archiveDir);
+            files = await this.fs.readdir(archiveDir);
         } catch (err) {
             if (err.code === "ENOENT") return [];
             throw err;
@@ -81,8 +83,8 @@ export class MetaFileStore {
 
         const metas = [];
         for (const file of files) {
-            const filePath = path.join(archiveDir, file);
-            const raw = await readFile(filePath, "utf8");
+            const filePath = this.fs.path.join(archiveDir, file);
+            const raw = await this.fs.readFile(filePath, "utf8");
             metas.push(JSON.parse(raw));
         }
         return metas;
