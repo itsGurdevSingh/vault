@@ -1,4 +1,4 @@
-export class Cache {
+class Cache {
     constructor() {
         this._cache = new Map(); // key -> cached value
     }
@@ -31,4 +31,6 @@ export class Cache {
         this._cache.delete(key);
     }
 }
+
+export { Cache };
 
