@@ -63,7 +63,7 @@ export class KeyManager {
     }
 
     // domain sepecific rotation
-    async rotate(domain) {
+    async rotateDomain(domain) {
         const d = this.normalizer.normalizeDomain(domain);
         // Delegates to the Atomic Rotator
         return this.rotator.triggerDomainRotation(d);
