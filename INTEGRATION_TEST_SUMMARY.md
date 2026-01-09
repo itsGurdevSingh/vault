@@ -52,19 +52,48 @@
 
 ---
 
+### 2. JWT Signing & Verification Flow (15 tests)
+
+**File:** `tests/integration/signing-flow.test.js`  
+**Functionality:** Complete JWT signing, verification, and JWKS generation with real crypto
+
+**What's Tested:**
+
+- JWT signing with payload, custom TTL, and additional claims
+- JWT structure validation (header, payload, signature)
+- Signature verification with correct/wrong public keys
+- Tampered payload detection
+- JWKS endpoint response format (RFC 7517)
+- JWT verification using JWKS public key
+- Multi-domain signing isolation
+- Error handling (invalid domain, payload, TTL, missing active KID)
+
+**Real Dependencies:**
+
+- ✅ node:crypto (real RSA signing/verification)
+- ✅ fs/promises (real key file I/O)
+- ✅ Signer (real)
+- ✅ Builder (JWKS) (real)
+- ✅ KeyResolver (real)
+- ✅ ActiveKIDState (real)
+- ✅ TokenBuilder (real)
+
+**Test Count:** 15 tests (4 test suites)
+
+**Bugs Fixed:**
+
+- ✅ ActiveKIDState.js: Fixed import path for Cache (`../utils/cache.js` not `../../utils/cache.js`)
+- ✅ KeyResolver.getActiveKID(): Now correctly passes `domain` parameter to kidStore.getActiveKid(domain)
+
+---
+
 ## 🔄 In Progress
 
-None
+### 3. Key Rotation Flow (~15-20 tests)
 
 ---
 
 ## 📋 Remaining (Priority 1)
-
-### 2. JWT Signing & Verification Flow (~8-10 tests)
-
-- Generate key → Sign JWT → Verify signature
-- JWKS endpoint format validation
-- Multi-domain signature isolation
 
 ### 3. Key Rotation Flow (~15-20 tests)
 
@@ -83,9 +112,9 @@ None
 
 ## 📊 Progress
 
-**Completed:** 1/4 Priority 1 tests (25%)  
-**Test Count:** ~10 test suites  
-**Estimated Remaining:** ~33-42 tests
+**Completed:** 2/4 Priority 1 tests (50%)  
+**Test Count:** ~30 tests  
+**Estimated Remaining:** ~25-32 tests
 
 ---
 

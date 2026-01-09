@@ -6,13 +6,13 @@
  */
 
 export class KeyResolver {
-    constructor({ loader , kidStore}) {
+    constructor({ loader, kidStore }) {
         this.loader = loader;
         this.kidStore = kidStore;
     }
 
     async getActiveKID(domain) {
-        return await this.kidStore.getActiveKid();
+        return await this.kidStore.getActiveKid(domain);
     }
 
     async getSigningKey(domain) {
