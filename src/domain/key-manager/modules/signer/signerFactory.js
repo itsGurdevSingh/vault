@@ -1,7 +1,7 @@
-import { Signer } from "./Signer";
+import { Signer } from "./Signer.js";
 
 class SignerFactory {
-    constructor(cache, keyResolver, cryptoEngine, opts = {logger: console}) {
+    constructor(cache, keyResolver, cryptoEngine, opts = { logger: console }) {
         this.cache = cache;
         this.keyResolver = keyResolver;
         this.cryptoEngine = cryptoEngine;
