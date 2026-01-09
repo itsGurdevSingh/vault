@@ -54,13 +54,13 @@ describe('KeyResolver', () => {
             expect(result).toBe(expectedKid);
         });
 
-        it('should not use domain parameter (passes to kidStore)', async () => {
+        it('should pass domain parameter to kidStore (bug fix)', async () => {
             mockKidStore.getActiveKid.mockResolvedValue('kid-456');
 
-            await resolver.getActiveKID('ANY_DOMAIN');
+            await resolver.getActiveKid('ANY_DOMAIN');
 
-            // Verifies current implementation doesn't pass domain to kidStore
-            expect(mockKidStore.getActiveKid).toHaveBeenCalledWith();
+            // Verifies bug fix: now correctly passes domain to kidStore.getActiveKid()
+            expect(mockKidStore.getActiveKid).toHaveBeenCalledWith('ANY_DOMAIN');
         });
 
         it('should propagate errors from kidStore', async () => {
