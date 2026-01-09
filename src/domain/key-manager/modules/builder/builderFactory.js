@@ -1,4 +1,4 @@
-import { Builder } from "./JWKSBuilder";
+import { Builder } from "./JWKSBuilder.js";
 
 class BuilderFactory {
     static getInstance(cache, loader, cryptoEngine) {
