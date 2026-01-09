@@ -1,9 +1,9 @@
 // sibling imports 
-import Janitor from './janitor.js';
-import KeyFileJanitor from './KeyFileJanitor.js';
-import MetadataJanitor from './MetadataJanitor.js';
-import ExpiredKeyReaper from './ExpiredKeyReaper.js';
-import KeyDeleter from './KeyDeleter.js';
+import { Janitor } from './janitor.js';
+import { KeyFileJanitor } from './KeyFileJanitor.js';
+import { MetadataJanitor } from './MetadataJanitor.js';
+import { ExpiredKeyReaper } from './ExpiredKeyReaper.js';
+import { KeyDeleter } from './KeyDeleter.js';
 
 
 class JanitorFactory {
@@ -26,9 +26,9 @@ class JanitorFactory {
         return new Janitor(keyFileJanitor, metadataJanitor, expiredKeyReaper);
     }
 
-    static getInstance(loaderCache, builderCache, metadataManager, pathsRepo) {
+    static getInstance(caches, metadataManager, pathsRepo) {
         if (!JanitorFactory.instance) {
-            JanitorFactory.instance = new JanitorFactory(loaderCache, builderCache, metadataManager, pathsRepo);
+            JanitorFactory.instance = new JanitorFactory(caches, metadataManager, pathsRepo);
         }
         return JanitorFactory.instance;
     }

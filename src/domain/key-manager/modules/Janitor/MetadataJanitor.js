@@ -19,6 +19,6 @@ export class MetadataJanitor {
 
         const expirationDate = new Date(Date.now() + KEY_PUBLIC_TTL_MS + KEY_GRACE_MS);
 
-        await this.metadataManager.addExpiry(domain, kid, expirationDate);
+        return await this.metadataManager.addExpiry(domain, kid, expirationDate);
     }
 }
