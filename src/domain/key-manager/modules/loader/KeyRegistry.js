@@ -15,7 +15,7 @@ constructor({reader, directory}) {
 
     async getPubKeyMap(domain) {
         const kids = await this.getAllPubKids(domain);
-        const keys = {};
+        const keys = {}; // kid -> pem
 
         for (const kid of kids) {
             keys[kid] = await this.reader.publicKey(kid);
