@@ -263,7 +263,33 @@ describe('KeyManager', () => {
         });
     });
 
-    describe('rotate (domain-specific rotation)', () => {
+    describe('rotate (immediate rotation - no args)', () => {
+        let manager;
+        let mockScheduler;
+
+        beforeEach(() => {
+            mockScheduler = {
+                triggerImmediateRotation: vi.fn().mockResolvedValue({ rotated: 2 })
+            };
+            manager = new KeyManager({ rotationScheduler: mockScheduler });
+        });
+
+        it('should delegate to scheduler.triggerImmediateRotation', async () => {
+            const result = await manager.rotate();
+
+            expect(mockScheduler.triggerImmediateRotation).toHaveBeenCalled();
+            expect(result).toEqual({ rotated: 2 });
+        });
+
+        it('should propagate errors from scheduler', async () => {
+            mockScheduler.triggerImmediateRotation.mockRejectedValue(new Error('Rotation failed'));
+
+            await expect(manager.rotate())
+                .rejects.toThrow('Rotation failed');
+        });
+    });
+
+    describe('rotateDomain (domain-specific rotation)', () => {
         let manager;
         let mockNormalizer;
         let mockRotator;
@@ -282,7 +308,7 @@ describe('KeyManager', () => {
         });
 
         it('should normalize domain and delegate to rotator', async () => {
-            const result = await manager.rotate('specific-domain');
+            const result = await manager.rotateDomain('specific-domain');
 
             expect(mockNormalizer.normalizeDomain).toHaveBeenCalledWith('specific-domain');
             expect(mockRotator.triggerDomainRotation).toHaveBeenCalledWith('SPECIFIC-DOMAIN');
@@ -290,7 +316,7 @@ describe('KeyManager', () => {
         });
 
         it('should handle different domain names', async () => {
-            await manager.rotate('test-123');
+            await manager.rotateDomain('test-123');
 
             expect(mockNormalizer.normalizeDomain).toHaveBeenCalledWith('test-123');
             expect(mockRotator.triggerDomainRotation).toHaveBeenCalledWith('TEST-123');
@@ -299,16 +325,8 @@ describe('KeyManager', () => {
         it('should propagate errors from rotator', async () => {
             mockRotator.triggerDomainRotation.mockRejectedValue(new Error('Domain rotation failed'));
 
-            await expect(manager.rotate('domain'))
+            await expect(manager.rotateDomain('domain'))
                 .rejects.toThrow('Domain rotation failed');
-        });
-
-        it('should note: rotate() requires domain argument (second definition overwrites first)', () => {
-            // In JavaScript, the second function definition overwrites the first
-            // The source has two rotate() methods, but only the second one exists
-            // rotate() without args will crash because domain is undefined
-            expect(typeof manager.rotate).toBe('function');
-            expect(manager.rotate.length).toBe(1); // Expects 1 argument
         });
     });
 
@@ -417,6 +435,7 @@ describe('KeyManager', () => {
 
             expect(typeof manager.initialSetup).toBe('function');
             expect(typeof manager.rotate).toBe('function');
+            expect(typeof manager.rotateDomain).toBe('function');
             expect(typeof manager.scheduleRotation).toBe('function');
         });
 
@@ -447,7 +466,7 @@ describe('KeyManager', () => {
             await manager.getJwks('test');
             await manager.getPublicKey('test', 'kid');
             await manager.initialSetup('test');
-            await manager.rotate('test');
+            await manager.rotateDomain('test');
 
             // Verify normalization was called for each domain-aware method
             expect(mockNormalizer.normalizeDomain).toHaveBeenCalledTimes(5);
