@@ -11,17 +11,22 @@ export class KeyResolver {
         this.kidStore = kidStore;
     }
 
-    async getActiveKID(domain) {
+    async getActiveKid(domain) {
         return await this.kidStore.getActiveKid(domain);
     }
 
+    // Alias for compatibility (deprecated)
+    async getActiveKID(domain) {
+        return this.getActiveKid(domain);
+    }
+
     async getSigningKey(domain) {
-        const activeKid = await this.getActiveKID(domain);
+        const activeKid = await this.getActiveKid(domain);
         return this.loader.getPvtKey(activeKid);
     }
 
     async getVarificationKey(domain) {
-        const activeKid = await this.getActiveKID(domain);
+        const activeKid = await this.getActiveKid(domain);
         return this.loader.loadPrivateKey(activeKid);
     }
 
