@@ -16,6 +16,8 @@ export default defineConfig({
             ]
         },
         include: ['tests/**/*.test.js', 'tests/**/*.spec.js'],
-        testTimeout: 10000
+        testTimeout: 10000,
+        // Run integration tests sequentially to avoid filesystem conflicts (Vitest 4 syntax)
+        fileParallelism: false
     }
 });
