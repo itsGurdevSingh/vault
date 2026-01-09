@@ -4,6 +4,7 @@ class RotationPolicyRepo {
 
     constructor() {
         this.model = rotationPolicy;
+        this.db = this.model.db;
     }
 
     async findByDomain(domain) {
@@ -57,6 +58,24 @@ class RotationPolicyRepo {
             { new: true },
             { session }
         );
+    }
+
+    /**
+     * Updates dates within a transaction.
+     */
+    async acknowledgeSuccessfulRotation({ domain, intervalDays }, session) {
+        const rotatedAt = new Date();
+        const nextRotationAt = new Date(rotatedAt.getTime() + intervalDays * 86400000);
+
+        return this.updateRotationDates({
+            domain,
+            rotatedAt,
+            nextRotationAt
+        }, session);
+    }
+
+    async getSession() {
+        return this.db.startSession();
     }
 
 }

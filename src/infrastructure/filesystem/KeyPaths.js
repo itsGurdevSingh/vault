@@ -1,5 +1,4 @@
 import { join } from 'path';
-import { normalizeDomain } from '../../utils/normalizer';
 
 const BASE_KEYS_DIR = join(process.cwd(), 'storage/keys');
 const BASE_KEYS_META_DIR = join(process.cwd(), 'storage/metadata/keys');
@@ -9,7 +8,7 @@ export const KeyPaths = {
     //====================== key file paths ======================//
     /**base key directory */
     base(domain) {
-        return join(BASE_KEYS_DIR, normalizeDomain(domain));
+        return join(BASE_KEYS_DIR, domain);
     },
 
     /**private key directory */
@@ -36,7 +35,7 @@ export const KeyPaths = {
 
     /** origin metadata key directory */
     metaKeyDir(domain) {
-        return join(BASE_KEYS_META_DIR, normalizeDomain(domain));
+        return join(BASE_KEYS_META_DIR, domain);
     },
 
     /** full path to origin metadata key file */
