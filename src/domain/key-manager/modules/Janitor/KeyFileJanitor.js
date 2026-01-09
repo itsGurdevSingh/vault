@@ -4,9 +4,10 @@ export class KeyFileJanitor {
      * @param {Cache} builderCache - The Cache used by the Builder
      * @param {KeyDeleter} filesystemHandler - The Infrastructure handler
      */
-    constructor(loaderCache, builderCache, KeyDeleter) {
+    constructor(loaderCache, builderCache, signerCache, KeyDeleter) {
         this.loaderCache = loaderCache;
         this.builderCache = builderCache; // Assuming this interface has a .delete() method
+        this.signerCache = signerCache;
         this.KeyDeleter = KeyDeleter;
     }
 
@@ -16,9 +17,10 @@ export class KeyFileJanitor {
             // If this fails, we throw, and the Cache remains valid (correctly reflecting the file still exists).
             await this.KeyDeleter.deletePrivateKey(domain, kid);
 
-            // STEP 2: Invalidate Read Cache (Loader)
+            // STEP 2: Invalidate Read Cache (Loader and Signer)
             // Now that the file is gone, we strictly ensure memory doesn't serve it.
-            await this.loaderCache.deletePrivate(kid);
+            await this.signerCache.delete(kid);
+            await this.loaderCache.private.delete(kid);
 
         } catch (error) {
             throw new Error(`Failed to delete private key for domain ${domain} and kid ${kid}: ${error.message}`);
@@ -31,7 +33,7 @@ export class KeyFileJanitor {
             await this.KeyDeleter.deletePublicKey(domain, kid);
 
             // STEP 2: Invalidate Loader Cache
-            await this.loaderCache.deletePublic(kid);
+            await this.loaderCache.public.delete(kid);
 
             // STEP 3: Invalidate Builder Cache
             // (Using 'this.builderCache' correctly)
