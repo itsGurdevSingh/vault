@@ -120,6 +120,7 @@ describe('Rotator', () => {
     it('should release lock even if rotation fails', async () => {
       mockLockRepo.acquire.mockResolvedValue('lock-token');
       mockKeyGenerator.generate.mockRejectedValue(new Error('Generation failed'));
+      mockKeyResolver.getActiveKid.mockResolvedValue('active-kid');
 
       await rotator.rotateKeys('example.com', vi.fn(), mockSession);
 
@@ -181,6 +182,7 @@ describe('Rotator', () => {
     });
 
     it('should throw if no active kid found during prepare', async () => {
+      mockLockRepo.acquire.mockResolvedValue('lock-token');
       mockKeyGenerator.generate.mockResolvedValue('new-kid');
       mockKeyResolver.getActiveKid.mockResolvedValue(null);
 
@@ -212,7 +214,17 @@ describe('Rotator', () => {
     });
 
     it('should throw if no previous kid found during commit', async () => {
-      mockKeyResolver.getActiveKid.mockResolvedValue(null);
+      mockLockRepo.acquire.mockResolvedValue('lock-token');
+      mockKeyGenerator.generate.mockResolvedValue('new-kid');
+      mockKeyResolver.getActiveKid
+        .mockResolvedValueOnce('active-kid')  // for prepare
+        .mockResolvedValueOnce(null)          // for commit
+        .mockResolvedValueOnce('active-kid'); // for rollback
+      mockKeyJanitor.addKeyExpiry.mockResolvedValue(undefined);
+      mockKeyJanitor.deletePrivate.mockResolvedValue(undefined);
+      mockKeyJanitor.deletePublic.mockResolvedValue(undefined);
+      mockKeyJanitor.deleteOriginMetadata.mockResolvedValue(undefined);
+      mockKeyJanitor.deleteArchivedMetadata.mockResolvedValue(undefined);
 
       await rotator.rotateKeys('example.com', vi.fn(), mockSession);
 
@@ -281,8 +293,13 @@ describe('Rotator', () => {
     });
 
     it('should rollback when commit fails', async () => {
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
+      mockLockRepo.acquire.mockResolvedValue('lock-token');
+      mockKeyGenerator.generate.mockResolvedValue('new-kid');
+      mockKeyResolver.getActiveKid
+        .mockResolvedValueOnce('active-kid')  // for prepare
+        .mockResolvedValueOnce('active-kid')  // for commit
+        .mockResolvedValueOnce('active-kid'); // for rollback
+      mockKeyJanitor.addKeyExpiry.mockResolvedValue(undefined);
       mockKeyResolver.setActiveKid.mockRejectedValue(new Error('Commit failed'));
       mockKeyJanitor.deletePrivate.mockResolvedValue(undefined);
       mockKeyJanitor.deletePublic.mockResolvedValue(undefined);
@@ -296,8 +313,13 @@ describe('Rotator', () => {
     });
 
     it('should delete upcoming kid private key during rollback', async () => {
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
+      mockLockRepo.acquire.mockResolvedValue('lock-token');
+      mockKeyGenerator.generate.mockResolvedValue('new-kid');
+      mockKeyResolver.getActiveKid
+        .mockResolvedValueOnce('active-kid')  // for prepare
+        .mockResolvedValueOnce('active-kid')  // for commit
+        .mockResolvedValueOnce('active-kid'); // for rollback
+      mockKeyJanitor.addKeyExpiry.mockResolvedValue(undefined);
       mockKeyResolver.setActiveKid.mockRejectedValue(new Error('Commit failed'));
       mockKeyJanitor.deletePrivate.mockResolvedValue(undefined);
       mockKeyJanitor.deletePublic.mockResolvedValue(undefined);
@@ -310,8 +332,13 @@ describe('Rotator', () => {
     });
 
     it('should delete upcoming kid public key during rollback', async () => {
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
+      mockLockRepo.acquire.mockResolvedValue('lock-token');
+      mockKeyGenerator.generate.mockResolvedValue('new-kid');
+      mockKeyResolver.getActiveKid
+        .mockResolvedValueOnce('active-kid')  // for prepare
+        .mockResolvedValueOnce('active-kid')  // for commit
+        .mockResolvedValueOnce('active-kid'); // for rollback
+      mockKeyJanitor.addKeyExpiry.mockResolvedValue(undefined);
       mockKeyResolver.setActiveKid.mockRejectedValue(new Error('Commit failed'));
       mockKeyJanitor.deletePrivate.mockResolvedValue(undefined);
       mockKeyJanitor.deletePublic.mockResolvedValue(undefined);
@@ -324,8 +351,13 @@ describe('Rotator', () => {
     });
 
     it('should delete upcoming kid origin metadata during rollback', async () => {
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
+      mockLockRepo.acquire.mockResolvedValue('lock-token');
+      mockKeyGenerator.generate.mockResolvedValue('new-kid');
+      mockKeyResolver.getActiveKid
+        .mockResolvedValueOnce('active-kid')  // for prepare
+        .mockResolvedValueOnce('active-kid')  // for commit
+        .mockResolvedValueOnce('active-kid'); // for rollback
+      mockKeyJanitor.addKeyExpiry.mockResolvedValue(undefined);
       mockKeyResolver.setActiveKid.mockRejectedValue(new Error('Commit failed'));
       mockKeyJanitor.deletePrivate.mockResolvedValue(undefined);
       mockKeyJanitor.deletePublic.mockResolvedValue(undefined);
@@ -338,8 +370,13 @@ describe('Rotator', () => {
     });
 
     it('should delete archived metadata for active kid during rollback', async () => {
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
+      mockLockRepo.acquire.mockResolvedValue('lock-token');
+      mockKeyGenerator.generate.mockResolvedValue('new-kid');
+      mockKeyResolver.getActiveKid
+        .mockResolvedValueOnce('active-kid')  // for prepare
+        .mockResolvedValueOnce('active-kid')  // for commit
+        .mockResolvedValueOnce('active-kid'); // for rollback
+      mockKeyJanitor.addKeyExpiry.mockResolvedValue(undefined);
       mockKeyResolver.setActiveKid.mockRejectedValue(new Error('Commit failed'));
       mockKeyJanitor.deletePrivate.mockResolvedValue(undefined);
       mockKeyJanitor.deletePublic.mockResolvedValue(undefined);
@@ -352,8 +389,13 @@ describe('Rotator', () => {
     });
 
     it('should return null on rollback', async () => {
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
+      mockLockRepo.acquire.mockResolvedValue('lock-token');
+      mockKeyGenerator.generate.mockResolvedValue('new-kid');
+      mockKeyResolver.getActiveKid
+        .mockResolvedValueOnce('active-kid')  // for prepare
+        .mockResolvedValueOnce('active-kid')  // for commit
+        .mockResolvedValueOnce('active-kid'); // for rollback
+      mockKeyJanitor.addKeyExpiry.mockResolvedValue(undefined);
       mockKeyResolver.setActiveKid.mockRejectedValue(new Error('Commit failed'));
       mockKeyJanitor.deletePrivate.mockResolvedValue(undefined);
       mockKeyJanitor.deletePublic.mockResolvedValue(undefined);
@@ -372,6 +414,7 @@ describe('Rotator', () => {
     });
 
     it('should handle generation errors', async () => {
+      mockLockRepo.acquire.mockResolvedValue('lock-token');
       mockKeyGenerator.generate.mockRejectedValue(new Error('Generation failed'));
       mockKeyResolver.getActiveKid.mockResolvedValue('active-kid');
 
@@ -383,9 +426,11 @@ describe('Rotator', () => {
     });
 
     it('should handle database transaction errors', async () => {
+      mockLockRepo.acquire.mockResolvedValue('lock-token');
       mockKeyGenerator.generate.mockResolvedValue('new-kid');
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
-      mockKeyResolver.getActiveKid.mockResolvedValueOnce('active-kid');
+      mockKeyResolver.getActiveKid
+        .mockResolvedValueOnce('active-kid')  // for prepare
+        .mockResolvedValueOnce('active-kid'); // for rollback
       mockKeyJanitor.addKeyExpiry.mockResolvedValue(undefined);
       const updateCB = vi.fn().mockRejectedValue(new Error('DB error'));
       mockKeyJanitor.deletePrivate.mockResolvedValue(undefined);
@@ -400,6 +445,7 @@ describe('Rotator', () => {
     });
 
     it('should always end session', async () => {
+      mockLockRepo.acquire.mockResolvedValue('lock-token');
       mockKeyGenerator.generate.mockRejectedValue(new Error('Failed'));
       mockKeyResolver.getActiveKid.mockResolvedValue('active-kid');
 

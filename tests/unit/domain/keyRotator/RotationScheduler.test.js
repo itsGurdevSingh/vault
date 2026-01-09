@@ -168,11 +168,11 @@ describe('RotationScheduler', () => {
       mockPolicyRepo.getDueForRotation
         .mockResolvedValueOnce([{ domain: 'example.com', rotationInterval: 30 }])
         .mockResolvedValueOnce([{ domain: 'example.com', rotationInterval: 30 }])
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce([{ domain: 'example.com', rotationInterval: 30 }]);
       mockPolicyRepo.getSession.mockResolvedValue(mockSession);
       mockRotator.rotateKeys
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(null)
+        .mockRejectedValueOnce(new Error('Failed'))
+        .mockRejectedValueOnce(new Error('Failed'))
         .mockResolvedValueOnce('new-kid');
 
       await scheduler.runScheduledRotation();
@@ -189,10 +189,10 @@ describe('RotationScheduler', () => {
 
       mockPolicyRepo.getDueForRotation
         .mockResolvedValueOnce([{ domain: 'example.com', rotationInterval: 30 }])
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce([{ domain: 'example.com', rotationInterval: 30 }]);
       mockPolicyRepo.getSession.mockResolvedValue(mockSession);
       mockRotator.rotateKeys
-        .mockResolvedValueOnce(null)
+        .mockRejectedValueOnce(new Error('Failed'))
         .mockResolvedValueOnce('new-kid');
 
       const promise = customScheduler.runScheduledRotation();
@@ -211,7 +211,7 @@ describe('RotationScheduler', () => {
         .mockResolvedValueOnce([{ domain: 'example.com', rotationInterval: 30 }])
         .mockResolvedValueOnce([{ domain: 'example.com', rotationInterval: 30 }]);
       mockPolicyRepo.getSession.mockResolvedValue(mockSession);
-      mockRotator.rotateKeys.mockResolvedValue(null);
+      mockRotator.rotateKeys.mockRejectedValue(new Error('Failed'));
 
       await scheduler.runScheduledRotation();
 
@@ -279,7 +279,7 @@ describe('RotationScheduler', () => {
           { domain: 'example1.com', rotationInterval: 30 },
           { domain: 'example2.com', rotationInterval: 60 }
         ])
-        .mockResolvedValueOnce([]);
+        .mockResolvedValue([]);
       mockPolicyRepo.getSession.mockResolvedValue(mockSession);
       mockRotator.rotateKeys
         .mockResolvedValueOnce('new-kid')
@@ -293,7 +293,8 @@ describe('RotationScheduler', () => {
     it('should handle repo errors', async () => {
       mockPolicyRepo.getDueForRotation
         .mockRejectedValueOnce(new Error('DB error'))
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce([])
+        .mockResolvedValue([]);
 
       await scheduler.runScheduledRotation();
 
@@ -305,11 +306,11 @@ describe('RotationScheduler', () => {
     it('should create session for rotation', async () => {
       const mockSession = { id: 'session-1' };
       const policy = { domain: 'example.com', rotationInterval: 30 };
+      mockPolicyRepo.findByDomain.mockResolvedValue(policy);
       mockPolicyRepo.getSession.mockResolvedValue(mockSession);
       mockRotator.rotateKeys.mockResolvedValue('new-kid');
 
       await scheduler.triggerDomainRotation('example.com');
-      mockPolicyRepo.findByDomain.mockResolvedValue(policy);
 
       expect(mockPolicyRepo.getSession).toHaveBeenCalled();
     });

@@ -58,13 +58,14 @@ class Rotator {
             // rollback rotation on error
             const activeKid = await this.#rollbackRotation(domain);
 
-            if (!activeKid) {
-                // this is crucial , should not happen
-                throw new Error("No active kid found after rollback.");
-            }
-
             // abort db transaction
             await session.abortTransaction();
+
+            if (!activeKid) {
+                // Critical error: no active kid to roll back to
+                console.error(`CRITICAL: Key rotation failed for domain "${domain}". No active kid found for rollback. Error:`, err);
+                return null;
+            }
 
             console.error(`Key rotation failed for domain "${domain}". Rolled back to active kid "${activeKid}". Error:`, err);
             return null;
@@ -130,11 +131,15 @@ class Rotator {
 
     /** rollback key rotation  */
     async #rollbackRotation(domain) {
-        // delete upcoming kid's private key
+        // If no upcoming kid was set, means failure happened before generation completed
+        // No cleanup needed, just return active kid
         if (!this.#upcomingKid) {
-            // this is crucial , should not happen
-            throw new Error("No upcoming kid found for rollback.");
+            const activeKid = await this.keyResolver.getActiveKid(domain);
+            // Return null if no active kid - outer handler will check and throw if needed
+            return activeKid;
         }
+
+        // delete upcoming kid's private key
         await this.keyJanitor.deletePrivate(domain, this.#upcomingKid);
         // also delete public key
         await this.keyJanitor.deletePublic(domain, this.#upcomingKid);
@@ -145,17 +150,16 @@ class Rotator {
         // remove meta from archive for active kid
         const activeKid = await this.keyResolver.getActiveKid(domain);
 
-        if (!activeKid) {
-            // this is crucial , should not happen
-            throw new Error("No active kid found for rollback.");
+        // If no active kid exists, this could happen if the error occurred during prepare
+        // before activeKid was confirmed. Return null and let outer handler deal with it.
+        if (activeKid) {
+            await this.keyJanitor.deleteArchivedMetadata(activeKid);
         }
-
-        await this.keyJanitor.deleteArchivedMetadata(activeKid);
 
         // clear upcoming kid
         this.#upcomingKid = null;
 
-        // return active kid
+        // return active kid (could be null)
         return activeKid;
     }
 
