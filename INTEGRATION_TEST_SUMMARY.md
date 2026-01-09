@@ -132,9 +132,65 @@
 
 ---
 
-## 📋 Remaining (Priority 1)
+### 4. Janitor Cleanup Flow (15 tests)
 
-### 4. Janitor Cleanup Flow (~10-12 tests)
+**File:** `tests/integration/janitor-flow.test.js`  
+**Functionality:** Key file deletion, metadata cleanup, expired key reaping with cache invalidation
+
+**What's Tested:**
+
+- Private key deletion with cache invalidation (loaderCache.private, signerCache)
+- Public key deletion with cache invalidation (loaderCache.public, builderCache)
+- Graceful handling of non-existent file deletion
+- Metadata expiry addition (archived metadata creation)
+- Origin metadata deletion
+- Archived metadata deletion  
+- Expired key reaper (multi-domain cleanup)
+- Grace period enforcement (KEY_PUBLIC_TTL_MS + KEY_GRACE_MS)
+- Selective cleanup (expired vs non-expired keys)
+- Multi-domain isolation (independent cleanup per domain)
+- Cache invalidation per KID (not per domain)
+- Error handling (missing files, partial cleanup failures)
+
+**Real Dependencies:**
+
+- ✅ node:fs/promises (real file operations)
+- ✅ Janitor facade (KeyFileJanitor + MetadataJanitor)
+- ✅ ExpiredKeyReaper (real - scheduled cleanup)
+- ✅ KeyDeleter (real filesystem deletion)
+- ✅ MetadataService + MetaFileStore (real)
+- ✅ Cache instances (real invalidation logic)
+
+**Test Count:** 15 tests (5 test suites)
+
+**Bugs Fixed:**
+
+- ✅ ExpiredKeyReaper: Fixed `metadataManager` undefined → changed to `this.metadataJanitor.metadataManager`
+- ✅ ExpiredKeyReaper receives MetadataJanitor (facade), not MetadataService directly
+
+**Design Patterns Validated:**
+
+- ✅ Facade Pattern: Janitor → KeyFileJanitor + MetadataJanitor → KeyDeleter
+- ✅ Cache Invalidation: Delete filesystem first, then invalidate caches
+- ✅ Error Resilience: Continue cleanup even if individual deletions fail
+
+---
+
+## 🎯 Priority 1 Complete! (56 tests)
+
+**Summary:**
+- ✅ Key Lifecycle: 15 tests
+- ✅ JWT Signing & Verification: 15 tests  
+- ✅ Key Rotation Flow: 11 tests
+- ✅ Janitor Cleanup Flow: 15 tests
+
+**Total:** 56 integration tests passing (100% pass rate)
+
+---
+
+## 📋 Next Steps (Priority 2 - Optional)
+
+### 5. Builder (JWKS Generation) Flow (~8-10 tests)
 
 - Complete rotation cycle with state transitions
 - Rollback mechanisms
