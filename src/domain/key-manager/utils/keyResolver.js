@@ -22,11 +22,11 @@ export class KeyResolver {
 
     async getSigningKey(domain) {
         const activeKid = await this.getActiveKid(domain);
-        const pem = await this.loader.getPvtKey(activeKid);
+        const pem = await this.loader.getPrivateKey(activeKid);
         return { privateKey: pem };
     }
 
-    async getVarificationKey(domain) {
+    async getVerificationKey(domain) {
         const activeKid = await this.getActiveKid(domain);
         return this.loader.loadPrivateKey(activeKid);
     }

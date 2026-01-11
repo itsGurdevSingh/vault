@@ -1,4 +1,4 @@
-export class Builder {
+export class JwksBuilder {
     constructor(Cache, loader, cryptoEngine) {
         this.cache = Cache;
         this.loader = loader;
@@ -15,7 +15,7 @@ export class Builder {
     }
 
     async getJWKS(domain) {
-        const publicKeys = await this.loader.getPubKeyMap(domain); // kid -> pem
+        const publicKeys = await this.loader.getPublicKeyMap(domain); // kid -> pem
 
         const keys = [];
         for (const [kid, pem] of Object.entries(publicKeys)) {

@@ -8,16 +8,16 @@ import {
     createTestKeyPaths,
 } from "./helpers/testSetup.js";
 import { Rotator } from "../../src/domain/key-manager/modules/keyRotator/rotator.js";
-import { KeyPairGenerator } from "../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js";
+import { RSAKeyGenerator } from "../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js";
 import { KeyWriter } from "../../src/domain/key-manager/modules/generator/KeyWriter.js";
 import { DirManager } from "../../src/domain/key-manager/modules/generator/DirManager.js";
-import { Janitor } from "../../src/domain/key-manager/modules/Janitor/janitor.js";
-import { KeyFileJanitor } from "../../src/domain/key-manager/modules/Janitor/KeyFileJanitor.js";
-import { KeyDeleter } from "../../src/domain/key-manager/modules/Janitor/KeyDeleter.js";
-import { MetadataJanitor } from "../../src/domain/key-manager/modules/Janitor/MetadataJanitor.js";
+import { Janitor } from "../../src/domain/key-manager/modules/janitor/janitor.js";
+import { KeyFileJanitor } from "../../src/domain/key-manager/modules/janitor/KeyFileJanitor.js";
+import { KeyDeleter } from "../../src/domain/key-manager/modules/janitor/KeyDeleter.js";
+import { MetadataJanitor } from "../../src/domain/key-manager/modules/janitor/MetadataJanitor.js";
 import { KeyResolver } from "../../src/domain/key-manager/utils/keyResolver.js";
 import { MetadataService } from "../../src/domain/key-manager/modules/metadata/MetadataService.js";
-import { MetaFileStore } from "../../src/domain/key-manager/modules/metadata/metaFileStore.js";
+import { MetadataFileStore } from "../../src/domain/key-manager/modules/metadata/metadataFileStore.js";
 import { CryptoEngine } from "../../src/infrastructure/cryptoEngine/CryptoEngine.js";
 import { CryptoConfig } from "../../src/infrastructure/cryptoEngine/cryptoConfig.js";
 import { KIDFactory } from "../../src/infrastructure/cryptoEngine/KIDFactory.js";
@@ -57,7 +57,7 @@ class MockSession {
 describe("Integration: Key Rotation Flow", () => {
     let testPaths;
     let cryptoEngine;
-    let keyPairGenerator;
+    let rsaKeyGenerator;
     let janitor;
     let keyResolver;
     let rotator;
@@ -84,7 +84,7 @@ describe("Integration: Key Rotation Flow", () => {
         const dirManager = new DirManager(testPaths, fs.mkdir);
 
         // Initialize metadata
-        const metaFileStore = new MetaFileStore(testPaths, {
+        const metadataFileStore = new MetadataFileStore(testPaths, {
             writeFile: fs.writeFile,
             readFile: fs.readFile,
             unlink: fs.unlink,
@@ -92,10 +92,10 @@ describe("Integration: Key Rotation Flow", () => {
             mkdir: fs.mkdir,
             path: path,
         });
-        metadataService = new MetadataService(metaFileStore);
+        metadataService = new MetadataService(metadataFileStore);
 
         // Initialize generator
-        keyPairGenerator = new KeyPairGenerator(
+        rsaKeyGenerator = new RSAKeyGenerator(
             cryptoEngine,
             metadataService,
             keyWriter,
@@ -137,11 +137,11 @@ describe("Integration: Key Rotation Flow", () => {
 
         // Initialize rotator with proper Janitor
         rotator = new Rotator({
-            keyGenerator: keyPairGenerator,
+            keyGenerator: rsaKeyGenerator,
             keyJanitor: janitor,
             keyResolver,
             metadataManager: metadataService,
-            LockRepo: mockLockRepo,
+            lockRepository: mockLockRepo,
         });
     });
 
@@ -151,7 +151,7 @@ describe("Integration: Key Rotation Flow", () => {
 
     // Helper to generate initial key and set as active
     async function setupDomain(domain) {
-        const kid = await keyPairGenerator.generate(domain);
+        const kid = await rsaKeyGenerator.generate(domain);
         await kidStore.setActiveKid(domain, kid);
         return kid;
     }
@@ -198,8 +198,8 @@ describe("Integration: Key Rotation Flow", () => {
 
             // Verify archived metadata exists
             const archivedMeta = await metadataService.read(domain, initialKid);
-            expect(archivedMeta.expiredAt).toBeDefined();
-            expect(new Date(archivedMeta.expiredAt).getTime()).toBeGreaterThan(Date.now());
+            expect(archivedMeta.expiresAt).toBeDefined();
+            expect(new Date(archivedMeta.expiresAt).getTime()).toBeGreaterThan(Date.now());
         });
 
         it("should generate different KIDs for each rotation", async () => {

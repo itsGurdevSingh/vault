@@ -9,11 +9,11 @@ import {
 import { KeyRegistry } from "../../src/domain/key-manager/modules/loader/KeyRegistry.js";
 import { KeyDirectory } from "../../src/domain/key-manager/modules/loader/KeyDirectory.js";
 import { KeyReader } from "../../src/domain/key-manager/modules/loader/KeyReader.js";
-import { KeyPairGenerator } from "../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js";
+import { RSAKeyGenerator } from "../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js";
 import { KeyWriter } from "../../src/domain/key-manager/modules/generator/KeyWriter.js";
 import { DirManager } from "../../src/domain/key-manager/modules/generator/DirManager.js";
 import { MetadataService } from "../../src/domain/key-manager/modules/metadata/MetadataService.js";
-import { MetaFileStore } from "../../src/domain/key-manager/modules/metadata/metaFileStore.js";
+import { MetadataFileStore } from "../../src/domain/key-manager/modules/metadata/metadataFileStore.js";
 import { CryptoEngine } from "../../src/infrastructure/cryptoEngine/CryptoEngine.js";
 import { CryptoConfig } from "../../src/infrastructure/cryptoEngine/cryptoConfig.js";
 import { KIDFactory } from "../../src/infrastructure/cryptoEngine/KIDFactory.js";
@@ -23,7 +23,7 @@ import path from "path";
 describe("Integration: Loader (Key Loading) Flow", () => {
     let testPaths;
     let cryptoEngine;
-    let keyPairGenerator;
+    let rsaKeyGenerator;
     let keyRegistry;
     let keyReader;
     let keyDirectory;
@@ -49,7 +49,7 @@ describe("Integration: Loader (Key Loading) Flow", () => {
         const dirManager = new DirManager(testPaths, fs.mkdir);
 
         // Initialize metadata
-        const metaFileStore = new MetaFileStore(testPaths, {
+        const metadataFileStore = new MetadataFileStore(testPaths, {
             writeFile: fs.writeFile,
             readFile: fs.readFile,
             unlink: fs.unlink,
@@ -57,10 +57,10 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             mkdir: fs.mkdir,
             path: path,
         });
-        const metadataService = new MetadataService(metaFileStore);
+        const metadataService = new MetadataService(metadataFileStore);
 
         // Initialize key generator
-        keyPairGenerator = new KeyPairGenerator(
+        rsaKeyGenerator = new RSAKeyGenerator(
             cryptoEngine,
             metadataService,
             keyWriter,
@@ -92,7 +92,7 @@ describe("Integration: Loader (Key Loading) Flow", () => {
     async function setupDomain(domain, count = 1) {
         const kids = [];
         for (let i = 0; i < count; i++) {
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
             kids.push(kid);
         }
         return kids;
@@ -104,7 +104,7 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             const [kid] = await setupDomain(domain, 1);
 
             // ACT: Load public key
-            const pem = await keyRegistry.getPubKey(kid);
+            const pem = await keyRegistry.getPublicKey(kid);
 
             // ASSERT: PEM loaded correctly
             expect(pem).toBeDefined();
@@ -118,7 +118,7 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             const kids = await setupDomain(domain, 3);
 
             // ACT: Load public key map
-            const keyMap = await keyRegistry.getPubKeyMap(domain);
+            const keyMap = await keyRegistry.getPublicKeyMap(domain);
 
             // ASSERT: Map contains all keys
             expect(Object.keys(keyMap).length).toBe(3);
@@ -133,7 +133,7 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             const kids = await setupDomain(domain, 2);
 
             // ACT: List public KIDs
-            const listedKids = await keyRegistry.getAllPubKids(domain);
+            const listedKids = await keyRegistry.getAllPublicKids(domain);
 
             // ASSERT: All KIDs listed
             expect(listedKids.length).toBe(2);
@@ -147,7 +147,7 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             await fs.mkdir(testPaths.publicDir(domain), { recursive: true });
 
             // ACT: Load key map
-            const keyMap = await keyRegistry.getPubKeyMap(domain);
+            const keyMap = await keyRegistry.getPublicKeyMap(domain);
 
             // ASSERT: Empty map
             expect(keyMap).toEqual({});
@@ -161,7 +161,7 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             const [kid] = await setupDomain(domain, 1);
 
             // ACT: Load private key
-            const pem = await keyRegistry.getPvtKey(kid);
+            const pem = await keyRegistry.getPrivateKey(kid);
 
             // ASSERT: PEM loaded correctly
             expect(pem).toBeDefined();
@@ -175,7 +175,7 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             const kids = await setupDomain(domain, 3);
 
             // ACT: Load private key map
-            const keyMap = await keyRegistry.getPvtKeyMap(domain);
+            const keyMap = await keyRegistry.getPrivateKeyMap(domain);
 
             // ASSERT: Map contains all keys
             expect(Object.keys(keyMap).length).toBe(3);
@@ -190,7 +190,7 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             const kids = await setupDomain(domain, 2);
 
             // ACT: List private KIDs
-            const listedKids = await keyRegistry.getAllPvtKids(domain);
+            const listedKids = await keyRegistry.getAllPrivateKids(domain);
 
             // ASSERT: All KIDs listed
             expect(listedKids.length).toBe(2);
@@ -204,13 +204,13 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             const [kid] = await setupDomain(domain, 1);
 
             // ACT: First load (cache miss)
-            const pem1 = await keyRegistry.getPubKey(kid);
+            const pem1 = await keyRegistry.getPublicKey(kid);
 
             // ASSERT: Cached
             expect(readerCache.public.get(kid)).toBe(pem1);
 
             // ACT: Second load (cache hit)
-            const pem2 = await keyRegistry.getPubKey(kid);
+            const pem2 = await keyRegistry.getPublicKey(kid);
 
             // ASSERT: Same object from cache
             expect(pem2).toBe(pem1);
@@ -221,13 +221,13 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             const [kid] = await setupDomain(domain, 1);
 
             // ACT: First load (cache miss)
-            const pem1 = await keyRegistry.getPvtKey(kid);
+            const pem1 = await keyRegistry.getPrivateKey(kid);
 
             // ASSERT: Cached
             expect(readerCache.private.get(kid)).toBe(pem1);
 
             // ACT: Second load (cache hit)
-            const pem2 = await keyRegistry.getPvtKey(kid);
+            const pem2 = await keyRegistry.getPrivateKey(kid);
 
             // ASSERT: Same object from cache
             expect(pem2).toBe(pem1);
@@ -238,13 +238,13 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             const [kid] = await setupDomain(domain, 1);
 
             // ACT: First load (populates cache)
-            const pem1 = await keyRegistry.getPubKey(kid);
+            const pem1 = await keyRegistry.getPublicKey(kid);
 
             // ACT: Delete public key file
             await fs.unlink(testPaths.publicKey(domain, kid));
 
             // ACT: Second load (cache hit, no filesystem access)
-            const pem2 = await keyRegistry.getPubKey(kid);
+            const pem2 = await keyRegistry.getPublicKey(kid);
 
             // ASSERT: Still returns cached PEM
             expect(pem2).toBe(pem1);
@@ -256,9 +256,9 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             const kids = await setupDomain(domain, 3);
 
             // ACT: Load all keys
-            const pem1 = await keyRegistry.getPubKey(kids[0]);
-            const pem2 = await keyRegistry.getPubKey(kids[1]);
-            const pem3 = await keyRegistry.getPubKey(kids[2]);
+            const pem1 = await keyRegistry.getPublicKey(kids[0]);
+            const pem2 = await keyRegistry.getPublicKey(kids[1]);
+            const pem3 = await keyRegistry.getPublicKey(kids[2]);
 
             // ASSERT: Each KID cached separately
             expect(readerCache.public.get(kids[0])).toBe(pem1);
@@ -277,8 +277,8 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             const kidsB = await setupDomain(domainB, 3);
 
             // ACT: Load keys from both domains
-            const mapA = await keyRegistry.getPubKeyMap(domainA);
-            const mapB = await keyRegistry.getPubKeyMap(domainB);
+            const mapA = await keyRegistry.getPublicKeyMap(domainA);
+            const mapB = await keyRegistry.getPublicKeyMap(domainB);
 
             // ASSERT: Correct counts
             expect(Object.keys(mapA).length).toBe(2);
@@ -305,9 +305,9 @@ describe("Integration: Loader (Key Loading) Flow", () => {
 
             // ACT: Concurrent loads
             const [mapA, mapB, mapC] = await Promise.all([
-                keyRegistry.getPubKeyMap(domainA),
-                keyRegistry.getPubKeyMap(domainB),
-                keyRegistry.getPubKeyMap(domainC),
+                keyRegistry.getPublicKeyMap(domainA),
+                keyRegistry.getPublicKeyMap(domainB),
+                keyRegistry.getPublicKeyMap(domainC),
             ]);
 
             // ASSERT: All loaded correctly
@@ -323,7 +323,7 @@ describe("Integration: Loader (Key Loading) Flow", () => {
 
             // ACT & ASSERT: Should throw
             await expect(async () => {
-                await keyRegistry.getPubKey(fakeKid);
+                await keyRegistry.getPublicKey(fakeKid);
             }).rejects.toThrow();
         });
 
@@ -332,7 +332,7 @@ describe("Integration: Loader (Key Loading) Flow", () => {
 
             // ACT & ASSERT: Should throw or return empty
             try {
-                const keyMap = await keyRegistry.getPubKeyMap(domain);
+                const keyMap = await keyRegistry.getPublicKeyMap(domain);
                 // If it doesn't throw, should return empty
                 expect(keyMap).toEqual({});
             } catch (error) {
@@ -356,7 +356,7 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             readerCache.public.delete(kid);
 
             // ACT & ASSERT: Load should succeed (KeyReader doesn't validate PEM format)
-            const pem = await keyRegistry.getPubKey(kid);
+            const pem = await keyRegistry.getPublicKey(kid);
             expect(pem).toBe("NOT A VALID PEM FILE");
         });
     });
@@ -367,8 +367,8 @@ describe("Integration: Loader (Key Loading) Flow", () => {
             const [kid] = await setupDomain(domain, 1);
 
             // ACT: Load both keys
-            const publicPem = await keyRegistry.getPubKey(kid);
-            const privatePem = await keyRegistry.getPvtKey(kid);
+            const publicPem = await keyRegistry.getPublicKey(kid);
+            const privatePem = await keyRegistry.getPrivateKey(kid);
 
             // ASSERT: Both exist and have correct format
             expect(publicPem).toContain("-----BEGIN PUBLIC KEY-----");

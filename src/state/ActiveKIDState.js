@@ -2,25 +2,25 @@ import { Cache } from "../utils/cache.js";
 
 class ActiveKidStore {
     constructor() {
-        this.activeKID = new Cache(); // for now in-memory
+        this.activeKid = new Cache(); // for now in-memory
 
     }
 
     async setActiveKid(domain, kid) {
-        await this.activeKID.set(domain, kid);
+        await this.activeKid.set(domain, kid);
         return kid;
     }
 
     async getActiveKid(domain) {
-        return this.activeKID.get(domain);
+        return this.activeKid.get(domain);
     }
 
     clearActiveKid(domain) {
-        this.activeKID.delete(normalizeDomain(domain));
+        this.activeKid.delete(normalizeDomain(domain));
     }
 
     clearAll() {
-        this.activeKID.clear();
+        this.activeKid.clear();
     }
 }
 

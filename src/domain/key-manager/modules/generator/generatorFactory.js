@@ -1,6 +1,6 @@
 import { DirManager } from "./DirManager.js";
 import { KeyWriter } from "./KeyWriter.js";
-import { KeyPairGenerator } from "./RSAKeyGenerator.js";
+import { RSAKeyGenerator } from "./RSAKeyGenerator.js";
 import { mkdir, writeFile } from "fs/promises";
 
 export class GeneratorFactory {
@@ -14,7 +14,7 @@ export class GeneratorFactory {
     create() {
         const keyWriter = new KeyWriter(this.paths, writeFile);
         const dirManager = new DirManager(this.paths, mkdir);
-        return new KeyPairGenerator(this.cryptoEngine, this.metadataManager, keyWriter, dirManager);
+        return new RSAKeyGenerator(this.cryptoEngine, this.metadataManager, keyWriter, dirManager);
     }
 
     static getInstance(cryptoEngine, metadataManager, paths) {

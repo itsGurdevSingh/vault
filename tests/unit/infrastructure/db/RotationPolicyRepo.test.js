@@ -31,7 +31,7 @@ vi.mock('../../../../src/infrastructure/db/models/RotationPolicy.model.js', () =
 }));
 
 // Now import the repo (after the mock is set up)
-const { rotationPolicyRepo } = await import('../../../../src/infrastructure/db/repositories/rotationPolicy.repo.js');
+const { rotationPolicyRepo } = await import('../../../../src/infrastructure/db/repositories/rotationPolicyRepository');
 
 describe('RotationPolicyRepo', () => {
     beforeEach(() => {

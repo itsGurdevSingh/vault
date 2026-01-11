@@ -5,7 +5,7 @@
  * Uses REAL filesystem operations and REAL crypto - no mocks.
  * 
  * Flow tested:
- * 1. KeyPairGenerator generates RSA key pair (real crypto)
+ * 1. RSAKeyGenerator generates RSA key pair (real crypto)
  * 2. DirManager creates directory structure
  * 3. KeyWriter saves keys to filesystem
  * 4. MetadataService creates metadata file
@@ -17,12 +17,12 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdir, writeFile, readFile, unlink } from 'fs/promises';
 import crypto from 'crypto';
 import { setupTestEnvironment, cleanupTestEnvironment, createTestKeyPaths, fileExists, readJsonFile, listFiles } from './helpers/testSetup.js';
-import { KeyPairGenerator } from '../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js';
+import { RSAKeyGenerator } from '../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js';
 import { KeyWriter } from '../../src/domain/key-manager/modules/generator/KeyWriter.js';
 import { DirManager } from '../../src/domain/key-manager/modules/generator/DirManager.js';
 import { KeyReader } from '../../src/domain/key-manager/modules/loader/KeyReader.js';
 import { MetadataService } from '../../src/domain/key-manager/modules/metadata/MetadataService.js';
-import { MetaFileStore } from '../../src/domain/key-manager/modules/metadata/metaFileStore.js';
+import { MetadataFileStore } from '../../src/domain/key-manager/modules/metadata/metadataFileStore.js';
 import { CryptoEngine } from '../../src/infrastructure/cryptoEngine/CryptoEngine.js';
 import { CryptoConfig } from '../../src/infrastructure/cryptoEngine/cryptoConfig.js';
 import { KIDFactory } from '../../src/infrastructure/cryptoEngine/KIDFactory.js';
@@ -35,7 +35,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
     let dirManager;
     let keyReader;
     let metadataService;
-    let keyPairGenerator;
+    let rsaKeyGenerator;
 
     beforeAll(async () => {
         // Setup test environment
@@ -59,7 +59,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
         dirManager = new DirManager(testPaths, mkdir);
 
         // Initialize metadata service
-        const metaFileStore = new MetaFileStore(testPaths, {
+        const metadataFileStore = new MetadataFileStore(testPaths, {
             writeFile,
             readFile,
             unlink,
@@ -70,10 +70,10 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
             mkdir,
             path: { join: (await import('path')).join }
         });
-        metadataService = new MetadataService(metaFileStore);
+        metadataService = new MetadataService(metadataFileStore);
 
-        // Initialize KeyPairGenerator
-        keyPairGenerator = new KeyPairGenerator(
+        // Initialize RSAKeyGenerator
+        rsaKeyGenerator = new RSAKeyGenerator(
             cryptoEngine,
             metadataService,
             keyWriter,
@@ -100,7 +100,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
             const domain = 'USER';
 
             // Generate key pair (full flow)
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
 
             // Verify KID format (domain-YYYYMMDD-HHMMSS-HEX)
             expect(kid).toBeTruthy();
@@ -137,7 +137,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
 
         it('should create metadata file with correct structure', async () => {
             const domain = 'SERVICE';
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
 
             // Read metadata file
             const metadataPath = testPaths.metaKeyFile(domain, kid);
@@ -147,8 +147,8 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
             expect(metadata).toHaveProperty('kid', kid);
             expect(metadata).toHaveProperty('domain', domain);
             expect(metadata).toHaveProperty('createdAt');
-            // expiresAt is undefined for new keys
-            expect(metadata.expiresAt).toBeUndefined();
+            // expiresAt is null for new keys
+            expect(metadata.expiresAt).toBeNull();
 
             // Verify createdAt is valid date
             const createdAt = new Date(metadata.createdAt);
@@ -164,7 +164,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
             ];
 
             for (const domain of specialDomains) {
-                const kid = await keyPairGenerator.generate(domain);
+                const kid = await rsaKeyGenerator.generate(domain);
 
                 // Verify files created
                 expect(await fileExists(testPaths.privateKey(domain, kid))).toBe(true);
@@ -186,7 +186,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
 
             // Generate multiple keys
             for (let i = 0; i < keyCount; i++) {
-                const kid = await keyPairGenerator.generate(domain);
+                const kid = await rsaKeyGenerator.generate(domain);
                 kids.push(kid);
             }
 
@@ -216,7 +216,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
 
             // Generate keys
             for (let i = 0; i < keyCount; i++) {
-                await keyPairGenerator.generate(domain);
+                await rsaKeyGenerator.generate(domain);
             }
 
             // List private key files
@@ -236,9 +236,9 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
             const domain2 = 'SERVICE';
             const domain3 = 'TEST';
 
-            const kid1 = await keyPairGenerator.generate(domain1);
-            const kid2 = await keyPairGenerator.generate(domain2);
-            const kid3 = await keyPairGenerator.generate(domain3);
+            const kid1 = await rsaKeyGenerator.generate(domain1);
+            const kid2 = await rsaKeyGenerator.generate(domain2);
+            const kid3 = await rsaKeyGenerator.generate(domain3);
 
             // Verify each domain has its own directory
             expect(await fileExists(testPaths.privateKey(domain1, kid1))).toBe(true);
@@ -262,8 +262,8 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
             const domain1 = 'USER';
             const domain2 = 'SERVICE';
 
-            const kid1 = await keyPairGenerator.generate(domain1);
-            const kid2 = await keyPairGenerator.generate(domain2);
+            const kid1 = await rsaKeyGenerator.generate(domain1);
+            const kid2 = await rsaKeyGenerator.generate(domain2);
 
             // Retrieve keys
             const key1 = await keyReader.privateKey(kid1);
@@ -279,7 +279,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
     describe('Directory Structure', () => {
         it('should create complete directory structure automatically', async () => {
             const domain = 'TEST';
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
 
             // Verify all directories exist
             const privateDir = testPaths.privateDir(domain);
@@ -293,7 +293,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
 
         it('should maintain separate private/public directories', async () => {
             const domain = 'SEPARATE_TEST';
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
 
             const privateFiles = await listFiles(testPaths.privateDir(domain));
             const publicFiles = await listFiles(testPaths.publicDir(domain));
@@ -308,7 +308,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
     describe('Key Format Validation', () => {
         it('should generate keys in PEM format', async () => {
             const domain = 'SERVICE';
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
 
             const privateKey = await keyReader.privateKey(kid);
             const publicKey = await keyReader.publicKey(kid);
@@ -329,7 +329,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
 
         it('should generate RSA keys with correct modulus length', async () => {
             const domain = 'TEST';
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
 
             const publicKey = await keyReader.publicKey(kid);
 
@@ -350,7 +350,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
     describe('Key Reader Caching', () => {
         it('should cache private key after first read', async () => {
             const domain = 'USER';
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
 
             // First read - from filesystem
             const key1 = await keyReader.privateKey(kid);
@@ -364,7 +364,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
 
         it('should cache public key after first read', async () => {
             const domain = 'SERVICE';
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
 
             // First read
             const key1 = await keyReader.publicKey(kid);
@@ -391,7 +391,7 @@ describe('Integration: Key Lifecycle (Generate → Store → Retrieve)', () => {
 
             // Generate keys concurrently
             const promises = Array(5).fill(null).map(() =>
-                keyPairGenerator.generate(domain)
+                rsaKeyGenerator.generate(domain)
             );
 
             const kids = await Promise.all(promises);

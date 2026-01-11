@@ -22,22 +22,22 @@ describe('ManagerFactory', () => {
             );
 
             expect(factory).toBeInstanceOf(ManagerFactory);
-            expect(factory.pathsRepo).toBe(mockPathsRepo);
-            expect(factory.CryptoEngine).toBe(mockCryptoEngine);
-            expect(factory.LockRepo).toBe(mockLockRepo);
+            expect(factory.pathService).toBe(mockPathsRepo);
+            expect(factory.cryptoEngine).toBe(mockCryptoEngine);
+            expect(factory.lockRepository).toBe(mockLockRepo);
             expect(factory.policyRepo).toBe(mockPolicyRepo);
-            expect(factory.Cache).toBe(mockCache);
+            expect(factory.cache).toBe(mockCache);
             expect(factory.kidStore).toBe(mockState);
         });
 
         it('should accept undefined dependencies (no validation)', () => {
             const factory = new ManagerFactory();
 
-            expect(factory.pathsRepo).toBeUndefined();
-            expect(factory.CryptoEngine).toBeUndefined();
-            expect(factory.LockRepo).toBeUndefined();
+            expect(factory.pathService).toBeUndefined();
+            expect(factory.cryptoEngine).toBeUndefined();
+            expect(factory.lockRepository).toBeUndefined();
             expect(factory.policyRepo).toBeUndefined();
-            expect(factory.Cache).toBeUndefined();
+            expect(factory.cache).toBeUndefined();
             expect(factory.kidStore).toBeUndefined();
         });
     });
@@ -114,8 +114,8 @@ describe('ManagerFactory', () => {
                 mockCache
             );
 
-            expect(instance1.pathsRepo.name).toBe('first');
-            expect(instance2.pathsRepo.name).toBe('first');
+            expect(instance1.pathService.name).toBe('first');
+            expect(instance2.pathService.name).toBe('first');
         });
     });
 
@@ -139,28 +139,28 @@ describe('ManagerFactory', () => {
     describe('dependency injection pattern', () => {
         it('should use constructor injection for external dependencies', () => {
             const deps = {
-                pathsRepo: {},
+                pathService: {},
                 cryptoEngine: class { },
-                lockRepo: {},
+                lockRepository: {},
                 policyRepo: {},
                 cache: class { },
                 state: {}
             };
 
             const factory = new ManagerFactory(
-                deps.pathsRepo,
+                deps.pathService,
                 deps.cryptoEngine,
-                deps.lockRepo,
+                deps.lockRepository,
                 deps.policyRepo,
                 deps.cache,
                 deps.state
             );
 
-            expect(factory.pathsRepo).toBe(deps.pathsRepo);
-            expect(factory.CryptoEngine).toBe(deps.cryptoEngine);
-            expect(factory.LockRepo).toBe(deps.lockRepo);
+            expect(factory.pathService).toBe(deps.pathService);
+            expect(factory.cryptoEngine).toBe(deps.cryptoEngine);
+            expect(factory.lockRepository).toBe(deps.lockRepository);
             expect(factory.policyRepo).toBe(deps.policyRepo);
-            expect(factory.Cache).toBe(deps.cache);
+            expect(factory.cache).toBe(deps.cache);
             expect(factory.kidStore).toBe(deps.state);
         });
 
@@ -176,11 +176,11 @@ describe('ManagerFactory', () => {
         it('should be responsible for wiring all KeyManager dependencies', () => {
             // Lists the dependencies the factory must wire
             const expectedDependencies = [
-                'pathsRepo',
-                'CryptoEngine',
-                'LockRepo',
+                'pathService',
+                'cryptoEngine',
+                'lockRepository',
                 'policyRepo',
-                'Cache',
+                'cache',
                 'kidStore'
             ];
 

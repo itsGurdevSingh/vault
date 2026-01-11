@@ -10,7 +10,7 @@ import { KeyResolver } from '../../../src/domain/key-manager/utils/keyResolver.j
 import { domainNormalizer } from '../../../src/domain/key-manager/utils/domainNormalizer.js';
 import { MetadataFactory } from '../../../src/domain/key-manager/modules/metadata/index.js';
 import { LoaderFactory } from '../../../src/domain/key-manager/modules/loader/index.js';
-import { JanitorFactory } from '../../../src/domain/key-manager/modules/Janitor/index.js';
+import { JanitorFactory } from '../../../src/domain/key-manager/modules/janitor/index.js';
 import { BuilderFactory } from '../../../src/domain/key-manager/modules/builder/index.js';
 import { GeneratorFactory } from '../../../src/domain/key-manager/modules/generator/index.js';
 import { SignerFactory } from '../../../src/domain/key-manager/modules/signer/index.js';

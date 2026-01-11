@@ -5,16 +5,16 @@ export class KeyRegistry {
         this.directory = directory;
     }
 
-    async getAllPubKids(domain) {
+    async getAllPublicKids(domain) {
         return await this.directory.listPublicKids(domain);
     }
 
-    async getAllPvtKids(domain) {
+    async getAllPrivateKids(domain) {
         return await this.directory.listPrivateKids(domain);
     }
 
-    async getPubKeyMap(domain) {
-        const kids = await this.getAllPubKids(domain);
+    async getPublicKeyMap(domain) {
+        const kids = await this.getAllPublicKids(domain);
         const keys = {}; // kid -> pem
 
         for (const kid of kids) {
@@ -23,8 +23,8 @@ export class KeyRegistry {
         return keys;
     }
 
-    async getPvtKeyMap(domain) {
-        const kids = await this.getAllPvtKids(domain);
+    async getPrivateKeyMap(domain) {
+        const kids = await this.getAllPrivateKids(domain);
         const keys = {};
         for (const kid of kids) {
             keys[kid] = await this.reader.privateKey(kid);
@@ -32,17 +32,12 @@ export class KeyRegistry {
         return keys;
     }
 
-    async getPubKey(kid) {
+    async getPublicKey(kid) {
         return await this.reader.publicKey(kid);
     }
 
-    async getPvtKey(kid) {
+    async getPrivateKey(kid) {
         return await this.reader.privateKey(kid);
-    }
-
-    // Alias for KeyManager facade compatibility
-    async getPublicKey(domain, kid) {
-        return await this.getPubKey(kid);
     }
 
 }

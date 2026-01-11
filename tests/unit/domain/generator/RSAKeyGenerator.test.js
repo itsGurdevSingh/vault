@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { KeyPairGenerator } from '../../../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js';
+import { RSAKeyGenerator } from '../../../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js';
 
-describe('KeyPairGenerator', () => {
+describe('RSAKeyGenerator', () => {
     let mockCryptoEngine;
     let mockMetadataManager;
     let mockKeyWriter;
@@ -27,7 +27,7 @@ describe('KeyPairGenerator', () => {
             ensure: vi.fn()
         };
 
-        generator = new KeyPairGenerator(
+        generator = new RSAKeyGenerator(
             mockCryptoEngine,
             mockMetadataManager,
             mockKeyWriter,
@@ -47,7 +47,7 @@ describe('KeyPairGenerator', () => {
         it('should accept cryptoEngine as first parameter', () => {
             // Test: CryptoEngine dependency injection
             const customEngine = { custom: 'engine' };
-            const gen = new KeyPairGenerator(customEngine, mockMetadataManager, mockKeyWriter, mockDirManager);
+            const gen = new RSAKeyGenerator(customEngine, mockMetadataManager, mockKeyWriter, mockDirManager);
 
             expect(gen.cryptoEngine).toBe(customEngine);
         });
@@ -55,7 +55,7 @@ describe('KeyPairGenerator', () => {
         it('should accept metadataManager as second parameter', () => {
             // Test: MetadataManager dependency injection
             const customManager = { custom: 'manager' };
-            const gen = new KeyPairGenerator(mockCryptoEngine, customManager, mockKeyWriter, mockDirManager);
+            const gen = new RSAKeyGenerator(mockCryptoEngine, customManager, mockKeyWriter, mockDirManager);
 
             expect(gen.metadataManager).toBe(customManager);
         });
@@ -63,7 +63,7 @@ describe('KeyPairGenerator', () => {
         it('should accept keyWriter as third parameter', () => {
             // Test: KeyWriter dependency injection
             const customWriter = { custom: 'writer' };
-            const gen = new KeyPairGenerator(mockCryptoEngine, mockMetadataManager, customWriter, mockDirManager);
+            const gen = new RSAKeyGenerator(mockCryptoEngine, mockMetadataManager, customWriter, mockDirManager);
 
             expect(gen.keyWriter).toBe(customWriter);
         });
@@ -71,7 +71,7 @@ describe('KeyPairGenerator', () => {
         it('should accept dirManager as fourth parameter', () => {
             // Test: DirManager dependency injection
             const customDirMgr = { custom: 'dirManager' };
-            const gen = new KeyPairGenerator(mockCryptoEngine, mockMetadataManager, mockKeyWriter, customDirMgr);
+            const gen = new RSAKeyGenerator(mockCryptoEngine, mockMetadataManager, mockKeyWriter, customDirMgr);
 
             expect(gen.dirManager).toBe(customDirMgr);
         });
@@ -313,7 +313,7 @@ describe('KeyPairGenerator', () => {
 
         it('should work with minimal valid dependencies', async () => {
             // Test: Generator works with basic mock implementations
-            const minimalGen = new KeyPairGenerator(
+            const minimalGen = new RSAKeyGenerator(
                 { generateKID: () => 'minimal-kid', generateKeyPair: async () => ({ publicKey: 'pub', privateKey: 'priv' }) },
                 { create: async () => { } },
                 { save: async () => { } },

@@ -224,7 +224,7 @@ describe('Integration: Public Key Retrieval Flow (Facade)', () => {
             const publicKey1 = await keyManager.getPublicKey(domain, kid);
 
             // Delete file
-            const pubKeyPath = testPaths.getPubKeyPath(domain, kid);
+            const pubKeyPath = testPaths.getPublicKeyPath(domain, kid);
             await fs.unlink(pubKeyPath);
 
             // Should still return from cache

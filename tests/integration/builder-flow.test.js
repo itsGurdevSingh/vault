@@ -7,15 +7,15 @@ import {
     cleanupTestEnvironment,
     createTestKeyPaths,
 } from "./helpers/testSetup.js";
-import { Builder } from "../../src/domain/key-manager/modules/builder/JWKSBuilder.js";
-import { KeyPairGenerator } from "../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js";
+import { JwksBuilder } from "../../src/domain/key-manager/modules/builder/jwksBuilder.js";
+import { RSAKeyGenerator } from "../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js";
 import { KeyWriter } from "../../src/domain/key-manager/modules/generator/KeyWriter.js";
 import { DirManager } from "../../src/domain/key-manager/modules/generator/DirManager.js";
 import { KeyDirectory } from "../../src/domain/key-manager/modules/loader/KeyDirectory.js";
 import { KeyRegistry } from "../../src/domain/key-manager/modules/loader/KeyRegistry.js";
 import { KeyReader } from "../../src/domain/key-manager/modules/loader/KeyReader.js";
 import { MetadataService } from "../../src/domain/key-manager/modules/metadata/MetadataService.js";
-import { MetaFileStore } from "../../src/domain/key-manager/modules/metadata/metaFileStore.js";
+import { MetadataFileStore } from "../../src/domain/key-manager/modules/metadata/metadataFileStore.js";
 import { CryptoEngine } from "../../src/infrastructure/cryptoEngine/CryptoEngine.js";
 import { CryptoConfig } from "../../src/infrastructure/cryptoEngine/cryptoConfig.js";
 import { KIDFactory } from "../../src/infrastructure/cryptoEngine/KIDFactory.js";
@@ -27,7 +27,7 @@ import { Cache } from "../../src/utils/cache.js";
 describe("Integration: Builder (JWKS Generation) Flow", () => {
     let testPaths;
     let cryptoEngine;
-    let keyPairGenerator;
+    let rsaKeyGenerator;
     let keyRegistry;
     let builder;
     let builderCache;
@@ -52,7 +52,7 @@ describe("Integration: Builder (JWKS Generation) Flow", () => {
         const dirManager = new DirManager(testPaths, fs.mkdir);
 
         // Initialize metadata
-        const metaFileStore = new MetaFileStore(testPaths, {
+        const metadataFileStore = new MetadataFileStore(testPaths, {
             writeFile: fs.writeFile,
             readFile: fs.readFile,
             unlink: fs.unlink,
@@ -60,10 +60,10 @@ describe("Integration: Builder (JWKS Generation) Flow", () => {
             mkdir: fs.mkdir,
             path: path,
         });
-        const metadataService = new MetadataService(metaFileStore);
+        const metadataService = new MetadataService(metadataFileStore);
 
         // Initialize generator
-        keyPairGenerator = new KeyPairGenerator(
+        rsaKeyGenerator = new RSAKeyGenerator(
             cryptoEngine,
             metadataService,
             keyWriter,
@@ -87,7 +87,7 @@ describe("Integration: Builder (JWKS Generation) Flow", () => {
         builderCache = new Cache();
 
         // Initialize builder (cache, loader, cryptoEngine)
-        builder = new Builder(builderCache, keyRegistry, cryptoEngine);
+        builder = new JwksBuilder(builderCache, keyRegistry, cryptoEngine);
     });
 
     afterAll(async () => {
@@ -102,7 +102,7 @@ describe("Integration: Builder (JWKS Generation) Flow", () => {
     async function setupDomain(domain, keyCount = 1) {
         const kids = [];
         for (let i = 0; i < keyCount; i++) {
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
             kids.push(kid);
             // Small delay to ensure different timestamps
             if (i < keyCount - 1) {

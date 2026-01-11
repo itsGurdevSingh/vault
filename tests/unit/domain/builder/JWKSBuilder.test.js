@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Builder } from '../../../../src/domain/key-manager/modules/builder/JWKSBuilder.js';
+import { JwksBuilder } from '../../../../src/domain/key-manager/modules/builder/jwksBuilder.js';
 
 describe('Builder', () => {
     let mockCache;
@@ -16,14 +16,14 @@ describe('Builder', () => {
         mockCache.set = vi.fn(originalSet);
 
         mockLoader = {
-            getPubKeyMap: vi.fn()
+            getPublicKeyMap: vi.fn()
         };
 
         mockCryptoEngine = {
             pemToJWK: vi.fn()
         };
 
-        builder = new Builder(mockCache, mockLoader, mockCryptoEngine);
+        builder = new JwksBuilder(mockCache, mockLoader, mockCryptoEngine);
     });
 
     describe('constructor', () => {
@@ -37,7 +37,7 @@ describe('Builder', () => {
         it('should accept cache as first parameter', () => {
             // Test: Cache dependency injection
             const customCache = { custom: 'cache' };
-            const b = new Builder(customCache, mockLoader, mockCryptoEngine);
+            const b = new JwksBuilder(customCache, mockLoader, mockCryptoEngine);
 
             expect(b.cache).toBe(customCache);
         });
@@ -45,7 +45,7 @@ describe('Builder', () => {
         it('should accept loader as second parameter', () => {
             // Test: Loader dependency injection
             const customLoader = { custom: 'loader' };
-            const b = new Builder(mockCache, customLoader, mockCryptoEngine);
+            const b = new JwksBuilder(mockCache, customLoader, mockCryptoEngine);
 
             expect(b.loader).toBe(customLoader);
         });
@@ -53,7 +53,7 @@ describe('Builder', () => {
         it('should accept cryptoEngine as third parameter', () => {
             // Test: CryptoEngine dependency injection
             const customEngine = { custom: 'engine' };
-            const b = new Builder(mockCache, mockLoader, customEngine);
+            const b = new JwksBuilder(mockCache, mockLoader, customEngine);
 
             expect(b.cryptoEngine).toBe(customEngine);
         });
@@ -62,7 +62,7 @@ describe('Builder', () => {
     describe('getJWKS', () => {
         beforeEach(() => {
             // Setup default mock responses
-            mockLoader.getPubKeyMap.mockResolvedValue({});
+            mockLoader.getPublicKeyMap.mockResolvedValue({});
             mockCryptoEngine.pemToJWK.mockResolvedValue({});
             mockCache.get.mockReturnValue(undefined);
         });
@@ -73,12 +73,12 @@ describe('Builder', () => {
 
             await builder.getJWKS(domain);
 
-            expect(mockLoader.getPubKeyMap).toHaveBeenCalledWith(domain);
+            expect(mockLoader.getPublicKeyMap).toHaveBeenCalledWith(domain);
         });
 
         it('should return JWKS with keys array', async () => {
             // Test: Return format matches JWKS spec
-            mockLoader.getPubKeyMap.mockResolvedValue({});
+            mockLoader.getPublicKeyMap.mockResolvedValue({});
 
             const result = await builder.getJWKS('example.com');
 
@@ -88,7 +88,7 @@ describe('Builder', () => {
 
         it('should return empty keys array when no public keys exist', async () => {
             // Test: Empty domain returns empty JWKS
-            mockLoader.getPubKeyMap.mockResolvedValue({});
+            mockLoader.getPublicKeyMap.mockResolvedValue({});
 
             const result = await builder.getJWKS('example.com');
 
@@ -97,7 +97,7 @@ describe('Builder', () => {
 
         it('should convert each PEM to JWK', async () => {
             // Test: All keys are converted
-            mockLoader.getPubKeyMap.mockResolvedValue({
+            mockLoader.getPublicKeyMap.mockResolvedValue({
                 'kid-1': '-----BEGIN PUBLIC KEY-----\nKEY1\n-----END PUBLIC KEY-----',
                 'kid-2': '-----BEGIN PUBLIC KEY-----\nKEY2\n-----END PUBLIC KEY-----'
             });
@@ -113,7 +113,7 @@ describe('Builder', () => {
             const kid = 'example-20260109-133000-abc123';
             const pem = '-----BEGIN PUBLIC KEY-----\nPUBLIC_KEY_DATA\n-----END PUBLIC KEY-----';
 
-            mockLoader.getPubKeyMap.mockResolvedValue({ [kid]: pem });
+            mockLoader.getPublicKeyMap.mockResolvedValue({ [kid]: pem });
             mockCryptoEngine.pemToJWK.mockResolvedValue({ kty: 'RSA', kid });
 
             await builder.getJWKS('example.com');
@@ -123,7 +123,7 @@ describe('Builder', () => {
 
         it('should include all converted JWKs in result', async () => {
             // Test: All JWKs appear in keys array
-            mockLoader.getPubKeyMap.mockResolvedValue({
+            mockLoader.getPublicKeyMap.mockResolvedValue({
                 'kid-1': 'pem-1',
                 'kid-2': 'pem-2',
                 'kid-3': 'pem-3'
@@ -145,7 +145,7 @@ describe('Builder', () => {
 
         it('should handle different domains independently', async () => {
             // Test: Each domain gets its own JWKS
-            mockLoader.getPubKeyMap
+            mockLoader.getPublicKeyMap
                 .mockResolvedValueOnce({ 'kid-1': 'pem-1' })
                 .mockResolvedValueOnce({ 'kid-2': 'pem-2' });
             mockCryptoEngine.pemToJWK.mockResolvedValue({ kty: 'RSA' });
@@ -153,8 +153,8 @@ describe('Builder', () => {
             await builder.getJWKS('domain1.com');
             await builder.getJWKS('domain2.com');
 
-            expect(mockLoader.getPubKeyMap).toHaveBeenCalledWith('domain1.com');
-            expect(mockLoader.getPubKeyMap).toHaveBeenCalledWith('domain2.com');
+            expect(mockLoader.getPublicKeyMap).toHaveBeenCalledWith('domain1.com');
+            expect(mockLoader.getPublicKeyMap).toHaveBeenCalledWith('domain2.com');
         });
 
         it('should preserve JWK properties from cryptoEngine', async () => {
@@ -167,7 +167,7 @@ describe('Builder', () => {
                 n: 'modulus_value',
                 e: 'AQAB'
             };
-            mockLoader.getPubKeyMap.mockResolvedValue({ 'test-kid': 'pem' });
+            mockLoader.getPublicKeyMap.mockResolvedValue({ 'test-kid': 'pem' });
             mockCryptoEngine.pemToJWK.mockResolvedValue(jwk);
 
             const result = await builder.getJWKS('example.com');
@@ -178,7 +178,7 @@ describe('Builder', () => {
 
     describe('caching behavior', () => {
         beforeEach(() => {
-            mockLoader.getPubKeyMap.mockResolvedValue({});
+            mockLoader.getPublicKeyMap.mockResolvedValue({});
         });
 
         it('should check cache before converting PEM', async () => {
@@ -186,7 +186,7 @@ describe('Builder', () => {
             const kid = 'cached-kid';
             const cachedJWK = { kty: 'RSA', kid, cached: true };
 
-            mockLoader.getPubKeyMap.mockResolvedValue({ [kid]: 'pem' });
+            mockLoader.getPublicKeyMap.mockResolvedValue({ [kid]: 'pem' });
             mockCache.get.mockReturnValue(cachedJWK);
 
             await builder.getJWKS('example.com');
@@ -200,7 +200,7 @@ describe('Builder', () => {
             const kid = 'cached-kid';
             const cachedJWK = { kty: 'RSA', kid, cached: true };
 
-            mockLoader.getPubKeyMap.mockResolvedValue({ [kid]: 'pem' });
+            mockLoader.getPublicKeyMap.mockResolvedValue({ [kid]: 'pem' });
             mockCache.get.mockReturnValue(cachedJWK);
 
             const result = await builder.getJWKS('example.com');
@@ -214,7 +214,7 @@ describe('Builder', () => {
             const pem = 'pem-data';
             const jwk = { kty: 'RSA', kid };
 
-            mockLoader.getPubKeyMap.mockResolvedValue({ [kid]: pem });
+            mockLoader.getPublicKeyMap.mockResolvedValue({ [kid]: pem });
             mockCache.get.mockReturnValue(undefined);
             mockCryptoEngine.pemToJWK.mockResolvedValue(jwk);
 
@@ -228,7 +228,7 @@ describe('Builder', () => {
             const kid = 'uncached-kid';
             const pem = 'pem-data';
 
-            mockLoader.getPubKeyMap.mockResolvedValue({ [kid]: pem });
+            mockLoader.getPublicKeyMap.mockResolvedValue({ [kid]: pem });
             mockCache.get.mockReturnValue(undefined);
             mockCryptoEngine.pemToJWK.mockResolvedValue({ kty: 'RSA', kid });
 
@@ -239,7 +239,7 @@ describe('Builder', () => {
 
         it('should handle mix of cached and uncached keys', async () => {
             // Test: Some keys from cache, some converted
-            mockLoader.getPubKeyMap.mockResolvedValue({
+            mockLoader.getPublicKeyMap.mockResolvedValue({
                 'cached-1': 'pem-1',
                 'uncached-1': 'pem-2',
                 'cached-2': 'pem-3'
@@ -268,7 +268,7 @@ describe('Builder', () => {
             const kid = 'repeat-kid';
             const jwk = { kty: 'RSA', kid };
 
-            mockLoader.getPubKeyMap.mockResolvedValue({ [kid]: 'pem' });
+            mockLoader.getPublicKeyMap.mockResolvedValue({ [kid]: 'pem' });
             mockCryptoEngine.pemToJWK.mockResolvedValue(jwk);
 
             // First call - converts
@@ -287,7 +287,7 @@ describe('Builder', () => {
         it('should propagate loader errors', async () => {
             // Test: Errors from loader bubble up
             const error = new Error('Failed to load public keys');
-            mockLoader.getPubKeyMap.mockRejectedValue(error);
+            mockLoader.getPublicKeyMap.mockRejectedValue(error);
 
             await expect(builder.getJWKS('example.com')).rejects.toThrow('Failed to load public keys');
         });
@@ -295,7 +295,7 @@ describe('Builder', () => {
         it('should propagate PEM to JWK conversion errors', async () => {
             // Test: Errors from cryptoEngine bubble up
             const error = new Error('Invalid PEM format');
-            mockLoader.getPubKeyMap.mockResolvedValue({ 'kid-1': 'invalid-pem' });
+            mockLoader.getPublicKeyMap.mockResolvedValue({ 'kid-1': 'invalid-pem' });
             mockCache.get.mockReturnValue(undefined);
             mockCryptoEngine.pemToJWK.mockRejectedValue(error);
 
@@ -304,7 +304,7 @@ describe('Builder', () => {
 
         it('should handle cache access errors gracefully', async () => {
             // Test: Cache errors are handled
-            mockLoader.getPubKeyMap.mockResolvedValue({ 'kid-1': 'pem' });
+            mockLoader.getPublicKeyMap.mockResolvedValue({ 'kid-1': 'pem' });
             mockCache.get.mockImplementation(() => {
                 throw new Error('Cache read error');
             });
@@ -314,7 +314,7 @@ describe('Builder', () => {
 
         it('should handle cache write errors gracefully', async () => {
             // Test: Cache set errors are handled
-            mockLoader.getPubKeyMap.mockResolvedValue({ 'kid-1': 'pem' });
+            mockLoader.getPublicKeyMap.mockResolvedValue({ 'kid-1': 'pem' });
             mockCache.get.mockReturnValue(undefined);
             mockCryptoEngine.pemToJWK.mockResolvedValue({ kty: 'RSA' });
             mockCache.set.mockImplementation(() => {
@@ -328,7 +328,7 @@ describe('Builder', () => {
     describe('integration scenarios', () => {
         it('should build complete JWKS for domain with multiple keys', async () => {
             // Test: End-to-end JWKS building
-            mockLoader.getPubKeyMap.mockResolvedValue({
+            mockLoader.getPublicKeyMap.mockResolvedValue({
                 'example-20260109-100000-abc': 'pem-1',
                 'example-20260109-110000-def': 'pem-2',
                 'example-20260109-120000-ghi': 'pem-3'
@@ -361,7 +361,7 @@ describe('Builder', () => {
                 e: 'AQAB'
             };
 
-            mockLoader.getPubKeyMap.mockResolvedValue({ [realJWK.kid]: 'pem' });
+            mockLoader.getPublicKeyMap.mockResolvedValue({ [realJWK.kid]: 'pem' });
             mockCache.get.mockReturnValue(undefined);
             mockCryptoEngine.pemToJWK.mockResolvedValue(realJWK);
 
@@ -374,7 +374,7 @@ describe('Builder', () => {
 
         it('should handle concurrent JWKS requests', async () => {
             // Test: Multiple parallel requests
-            mockLoader.getPubKeyMap.mockResolvedValue({ 'kid-1': 'pem' });
+            mockLoader.getPublicKeyMap.mockResolvedValue({ 'kid-1': 'pem' });
             mockCache.get.mockReturnValue(undefined);
             mockCryptoEngine.pemToJWK.mockResolvedValue({ kty: 'RSA', kid: 'kid-1' });
 
@@ -392,9 +392,9 @@ describe('Builder', () => {
 
         it('should work with minimal valid dependencies', async () => {
             // Test: Builder works with basic implementations
-            const minimalBuilder = new Builder(
+            const minimalBuilder = new JwksBuilder(
                 new Map(),
-                { getPubKeyMap: async () => ({ 'test-kid': 'pem' }) },
+                { getPublicKeyMap: async () => ({ 'test-kid': 'pem' }) },
                 { pemToJWK: async (pem, kid) => ({ kty: 'RSA', kid }) }
             );
 

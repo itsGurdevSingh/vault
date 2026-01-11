@@ -66,16 +66,16 @@ export function createTestKeyPaths() {
             return join(paths.metaArchivedDir(), `${kid}.meta`);
         },
         // Aliases for compatibility with different naming conventions
-        getPvtKeyDir(domain) {
+        getPrivateKeyDir(domain) {
             return paths.privateDir(domain);
         },
-        getPubKeyDir(domain) {
+        getPublicKeyDir(domain) {
             return paths.publicDir(domain);
         },
-        getPvtKeyPath(domain, kid) {
+        getPrivateKeyPath(domain, kid) {
             return paths.privateKey(domain, kid);
         },
-        getPubKeyPath(domain, kid) {
+        getPublicKeyPath(domain, kid) {
             return paths.publicKey(domain, kid);
         },
         getMetaKeyDir(domain) {

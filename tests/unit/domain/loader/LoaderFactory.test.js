@@ -239,7 +239,7 @@ describe('LoaderFactory', () => {
             // Consumer gets KeyRegistry, not individual components
             expect(registry).toHaveProperty('reader');
             expect(registry).toHaveProperty('directory');
-            expect(typeof registry.getAllPubKids).toBe('function');
+            expect(typeof registry.getAllPublicKids).toBe('function');
         });
 
         it('should enable dependency injection at factory level', async () => {
@@ -266,12 +266,12 @@ describe('LoaderFactory', () => {
             const registry = await factory.create();
 
             // Registry should expose all expected methods
-            expect(typeof registry.getAllPubKids).toBe('function');
-            expect(typeof registry.getAllPvtKids).toBe('function');
-            expect(typeof registry.getPubKeyMap).toBe('function');
-            expect(typeof registry.getPvtKeyMap).toBe('function');
-            expect(typeof registry.getPubKey).toBe('function');
-            expect(typeof registry.getPvtKey).toBe('function');
+            expect(typeof registry.getAllPublicKids).toBe('function');
+            expect(typeof registry.getAllPrivateKids).toBe('function');
+            expect(typeof registry.getPublicKeyMap).toBe('function');
+            expect(typeof registry.getPrivateKeyMap).toBe('function');
+            expect(typeof registry.getPublicKey).toBe('function');
+            expect(typeof registry.getPrivateKey).toBe('function');
         });
 
         it('should handle concurrent registry creation', async () => {

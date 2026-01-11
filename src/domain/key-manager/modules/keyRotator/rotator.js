@@ -3,23 +3,23 @@ class Rotator {
     #previousKid = null;
     #upcomingKid = null;
 
-    constructor({ keyGenerator, keyJanitor, keyResolver, metadataManager, LockRepo }) {
+    constructor({ keyGenerator, keyJanitor, keyResolver, metadataManager, lockRepository }) {
         this.keyGenerator = keyGenerator;
         this.keyJanitor = keyJanitor;
         this.keyResolver = keyResolver;
         this.metadataManager = metadataManager;
-        this.lockRepo = LockRepo;
+        this.lockRepository = lockRepository;
     }
 
 
-    async rotateKeys(domain, updateRotationDatesCB, session) {
+    async rotateKeys(domain, updateRotationDatesCallback, session) {
         // validate parameters
-        if (!updateRotationDatesCB || !domain || typeof updateRotationDatesCB !== 'function') {
+        if (!updateRotationDatesCallback || !domain || typeof updateRotationDatesCallback !== 'function') {
             // we need to update rotation dates in db transaction throw error
             throw new Error("Invalid parameters for key rotation.");
         }
         // acquire lock for rotation 
-        const token = await this.lockRepo.acquire(domain, 300); // 5 minutes timeout
+        const token = await this.lockRepository.acquire(domain, 300); // 5 minutes timeout
         if (!token) {
             console.log(`Domain "${domain}" is already being rotated.`);
             return null;
@@ -27,14 +27,14 @@ class Rotator {
 
         try {
             // perform rotation
-            return await this.#performRotation(domain, updateRotationDatesCB, session);
+            return await this.#performRotation(domain, updateRotationDatesCallback, session);
         } finally {
             // release only if *we* hold the lock
-            await this.lockRepo.release(domain, token);
+            await this.lockRepository.release(domain, token);
         }
     }
 
-    async #performRotation(domain, updateRotationDatesCB, session) {
+    async #performRotation(domain, updateRotationDatesCallback, session) {
 
         try {
             // prepare rotation
@@ -44,7 +44,7 @@ class Rotator {
             session.startTransaction();
 
             // run db transaction if provided
-            await updateRotationDatesCB(session);
+            await updateRotationDatesCallback(session);
             // commit rotation
             const newActiveKid = await this.#commitRotation(domain);
 

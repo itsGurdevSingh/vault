@@ -55,8 +55,8 @@ describe('Integration: Initial Setup Flow (Facade)', () => {
             await keyManager.initialSetup(domain);
 
             // Verify all directories created
-            const pubKeyDir = testPaths.getPubKeyDir(domain);
-            const pvtKeyDir = testPaths.getPvtKeyDir(domain);
+            const pubKeyDir = testPaths.getPublicKeyDir(domain);
+            const pvtKeyDir = testPaths.getPrivateKeyDir(domain);
             const metaKeyDir = testPaths.getMetaKeyDir(domain);
 
             const pubExists = await fs.access(pubKeyDir).then(() => true).catch(() => false);
@@ -74,8 +74,8 @@ describe('Integration: Initial Setup Flow (Facade)', () => {
             const result = await keyManager.initialSetup(domain);
 
             // Verify public and private key files exist
-            const pubKeyPath = testPaths.getPubKeyPath(domain, result.kid);
-            const pvtKeyPath = testPaths.getPvtKeyPath(domain, result.kid);
+            const pubKeyPath = testPaths.getPublicKeyPath(domain, result.kid);
+            const pvtKeyPath = testPaths.getPrivateKeyPath(domain, result.kid);
 
             const pubKey = await fs.readFile(pubKeyPath, 'utf8');
             const pvtKey = await fs.readFile(pvtKeyPath, 'utf8');
@@ -97,7 +97,7 @@ describe('Integration: Initial Setup Flow (Facade)', () => {
             expect(meta.kid).toBe(result.kid);
             expect(meta.domain).toBe(domain);
             expect(meta.createdAt).toBeDefined();
-            expect(meta.expiredAt).toBeNull();
+            expect(meta.expiresAt).toBeNull();
         });
 
         it('should set active KID in state', async () => {

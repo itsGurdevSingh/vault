@@ -3,31 +3,31 @@ import { isExpired } from '../../../../src/domain/key-manager/modules/metadata/u
 
 describe('utils - isExpired', () => {
   describe('basic expiration logic', () => {
-    it('should return false if expiredAt is null', () => {
-      const meta = { kid: 'test', expiredAt: null };
+    it('should return false if expiresAt is null', () => {
+      const meta = { kid: 'test', expiresAt: null };
       expect(isExpired(meta)).toBe(false);
     });
 
-    it('should return false if expiredAt is undefined', () => {
+    it('should return false if expiresAt is undefined', () => {
       const meta = { kid: 'test' };
       expect(isExpired(meta)).toBe(false);
     });
 
-    it('should return true if expiredAt is in the past', () => {
+    it('should return true if expiresAt is in the past', () => {
       const pastDate = new Date(Date.now() - 10000);
-      const meta = { kid: 'test', expiredAt: pastDate.toISOString() };
+      const meta = { kid: 'test', expiresAt: pastDate.toISOString() };
       expect(isExpired(meta)).toBe(true);
     });
 
-    it('should return false if expiredAt is in the future', () => {
+    it('should return false if expiresAt is in the future', () => {
       const futureDate = new Date(Date.now() + 10000);
-      const meta = { kid: 'test', expiredAt: futureDate.toISOString() };
+      const meta = { kid: 'test', expiresAt: futureDate.toISOString() };
       expect(isExpired(meta)).toBe(false);
     });
 
-    it('should return true if expiredAt equals now', () => {
+    it('should return true if expiresAt equals now', () => {
       const now = Date.now();
-      const meta = { kid: 'test', expiredAt: new Date(now).toISOString() };
+      const meta = { kid: 'test', expiresAt: new Date(now).toISOString() };
       expect(isExpired(meta, now)).toBe(true);
     });
   });
@@ -35,18 +35,18 @@ describe('utils - isExpired', () => {
   describe('custom now parameter', () => {
     it('should use custom now timestamp', () => {
       const customNow = Date.now() + 5000;
-      const meta = { kid: 'test', expiredAt: new Date(customNow - 1000).toISOString() };
+      const meta = { kid: 'test', expiresAt: new Date(customNow - 1000).toISOString() };
       expect(isExpired(meta, customNow)).toBe(true);
     });
 
     it('should default to Date.now() if now not provided', () => {
-      const meta = { kid: 'test', expiredAt: new Date(Date.now() - 1000).toISOString() };
+      const meta = { kid: 'test', expiresAt: new Date(Date.now() - 1000).toISOString() };
       expect(isExpired(meta)).toBe(true);
     });
 
-    it('should handle edge case where expiredAt equals custom now', () => {
+    it('should handle edge case where expiresAt equals custom now', () => {
       const customNow = 1000000;
-      const meta = { kid: 'test', expiredAt: new Date(customNow).toISOString() };
+      const meta = { kid: 'test', expiresAt: new Date(customNow).toISOString() };
       expect(isExpired(meta, customNow)).toBe(true);
     });
   });
@@ -54,7 +54,7 @@ describe('utils - isExpired', () => {
   describe('date formats', () => {
     it('should handle ISO string dates', () => {
       const isoDate = '2020-01-01T00:00:00.000Z';
-      const meta = { kid: 'test', expiredAt: isoDate };
+      const meta = { kid: 'test', expiresAt: isoDate };
       expect(isExpired(meta)).toBe(true);
     });
 
@@ -64,10 +64,10 @@ describe('utils - isExpired', () => {
         new Date('2025-12-31').toISOString(),
         new Date(0).toISOString()
       ];
-      
+
       const now = Date.now();
       dates.forEach(date => {
-        const meta = { kid: 'test', expiredAt: date };
+        const meta = { kid: 'test', expiresAt: date };
         const expectedExpired = new Date(date).getTime() <= now;
         expect(isExpired(meta)).toBe(expectedExpired);
       });
@@ -76,17 +76,17 @@ describe('utils - isExpired', () => {
 
   describe('edge cases', () => {
     it('should handle epoch time (0)', () => {
-      const meta = { kid: 'test', expiredAt: new Date(0).toISOString() };
+      const meta = { kid: 'test', expiresAt: new Date(0).toISOString() };
       expect(isExpired(meta)).toBe(true);
     });
 
     it('should handle far future dates', () => {
-      const meta = { kid: 'test', expiredAt: new Date('2099-12-31').toISOString() };
+      const meta = { kid: 'test', expiresAt: new Date('2099-12-31').toISOString() };
       expect(isExpired(meta)).toBe(false);
     });
 
-    it('should return false for empty string expiredAt', () => {
-      const meta = { kid: 'test', expiredAt: '' };
+    it('should return false for empty string expiresAt', () => {
+      const meta = { kid: 'test', expiresAt: '' };
       expect(isExpired(meta)).toBe(false);
     });
   });

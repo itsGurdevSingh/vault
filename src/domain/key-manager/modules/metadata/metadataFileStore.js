@@ -1,4 +1,4 @@
-export class MetaFileStore {
+export class MetadataFileStore {
 
     constructor(metaPaths = null, fsOps = null) {
 

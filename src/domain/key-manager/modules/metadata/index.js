@@ -1,1 +1,1 @@
-export * from './metaFactory.js';
+export * from './metadataFactory.js';

@@ -14,7 +14,7 @@ describe('BuilderFactory', () => {
         mockCache = new Map();
 
         mockLoader = {
-            getPubKeyMap: vi.fn()
+            getPublicKeyMap: vi.fn()
         };
 
         mockCryptoEngine = {
@@ -275,7 +275,7 @@ describe('BuilderFactory', () => {
 
         it('should support builder lifecycle across factory', async () => {
             // Test: Builders from factory work independently
-            mockLoader.getPubKeyMap.mockResolvedValue({
+            mockLoader.getPublicKeyMap.mockResolvedValue({
                 'kid-1': 'pem-1',
                 'kid-2': 'pem-2'
             });

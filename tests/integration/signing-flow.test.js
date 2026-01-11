@@ -17,14 +17,14 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { mkdir, writeFile, readFile } from 'fs/promises';
 import crypto from 'crypto';
 import { setupTestEnvironment, cleanupTestEnvironment, createTestKeyPaths } from './helpers/testSetup.js';
-import { KeyPairGenerator } from '../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js';
+import { RSAKeyGenerator } from '../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js';
 import { KeyWriter } from '../../src/domain/key-manager/modules/generator/KeyWriter.js';
 import { DirManager } from '../../src/domain/key-manager/modules/generator/DirManager.js';
 import { KeyReader } from '../../src/domain/key-manager/modules/loader/KeyReader.js';
 import { MetadataService } from '../../src/domain/key-manager/modules/metadata/MetadataService.js';
-import { MetaFileStore } from '../../src/domain/key-manager/modules/metadata/metaFileStore.js';
+import { MetadataFileStore } from '../../src/domain/key-manager/modules/metadata/metadataFileStore.js';
 import { Signer } from '../../src/domain/key-manager/modules/signer/Signer.js';
-import { Builder } from '../../src/domain/key-manager/modules/builder/JWKSBuilder.js';
+import { JwksBuilder } from '../../src/domain/key-manager/modules/builder/jwksBuilder.js';
 import { KeyResolver } from '../../src/domain/key-manager/utils/keyResolver.js';
 import { activeKidStore } from '../../src/state/ActiveKIDState.js';
 import { CryptoEngine } from '../../src/infrastructure/cryptoEngine/CryptoEngine.js';
@@ -36,7 +36,7 @@ import * as utils from '../../src/infrastructure/cryptoEngine/utils.js';
 describe('Integration: JWT Signing & Verification Flow', () => {
     let testPaths;
     let cryptoEngine;
-    let keyPairGenerator;
+    let rsaKeyGenerator;
     let signer;
     let jwksBuilder;
     let keyReader;
@@ -62,7 +62,7 @@ describe('Integration: JWT Signing & Verification Flow', () => {
         // Initialize key generation components
         const keyWriter = new KeyWriter(testPaths, writeFile);
         const dirManager = new DirManager(testPaths, mkdir);
-        const metaFileStore = new MetaFileStore(testPaths, {
+        const metadataFileStore = new MetadataFileStore(testPaths, {
             writeFile,
             readFile,
             unlink: async () => { },
@@ -70,9 +70,9 @@ describe('Integration: JWT Signing & Verification Flow', () => {
             mkdir,
             path: { join: (await import('path')).join }
         });
-        const metadataService = new MetadataService(metaFileStore);
+        const metadataService = new MetadataService(metadataFileStore);
 
-        keyPairGenerator = new KeyPairGenerator(
+        rsaKeyGenerator = new RSAKeyGenerator(
             cryptoEngine,
             metadataService,
             keyWriter,
@@ -91,11 +91,11 @@ describe('Integration: JWT Signing & Verification Flow', () => {
 
         // Initialize loader mock (provides keys by KID)
         loaderMock = {
-            async getPvtKey(kid) {
+            async getPrivateKey(kid) {
                 const pem = await keyReader.privateKey(kid);
                 return pem; // Return just the PEM string (KeyResolver will wrap it)
             },
-            async getPubKeyMap(domain) {
+            async getPublicKeyMap(domain) {
                 // Return all public keys for domain (simplified - returns active key only)
                 const activeKid = await activeKidStore.getActiveKid(domain);
                 if (!activeKid) return {};
@@ -120,7 +120,7 @@ describe('Integration: JWT Signing & Verification Flow', () => {
 
         // Initialize JWKS Builder
         const jwksCache = new Map();
-        jwksBuilder = new Builder(jwksCache, loaderMock, cryptoEngine);
+        jwksBuilder = new JwksBuilder(jwksCache, loaderMock, cryptoEngine);
     });
 
     afterAll(async () => {
@@ -138,7 +138,7 @@ describe('Integration: JWT Signing & Verification Flow', () => {
             const payload = { userId: '12345', role: 'admin' };
 
             // 1. Generate key
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
             await activeKidStore.setActiveKid(domain, kid);
 
             // 2. Sign JWT
@@ -172,7 +172,7 @@ describe('Integration: JWT Signing & Verification Flow', () => {
             const domain = 'SERVICE';
             const payload = { serviceId: 'api-gateway' };
 
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
             await activeKidStore.setActiveKid(domain, kid);
 
             const jwt = await signer.sign(domain, payload, { ttlSeconds: 7200 }); // 2 hours
@@ -187,7 +187,7 @@ describe('Integration: JWT Signing & Verification Flow', () => {
             const domain = 'TEST';
             const payload = { testId: 'test-123' };
 
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
             await activeKidStore.setActiveKid(domain, kid);
 
             const jwt = await signer.sign(domain, payload, {
@@ -211,7 +211,7 @@ describe('Integration: JWT Signing & Verification Flow', () => {
             const domain = 'USER';
             const payload = { userId: 'verify-test' };
 
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
             await activeKidStore.setActiveKid(domain, kid);
 
             const jwt = await signer.sign(domain, payload);
@@ -241,8 +241,8 @@ describe('Integration: JWT Signing & Verification Flow', () => {
             const payload = { userId: 'wrong-key-test' };
 
             // Generate two different keys
-            const kid1 = await keyPairGenerator.generate(domain1);
-            const kid2 = await keyPairGenerator.generate(domain2);
+            const kid1 = await rsaKeyGenerator.generate(domain1);
+            const kid2 = await rsaKeyGenerator.generate(domain2);
             await activeKidStore.setActiveKid(domain1, kid1);
 
             // Sign with domain1's key
@@ -270,7 +270,7 @@ describe('Integration: JWT Signing & Verification Flow', () => {
             const domain = 'USER';
             const payload = { userId: 'tamper-test' };
 
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
             await activeKidStore.setActiveKid(domain, kid);
 
             const jwt = await signer.sign(domain, payload);
@@ -303,7 +303,7 @@ describe('Integration: JWT Signing & Verification Flow', () => {
         it('should generate JWKS response with correct format', async () => {
             const domain = 'USER';
 
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
             await activeKidStore.setActiveKid(domain, kid);
 
             // Generate JWKS
@@ -328,7 +328,7 @@ describe('Integration: JWT Signing & Verification Flow', () => {
             const domain = 'SERVICE';
             const payload = { serviceId: 'jwks-test' };
 
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
             await activeKidStore.setActiveKid(domain, kid);
 
             // Sign JWT
@@ -362,7 +362,7 @@ describe('Integration: JWT Signing & Verification Flow', () => {
         it('should cache JWK conversion', async () => {
             const domain = 'TEST';
 
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
             await activeKidStore.setActiveKid(domain, kid);
 
             // First call
@@ -382,8 +382,8 @@ describe('Integration: JWT Signing & Verification Flow', () => {
             const servicePayload = { serviceId: 'service456' };
 
             // Generate keys for both domains
-            const userKid = await keyPairGenerator.generate('USER');
-            const serviceKid = await keyPairGenerator.generate('SERVICE');
+            const userKid = await rsaKeyGenerator.generate('USER');
+            const serviceKid = await rsaKeyGenerator.generate('SERVICE');
 
             await activeKidStore.setActiveKid('USER', userKid);
             await activeKidStore.setActiveKid('SERVICE', serviceKid);
@@ -406,8 +406,8 @@ describe('Integration: JWT Signing & Verification Flow', () => {
         });
 
         it('should verify each domain JWT with correct JWKS', async () => {
-            const userKid = await keyPairGenerator.generate('USER');
-            const serviceKid = await keyPairGenerator.generate('SERVICE');
+            const userKid = await rsaKeyGenerator.generate('USER');
+            const serviceKid = await rsaKeyGenerator.generate('SERVICE');
 
             await activeKidStore.setActiveKid('USER', userKid);
             await activeKidStore.setActiveKid('SERVICE', serviceKid);
@@ -475,7 +475,7 @@ describe('Integration: JWT Signing & Verification Flow', () => {
         it('should throw error for invalid payload', async () => {
             const domain = 'USER';
 
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
             await activeKidStore.setActiveKid(domain, kid);
 
             await expect(async () => {
@@ -491,7 +491,7 @@ describe('Integration: JWT Signing & Verification Flow', () => {
             const domain = 'USER';
             const payload = { test: 'data' };
 
-            const kid = await keyPairGenerator.generate(domain);
+            const kid = await rsaKeyGenerator.generate(domain);
             await activeKidStore.setActiveKid(domain, kid);
 
             await expect(async () => {

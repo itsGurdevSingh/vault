@@ -13,7 +13,7 @@ describe('RotationFactory', () => {
       keyJanitor: { addKeyExpiry: vi.fn() },
       keyResolver: { getActiveKid: vi.fn() },
       metadataManager: { create: vi.fn() },
-      LockRepo: { acquire: vi.fn(), release: vi.fn() }
+      lockRepository: { acquire: vi.fn(), release: vi.fn() }
     };
 
     mockSchedulerDeps = {
@@ -30,7 +30,7 @@ describe('RotationFactory', () => {
       expect(factory.keyJanitor).toBe(mockRotatorDeps.keyJanitor);
       expect(factory.keyResolver).toBe(mockRotatorDeps.keyResolver);
       expect(factory.metadataManager).toBe(mockRotatorDeps.metadataManager);
-      expect(factory.LockRepo).toBe(mockRotatorDeps.LockRepo);
+      expect(factory.lockRepository).toBe(mockRotatorDeps.lockRepository);
     });
 
     it('should initialize with scheduler dependencies', () => {
@@ -46,7 +46,7 @@ describe('RotationFactory', () => {
         keyJanitor: { id: 'custom-janitor' },
         keyResolver: { id: 'custom-resolver' },
         metadataManager: { id: 'custom-meta' },
-        LockRepo: { id: 'custom-lock' }
+        lockRepository: { id: 'custom-lock' }
       };
       const customSchedulerDeps = {
         state: { custom: 'state' },
@@ -81,7 +81,7 @@ describe('RotationFactory', () => {
       expect(scheduler.rotator.keyJanitor).toBe(mockRotatorDeps.keyJanitor);
       expect(scheduler.rotator.keyResolver).toBe(mockRotatorDeps.keyResolver);
       expect(scheduler.rotator.metadataManager).toBe(mockRotatorDeps.metadataManager);
-      expect(scheduler.rotator.lockRepo).toBe(mockRotatorDeps.LockRepo);
+      expect(scheduler.rotator.lockRepository).toBe(mockRotatorDeps.lockRepository);
     });
 
     it('should create new RotationScheduler instance each time', () => {
@@ -127,7 +127,7 @@ describe('RotationFactory', () => {
       expect(instance.keyJanitor).toBe(mockRotatorDeps.keyJanitor);
       expect(instance.keyResolver).toBe(mockRotatorDeps.keyResolver);
       expect(instance.metadataManager).toBe(mockRotatorDeps.metadataManager);
-      expect(instance.LockRepo).toBe(mockRotatorDeps.LockRepo);
+      expect(instance.lockRepository).toBe(mockRotatorDeps.lockRepository);
     });
 
     it('should initialize with scheduler dependencies', () => {

@@ -2,13 +2,13 @@ import { RotationScheduler } from "./RotationScheduler";
 import { Rotator } from "./rotator";
 
 class RotationFactory {
-    constructor({ keyGenerator, keyJanitor, keyResolver, metadataManager, LockRepo }, { state, policyRepo }) {
+    constructor({ keyGenerator, keyJanitor, keyResolver, metadataManager, lockRepository }, { state, policyRepo }) {
         // Rotator Dependencies
         this.keyGenerator = keyGenerator;
         this.keyJanitor = keyJanitor;
         this.keyResolver = keyResolver;
         this.metadataManager = metadataManager;
-        this.LockRepo = LockRepo;
+        this.lockRepository = lockRepository;
         // Scheduler Dependencies
         this.state = state;
         this.policyRepo = policyRepo;
@@ -20,14 +20,14 @@ class RotationFactory {
             keyJanitor: this.keyJanitor,
             keyResolver: this.keyResolver,
             metadataManager: this.metadataManager,
-            LockRepo: this.LockRepo
+            lockRepository: this.lockRepository
         });
         return new RotationScheduler(keyRotator, this.policyRepo, this.state);
     }
 
-    static getInstances({ keyGenerator, keyJanitor, keyResolver, metadataManager, LockRepo }, { state, policyRepo }) {
+    static getInstances({ keyGenerator, keyJanitor, keyResolver, metadataManager, lockRepository }, { state, policyRepo }) {
         if (!this.schedulerInstance) {
-            this.schedulerInstance = new RotationFactory({ keyGenerator, keyJanitor, keyResolver, metadataManager, LockRepo }, { state, policyRepo });
+            this.schedulerInstance = new RotationFactory({ keyGenerator, keyJanitor, keyResolver, metadataManager, lockRepository }, { state, policyRepo });
         }
         return this.schedulerInstance
     }

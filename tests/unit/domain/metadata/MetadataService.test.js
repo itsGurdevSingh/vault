@@ -42,7 +42,7 @@ describe('MetadataService', () => {
                 kid,
                 domain,
                 createdAt: createdAt.toISOString(),
-                expiredAt: null
+                expiresAt: null
             });
             expect(result).toEqual({ kid, domain });
         });
@@ -58,7 +58,7 @@ describe('MetadataService', () => {
         });
 
         it('should return result from store', async () => {
-            const expected = { kid: 'kid', domain: 'domain.com', createdAt: '2024-01-01', expiredAt: null };
+            const expected = { kid: 'kid', domain: 'domain.com', createdAt: '2024-01-01', expiresAt: null };
             mockStore.writeOrigin.mockResolvedValue(expected);
 
             const result = await service.create('domain.com', 'kid', new Date());
@@ -79,7 +79,7 @@ describe('MetadataService', () => {
         });
 
         it('should fallback to archive if origin not found', async () => {
-            const archivedMeta = { kid: 'kid', expiredAt: '2024-12-31' };
+            const archivedMeta = { kid: 'kid', expiresAt: '2024-12-31' };
             mockStore.readOrigin.mockResolvedValue(null);
             mockStore.readArchive.mockResolvedValue(archivedMeta);
 
@@ -110,7 +110,7 @@ describe('MetadataService', () => {
 
     describe('addExpiry', () => {
         it('should read current metadata, apply expiry, and write to archive', async () => {
-            const current = { kid: 'kid', domain: 'domain.com', createdAt: '2024-01-01', expiredAt: null };
+            const current = { kid: 'kid', domain: 'domain.com', createdAt: '2024-01-01', expiresAt: null };
             const expiresAt = new Date('2024-12-31');
             mockStore.readOrigin.mockResolvedValue(current);
             mockStore.writeArchive.mockResolvedValue({});
@@ -120,7 +120,7 @@ describe('MetadataService', () => {
             expect(mockStore.readOrigin).toHaveBeenCalledWith('domain.com', 'kid');
             expect(mockStore.writeArchive).toHaveBeenCalledWith('kid', {
                 ...current,
-                expiredAt: expiresAt.toISOString()
+                expiresAt: expiresAt.toISOString()
             });
         });
 
@@ -135,7 +135,7 @@ describe('MetadataService', () => {
         });
 
         it('should work with archived metadata', async () => {
-            const archived = { kid: 'kid', domain: 'domain.com', expiredAt: '2024-06-01' };
+            const archived = { kid: 'kid', domain: 'domain.com', expiresAt: '2024-06-01' };
             const newExpiresAt = new Date('2024-12-31');
             mockStore.readOrigin.mockResolvedValue(null);
             mockStore.readArchive.mockResolvedValue(archived);
@@ -145,12 +145,12 @@ describe('MetadataService', () => {
 
             expect(mockStore.writeArchive).toHaveBeenCalledWith('kid', {
                 ...archived,
-                expiredAt: newExpiresAt.toISOString()
+                expiresAt: newExpiresAt.toISOString()
             });
         });
 
         it('should return result from writeArchive', async () => {
-            const expected = { kid: 'kid', expiredAt: '2024-12-31' };
+            const expected = { kid: 'kid', expiresAt: '2024-12-31' };
             mockStore.readOrigin.mockResolvedValue({ kid: 'kid' });
             mockStore.writeArchive.mockResolvedValue(expected);
 
@@ -202,10 +202,10 @@ describe('MetadataService', () => {
         it('should read all archives and filter expired ones', async () => {
             const now = Date.now();
             const archives = [
-                { kid: 'kid1', expiredAt: new Date(now - 1000).toISOString() },
-                { kid: 'kid2', expiredAt: new Date(now + 1000).toISOString() },
-                { kid: 'kid3', expiredAt: new Date(now - 5000).toISOString() },
-                { kid: 'kid4', expiredAt: null }
+                { kid: 'kid1', expiresAt: new Date(now - 1000).toISOString() },
+                { kid: 'kid2', expiresAt: new Date(now + 1000).toISOString() },
+                { kid: 'kid3', expiresAt: new Date(now - 5000).toISOString() },
+                { kid: 'kid4', expiresAt: null }
             ];
             mockStore.readAllArchives.mockResolvedValue(archives);
 
@@ -225,9 +225,9 @@ describe('MetadataService', () => {
             expect(result).toEqual([]);
         });
 
-        it('should handle archives without expiredAt', async () => {
+        it('should handle archives without expiresAt', async () => {
             const archives = [
-                { kid: 'kid1', expiredAt: null },
+                { kid: 'kid1', expiresAt: null },
                 { kid: 'kid2' }
             ];
             mockStore.readAllArchives.mockResolvedValue(archives);
@@ -240,7 +240,7 @@ describe('MetadataService', () => {
         it('should only return expired metadata', async () => {
             const futureDate = new Date(Date.now() + 100000).toISOString();
             const archives = [
-                { kid: 'future', expiredAt: futureDate }
+                { kid: 'future', expiresAt: futureDate }
             ];
             mockStore.readAllArchives.mockResolvedValue(archives);
 

@@ -50,7 +50,7 @@ describe('Rotator', () => {
       keyJanitor: mockKeyJanitor,
       keyResolver: mockKeyResolver,
       metadataManager: mockMetadataManager,
-      LockRepo: mockLockRepo
+      lockRepository: mockLockRepo
     });
   });
 
@@ -60,7 +60,7 @@ describe('Rotator', () => {
       expect(rotator.keyJanitor).toBe(mockKeyJanitor);
       expect(rotator.keyResolver).toBe(mockKeyResolver);
       expect(rotator.metadataManager).toBe(mockMetadataManager);
-      expect(rotator.lockRepo).toBe(mockLockRepo);
+      expect(rotator.lockRepository).toBe(mockLockRepo);
     });
   });
 

@@ -71,8 +71,8 @@ describe('GeneratorFactory', () => {
     });
 
     describe('create', () => {
-        it('should create KeyPairGenerator instance with proper dependencies', () => {
-            // Test: Factory assembles KeyPairGenerator with injected components
+        it('should create RSAKeyGenerator instance with proper dependencies', () => {
+            // Test: Factory assembles RSAKeyGenerator with injected components
             const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
 
             const generator = factory.create();
@@ -84,7 +84,7 @@ describe('GeneratorFactory', () => {
             expect(generator.dirManager).toBeDefined();
         });
 
-        it('should inject cryptoEngine into KeyPairGenerator', () => {
+        it('should inject cryptoEngine into RSAKeyGenerator', () => {
             // Test: CryptoEngine flows from factory to generator
             const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
 
@@ -93,7 +93,7 @@ describe('GeneratorFactory', () => {
             expect(generator.cryptoEngine).toBe(mockCryptoEngine);
         });
 
-        it('should inject metadataManager into KeyPairGenerator', () => {
+        it('should inject metadataManager into RSAKeyGenerator', () => {
             // Test: MetadataManager flows from factory to generator
             const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
 
@@ -124,7 +124,7 @@ describe('GeneratorFactory', () => {
             expect(typeof generator.dirManager.mkdir).toBe('function');
         });
 
-        it('should create new KeyPairGenerator instance each time', () => {
+        it('should create new RSAKeyGenerator instance each time', () => {
             // Test: Each create() call returns new instance
             const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
 
@@ -230,7 +230,7 @@ describe('GeneratorFactory', () => {
 
             const generator = factory.create();
 
-            // Consumer gets KeyPairGenerator, not individual components
+            // Consumer gets RSAKeyGenerator, not individual components
             expect(generator).toHaveProperty('keyWriter');
             expect(generator).toHaveProperty('dirManager');
             expect(typeof generator.generate).toBe('function');

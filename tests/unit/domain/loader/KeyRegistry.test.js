@@ -33,7 +33,7 @@ describe('KeyRegistry', () => {
         });
     });
 
-    describe('getAllPubKids', () => {
+    describe('getAllPublicKids', () => {
         it('should delegate to directory to list public KIDs', async () => {
             // Test: Fetch all public key identifiers for a domain
             const domain = 'testdomain';
@@ -41,7 +41,7 @@ describe('KeyRegistry', () => {
 
             mockDirectory.listPublicKids.mockResolvedValue(expectedKids);
 
-            const kids = await keyRegistry.getAllPubKids(domain);
+            const kids = await keyRegistry.getAllPublicKids(domain);
 
             expect(kids).toEqual(expectedKids);
             expect(mockDirectory.listPublicKids).toHaveBeenCalledWith(domain);
@@ -53,7 +53,7 @@ describe('KeyRegistry', () => {
 
             mockDirectory.listPublicKids.mockResolvedValue([]);
 
-            const kids = await keyRegistry.getAllPubKids(domain);
+            const kids = await keyRegistry.getAllPublicKids(domain);
 
             expect(kids).toEqual([]);
         });
@@ -64,15 +64,15 @@ describe('KeyRegistry', () => {
                 .mockResolvedValueOnce(['domain1-kid1', 'domain1-kid2'])
                 .mockResolvedValueOnce(['domain2-kid1']);
 
-            const kids1 = await keyRegistry.getAllPubKids('domain1');
-            const kids2 = await keyRegistry.getAllPubKids('domain2');
+            const kids1 = await keyRegistry.getAllPublicKids('domain1');
+            const kids2 = await keyRegistry.getAllPublicKids('domain2');
 
             expect(kids1).toHaveLength(2);
             expect(kids2).toHaveLength(1);
         });
     });
 
-    describe('getAllPvtKids', () => {
+    describe('getAllPrivateKids', () => {
         it('should delegate to directory to list private KIDs', async () => {
             // Test: Fetch all private key identifiers for a domain
             const domain = 'testdomain';
@@ -80,7 +80,7 @@ describe('KeyRegistry', () => {
 
             mockDirectory.listPrivateKids.mockResolvedValue(expectedKids);
 
-            const kids = await keyRegistry.getAllPvtKids(domain);
+            const kids = await keyRegistry.getAllPrivateKids(domain);
 
             expect(kids).toEqual(expectedKids);
             expect(mockDirectory.listPrivateKids).toHaveBeenCalledWith(domain);
@@ -92,7 +92,7 @@ describe('KeyRegistry', () => {
 
             mockDirectory.listPrivateKids.mockResolvedValue([]);
 
-            const kids = await keyRegistry.getAllPvtKids(domain);
+            const kids = await keyRegistry.getAllPrivateKids(domain);
 
             expect(kids).toEqual([]);
         });
@@ -102,7 +102,7 @@ describe('KeyRegistry', () => {
             const domain = 'anotherdomain';
             mockDirectory.listPrivateKids.mockResolvedValue(['kid-x', 'kid-y']);
 
-            const kids = await keyRegistry.getAllPvtKids(domain);
+            const kids = await keyRegistry.getAllPrivateKids(domain);
 
             expect(kids).toContain('kid-x');
             expect(kids).toContain('kid-y');
@@ -110,7 +110,7 @@ describe('KeyRegistry', () => {
         });
     });
 
-    describe('getPubKeyMap', () => {
+    describe('getPublicKeyMap', () => {
         it('should build map of KID to public key PEM', async () => {
             // Test: Create KID->PEM mapping for all public keys
             const domain = 'testdomain';
@@ -122,7 +122,7 @@ describe('KeyRegistry', () => {
                 .mockResolvedValueOnce('-----BEGIN PUBLIC KEY-----\nkey2\n-----END PUBLIC KEY-----')
                 .mockResolvedValueOnce('-----BEGIN PUBLIC KEY-----\nkey3\n-----END PUBLIC KEY-----');
 
-            const keyMap = await keyRegistry.getPubKeyMap(domain);
+            const keyMap = await keyRegistry.getPublicKeyMap(domain);
 
             expect(keyMap).toEqual({
                 kid1: '-----BEGIN PUBLIC KEY-----\nkey1\n-----END PUBLIC KEY-----',
@@ -138,7 +138,7 @@ describe('KeyRegistry', () => {
 
             mockDirectory.listPublicKids.mockResolvedValue([]);
 
-            const keyMap = await keyRegistry.getPubKeyMap(domain);
+            const keyMap = await keyRegistry.getPublicKeyMap(domain);
 
             expect(keyMap).toEqual({});
             expect(mockReader.publicKey).not.toHaveBeenCalled();
@@ -152,7 +152,7 @@ describe('KeyRegistry', () => {
             mockDirectory.listPublicKids.mockResolvedValue(kids);
             mockReader.publicKey.mockResolvedValue('pem-content');
 
-            await keyRegistry.getPubKeyMap(domain);
+            await keyRegistry.getPublicKeyMap(domain);
 
             expect(mockReader.publicKey).toHaveBeenCalledWith('kid-a');
             expect(mockReader.publicKey).toHaveBeenCalledWith('kid-b');
@@ -165,7 +165,7 @@ describe('KeyRegistry', () => {
             mockDirectory.listPublicKids.mockResolvedValue(['kid1']);
             mockReader.publicKey.mockRejectedValue(new Error('Read failed'));
 
-            await expect(keyRegistry.getPubKeyMap(domain))
+            await expect(keyRegistry.getPublicKeyMap(domain))
                 .rejects
                 .toThrow('Read failed');
         });
@@ -179,13 +179,13 @@ describe('KeyRegistry', () => {
             mockReader.publicKey
                 .mockImplementation(kid => Promise.resolve(`pem-for-${kid}`));
 
-            const keyMap = await keyRegistry.getPubKeyMap(domain);
+            const keyMap = await keyRegistry.getPublicKeyMap(domain);
 
             expect(Object.keys(keyMap)).toEqual(kids);
         });
     });
 
-    describe('getPvtKeyMap', () => {
+    describe('getPrivateKeyMap', () => {
         it('should build map of KID to private key PEM', async () => {
             // Test: Create KID->PEM mapping for all private keys
             const domain = 'testdomain';
@@ -196,7 +196,7 @@ describe('KeyRegistry', () => {
                 .mockResolvedValueOnce('-----BEGIN PRIVATE KEY-----\nkey1\n-----END PRIVATE KEY-----')
                 .mockResolvedValueOnce('-----BEGIN PRIVATE KEY-----\nkey2\n-----END PRIVATE KEY-----');
 
-            const keyMap = await keyRegistry.getPvtKeyMap(domain);
+            const keyMap = await keyRegistry.getPrivateKeyMap(domain);
 
             expect(keyMap).toEqual({
                 kid1: '-----BEGIN PRIVATE KEY-----\nkey1\n-----END PRIVATE KEY-----',
@@ -211,7 +211,7 @@ describe('KeyRegistry', () => {
 
             mockDirectory.listPrivateKids.mockResolvedValue([]);
 
-            const keyMap = await keyRegistry.getPvtKeyMap(domain);
+            const keyMap = await keyRegistry.getPrivateKeyMap(domain);
 
             expect(keyMap).toEqual({});
             expect(mockReader.privateKey).not.toHaveBeenCalled();
@@ -225,7 +225,7 @@ describe('KeyRegistry', () => {
             mockDirectory.listPrivateKids.mockResolvedValue(kids);
             mockReader.privateKey.mockResolvedValue('pem-content');
 
-            await keyRegistry.getPvtKeyMap(domain);
+            await keyRegistry.getPrivateKeyMap(domain);
 
             expect(mockReader.privateKey).toHaveBeenCalledWith('kid-x');
             expect(mockReader.privateKey).toHaveBeenCalledWith('kid-y');
@@ -238,7 +238,7 @@ describe('KeyRegistry', () => {
             mockDirectory.listPrivateKids.mockResolvedValue(['only-kid']);
             mockReader.privateKey.mockResolvedValue('only-key-pem');
 
-            const keyMap = await keyRegistry.getPvtKeyMap(domain);
+            const keyMap = await keyRegistry.getPrivateKeyMap(domain);
 
             expect(keyMap).toEqual({
                 'only-kid': 'only-key-pem'
@@ -252,13 +252,13 @@ describe('KeyRegistry', () => {
             mockDirectory.listPrivateKids.mockResolvedValue(['kid1']);
             mockReader.privateKey.mockRejectedValue(new Error('File not found'));
 
-            await expect(keyRegistry.getPvtKeyMap(domain))
+            await expect(keyRegistry.getPrivateKeyMap(domain))
                 .rejects
                 .toThrow('File not found');
         });
     });
 
-    describe('getPubKey', () => {
+    describe('getPublicKey', () => {
         it('should retrieve single public key by KID', async () => {
             // Test: Direct public key retrieval
             const kid = 'testdomain-20260109-143022-ABCD1234';
@@ -266,7 +266,7 @@ describe('KeyRegistry', () => {
 
             mockReader.publicKey.mockResolvedValue(expectedPem);
 
-            const pem = await keyRegistry.getPubKey(kid);
+            const pem = await keyRegistry.getPublicKey(kid);
 
             expect(pem).toBe(expectedPem);
             expect(mockReader.publicKey).toHaveBeenCalledWith(kid);
@@ -277,7 +277,7 @@ describe('KeyRegistry', () => {
             const kid = 'anykid';
             mockReader.publicKey.mockResolvedValue('any pem');
 
-            await keyRegistry.getPubKey(kid);
+            await keyRegistry.getPublicKey(kid);
 
             expect(mockReader.publicKey).toHaveBeenCalledWith(kid);
             expect(mockReader.publicKey).toHaveBeenCalledTimes(1);
@@ -289,7 +289,7 @@ describe('KeyRegistry', () => {
 
             mockReader.publicKey.mockRejectedValue(new Error('Key not found'));
 
-            await expect(keyRegistry.getPubKey(kid))
+            await expect(keyRegistry.getPublicKey(kid))
                 .rejects
                 .toThrow('Key not found');
         });
@@ -305,13 +305,13 @@ describe('KeyRegistry', () => {
             mockReader.publicKey.mockResolvedValue('test pem');
 
             for (const kid of kids) {
-                await keyRegistry.getPubKey(kid);
+                await keyRegistry.getPublicKey(kid);
                 expect(mockReader.publicKey).toHaveBeenCalledWith(kid);
             }
         });
     });
 
-    describe('getPvtKey', () => {
+    describe('getPrivateKey', () => {
         it('should retrieve single private key by KID', async () => {
             // Test: Direct private key retrieval
             const kid = 'testdomain-20260109-143022-ABCD1234';
@@ -319,7 +319,7 @@ describe('KeyRegistry', () => {
 
             mockReader.privateKey.mockResolvedValue(expectedPem);
 
-            const pem = await keyRegistry.getPvtKey(kid);
+            const pem = await keyRegistry.getPrivateKey(kid);
 
             expect(pem).toBe(expectedPem);
             expect(mockReader.privateKey).toHaveBeenCalledWith(kid);
@@ -330,7 +330,7 @@ describe('KeyRegistry', () => {
             const kid = 'somekid';
             mockReader.privateKey.mockResolvedValue('some pem');
 
-            await keyRegistry.getPvtKey(kid);
+            await keyRegistry.getPrivateKey(kid);
 
             expect(mockReader.privateKey).toHaveBeenCalledWith(kid);
             expect(mockReader.privateKey).toHaveBeenCalledTimes(1);
@@ -342,7 +342,7 @@ describe('KeyRegistry', () => {
 
             mockReader.privateKey.mockRejectedValue(new Error('Permission denied'));
 
-            await expect(keyRegistry.getPvtKey(kid))
+            await expect(keyRegistry.getPrivateKey(kid))
                 .rejects
                 .toThrow('Permission denied');
         });
@@ -354,8 +354,8 @@ describe('KeyRegistry', () => {
             mockReader.publicKey.mockResolvedValue('public pem');
             mockReader.privateKey.mockResolvedValue('private pem');
 
-            const pubPem = await keyRegistry.getPubKey(kid);
-            const pvtPem = await keyRegistry.getPvtKey(kid);
+            const pubPem = await keyRegistry.getPublicKey(kid);
+            const pvtPem = await keyRegistry.getPrivateKey(kid);
 
             expect(pubPem).toBe('public pem');
             expect(pvtPem).toBe('private pem');
@@ -371,10 +371,10 @@ describe('KeyRegistry', () => {
             mockReader.publicKey.mockResolvedValue('test pem');
 
             // List kids
-            const kids = await keyRegistry.getAllPubKids(domain);
+            const kids = await keyRegistry.getAllPublicKids(domain);
 
             // Build map
-            const keyMap = await keyRegistry.getPubKeyMap(domain);
+            const keyMap = await keyRegistry.getPublicKeyMap(domain);
 
             expect(kids).toHaveLength(2);
             expect(Object.keys(keyMap)).toHaveLength(2);
@@ -390,10 +390,10 @@ describe('KeyRegistry', () => {
             mockReader.privateKey.mockResolvedValue('private pem');
 
             const [pubKids, pvtKids, pubKey, pvtKey] = await Promise.all([
-                keyRegistry.getAllPubKids(domain),
-                keyRegistry.getAllPvtKids(domain),
-                keyRegistry.getPubKey('kid1'),
-                keyRegistry.getPvtKey('kid1')
+                keyRegistry.getAllPublicKids(domain),
+                keyRegistry.getAllPrivateKids(domain),
+                keyRegistry.getPublicKey('kid1'),
+                keyRegistry.getPrivateKey('kid1')
             ]);
 
             expect(pubKids).toEqual(['kid1']);
@@ -410,22 +410,22 @@ describe('KeyRegistry', () => {
             mockDirectory.listPublicKids.mockResolvedValue(manyKids);
             mockReader.publicKey.mockImplementation(kid => Promise.resolve(`pem-${kid}`));
 
-            const keyMap = await keyRegistry.getPubKeyMap(domain);
+            const keyMap = await keyRegistry.getPublicKeyMap(domain);
 
             expect(Object.keys(keyMap)).toHaveLength(50);
             expect(mockReader.publicKey).toHaveBeenCalledTimes(50);
         });
 
         it('should maintain consistency between listing and reading', async () => {
-            // Test: Same KIDs returned by getAllPubKids appear in getPubKeyMap
+            // Test: Same KIDs returned by getAllPublicKids appear in getPublicKeyMap
             const domain = 'testdomain';
             const kids = ['kid1', 'kid2', 'kid3'];
 
             mockDirectory.listPublicKids.mockResolvedValue(kids);
             mockReader.publicKey.mockResolvedValue('test pem');
 
-            const listedKids = await keyRegistry.getAllPubKids(domain);
-            const keyMap = await keyRegistry.getPubKeyMap(domain);
+            const listedKids = await keyRegistry.getAllPublicKids(domain);
+            const keyMap = await keyRegistry.getPublicKeyMap(domain);
 
             expect(Object.keys(keyMap)).toEqual(listedKids);
         });
@@ -438,7 +438,7 @@ describe('KeyRegistry', () => {
 
             mockDirectory.listPublicKids.mockRejectedValue(new Error('Directory read failed'));
 
-            await expect(keyRegistry.getAllPubKids(domain))
+            await expect(keyRegistry.getAllPublicKids(domain))
                 .rejects
                 .toThrow('Directory read failed');
         });
@@ -452,7 +452,7 @@ describe('KeyRegistry', () => {
                 .mockResolvedValueOnce('pem1')
                 .mockRejectedValueOnce(new Error('Read failed'));
 
-            await expect(keyRegistry.getPubKeyMap(domain))
+            await expect(keyRegistry.getPublicKeyMap(domain))
                 .rejects
                 .toThrow('Read failed');
         });

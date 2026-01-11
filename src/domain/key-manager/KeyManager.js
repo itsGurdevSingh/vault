@@ -31,7 +31,7 @@ export class KeyManager {
 
     async getPublicKey(domain, kid) {
         const d = this.normalizer.normalizeDomain(domain);
-        return this.loader.getPublicKey(d, kid);
+        return this.loader.getPublicKey(kid);
     }
 
     // --- 2. LIFECYCLE (Admin/Cron) ---

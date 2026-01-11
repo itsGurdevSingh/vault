@@ -173,14 +173,14 @@ describe('KeyManager', () => {
             const result = await manager.getPublicKey('example', 'kid-123');
 
             expect(mockNormalizer.normalizeDomain).toHaveBeenCalledWith('example');
-            expect(mockLoader.getPublicKey).toHaveBeenCalledWith('EXAMPLE', 'kid-123');
+            expect(mockLoader.getPublicKey).toHaveBeenCalledWith('kid-123');
             expect(result).toEqual({ key: 'public' });
         });
 
         it('should pass kid parameter correctly', async () => {
             await manager.getPublicKey('domain', 'specific-kid-456');
 
-            expect(mockLoader.getPublicKey).toHaveBeenCalledWith('DOMAIN', 'specific-kid-456');
+            expect(mockLoader.getPublicKey).toHaveBeenCalledWith('specific-kid-456');
         });
 
         it('should propagate errors from loader', async () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { MetadataFactory } from '../../../../src/domain/key-manager/modules/metadata/metaFactory.js';
+import { MetadataFactory } from '../../../../src/domain/key-manager/modules/metadata/metadataFactory.js';
 
 describe('MetadataFactory', () => {
     let mockPathsRepo;

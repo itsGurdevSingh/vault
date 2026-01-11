@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { MetaFileStore } from '../../../../src/domain/key-manager/modules/metadata/metaFileStore.js';
+import { MetadataFileStore } from '../../../../src/domain/key-manager/modules/metadata/metadataFileStore.js';
 import { writeFile, readFile, unlink, readdir, mkdir } from 'fs/promises';
 
 vi.mock('fs/promises', () => ({
@@ -10,7 +10,7 @@ vi.mock('fs/promises', () => ({
     mkdir: vi.fn()
 }));
 
-describe('MetaFileStore', () => {
+describe('MetadataFileStore', () => {
     let store;
     let mockPaths;
     let mockFs;
@@ -33,7 +33,7 @@ describe('MetaFileStore', () => {
             path: { join: (...args) => args.join('/') }
         };
 
-        store = new MetaFileStore(mockPaths, mockFs);
+        store = new MetadataFileStore(mockPaths, mockFs);
     });
 
     describe('constructor', () => {
@@ -43,25 +43,25 @@ describe('MetaFileStore', () => {
         });
 
         it('should throw if no paths provided', () => {
-            expect(() => new MetaFileStore(null, mockFs)).toThrow('Meta paths must be provided');
+            expect(() => new MetadataFileStore(null, mockFs)).toThrow('Meta paths must be provided');
         });
 
         it('should throw if paths is undefined', () => {
-            expect(() => new MetaFileStore(undefined, mockFs)).toThrow('Meta paths must be provided');
+            expect(() => new MetadataFileStore(undefined, mockFs)).toThrow('Meta paths must be provided');
         });
 
         it('should throw if no fsOps provided', () => {
-            expect(() => new MetaFileStore(mockPaths, null)).toThrow('Filesystem operations must be provided');
+            expect(() => new MetadataFileStore(mockPaths, null)).toThrow('Filesystem operations must be provided');
         });
 
         it('should throw if fsOps is undefined', () => {
-            expect(() => new MetaFileStore(mockPaths)).toThrow('Filesystem operations must be provided');
+            expect(() => new MetadataFileStore(mockPaths)).toThrow('Filesystem operations must be provided');
         });
     });
 
     describe('writeOrigin', () => {
         it('should write metadata to origin file', async () => {
-            const meta = { kid: 'test-kid', domain: 'example.com', createdAt: '2024-01-01', expiredAt: null };
+            const meta = { kid: 'test-kid', domain: 'example.com', createdAt: '2024-01-01', expiresAt: null };
             writeFile.mockResolvedValue(undefined);
 
             await store.writeOrigin('example.com', 'test-kid', meta);
@@ -181,7 +181,7 @@ describe('MetaFileStore', () => {
         });
 
         it('should write metadata to archive file', async () => {
-            const meta = { kid: 'archived-kid', expiredAt: '2024-12-31' };
+            const meta = { kid: 'archived-kid', expiresAt: '2024-12-31' };
             mkdir.mockResolvedValue(undefined);
             writeFile.mockResolvedValue(undefined);
 
@@ -196,7 +196,7 @@ describe('MetaFileStore', () => {
         });
 
         it('should return metadata after writing', async () => {
-            const meta = { kid: 'kid', expiredAt: '2024-01-01' };
+            const meta = { kid: 'kid', expiresAt: '2024-01-01' };
             mkdir.mockResolvedValue(undefined);
             writeFile.mockResolvedValue(undefined);
 
@@ -208,7 +208,7 @@ describe('MetaFileStore', () => {
 
     describe('readArchive', () => {
         it('should read and parse archived metadata', async () => {
-            const meta = { kid: 'archived-kid', expiredAt: '2024-12-31' };
+            const meta = { kid: 'archived-kid', expiresAt: '2024-12-31' };
             readFile.mockResolvedValue(JSON.stringify(meta));
 
             const result = await store.readArchive('archived-kid');

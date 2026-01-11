@@ -8,8 +8,8 @@ import {
     createTestKeyPaths,
 } from "./helpers/testSetup.js";
 import { MetadataService } from "../../src/domain/key-manager/modules/metadata/MetadataService.js";
-import { MetaFileStore } from "../../src/domain/key-manager/modules/metadata/metaFileStore.js";
-import { KeyPairGenerator } from "../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js";
+import { MetadataFileStore } from "../../src/domain/key-manager/modules/metadata/metadataFileStore.js";
+import { RSAKeyGenerator } from "../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js";
 import { KeyWriter } from "../../src/domain/key-manager/modules/generator/KeyWriter.js";
 import { DirManager } from "../../src/domain/key-manager/modules/generator/DirManager.js";
 import { CryptoEngine } from "../../src/infrastructure/cryptoEngine/CryptoEngine.js";
@@ -20,7 +20,7 @@ import { pemToArrayBuffer, base64UrlEncode, assertPlainObject } from "../../src/
 describe("Integration: Metadata Management Flow", () => {
     let testPaths;
     let metadataService;
-    let keyPairGenerator;
+    let rsaKeyGenerator;
     let cryptoEngine;
 
     beforeAll(async () => {
@@ -43,7 +43,7 @@ describe("Integration: Metadata Management Flow", () => {
         const dirManager = new DirManager(testPaths, fs.mkdir);
 
         // Initialize metadata
-        const metaFileStore = new MetaFileStore(testPaths, {
+        const metadataFileStore = new MetadataFileStore(testPaths, {
             writeFile: fs.writeFile,
             readFile: fs.readFile,
             unlink: fs.unlink,
@@ -51,10 +51,10 @@ describe("Integration: Metadata Management Flow", () => {
             mkdir: fs.mkdir,
             path: path,
         });
-        metadataService = new MetadataService(metaFileStore);
+        metadataService = new MetadataService(metadataFileStore);
 
         // Initialize key generator (for creating test keys with metadata)
-        keyPairGenerator = new KeyPairGenerator(
+        rsaKeyGenerator = new RSAKeyGenerator(
             cryptoEngine,
             metadataService,
             keyWriter,
@@ -70,7 +70,7 @@ describe("Integration: Metadata Management Flow", () => {
      * Helper: Generate key and return KID
      */
     async function generateKey(domain) {
-        return await keyPairGenerator.generate(domain);
+        return await rsaKeyGenerator.generate(domain);
     }
 
     describe("Metadata CRUD Operations", () => {
@@ -86,7 +86,7 @@ describe("Integration: Metadata Management Flow", () => {
             expect(meta.kid).toBe(kid);
             expect(meta.domain).toBe(domain);
             expect(meta.createdAt).toBeDefined();
-            expect(meta.expiredAt).toBeNull();
+            expect(meta.expiresAt).toBeNull();
         });
 
         it("should read existing metadata from origin", async () => {
@@ -99,7 +99,7 @@ describe("Integration: Metadata Management Flow", () => {
             // ASSERT: Correct metadata returned
             expect(meta.kid).toBe(kid);
             expect(meta.domain).toBe(domain);
-            expect(meta.expiredAt).toBeNull();
+            expect(meta.expiresAt).toBeNull();
             expect(new Date(meta.createdAt)).toBeInstanceOf(Date);
         });
 
@@ -158,8 +158,8 @@ describe("Integration: Metadata Management Flow", () => {
 
             // ASSERT: Expiry added
             expect(updatedMeta).toBeDefined();
-            expect(updatedMeta.expiredAt).toBeDefined();
-            expect(new Date(updatedMeta.expiredAt)).toEqual(expiresAt);
+            expect(updatedMeta.expiresAt).toBeDefined();
+            expect(new Date(updatedMeta.expiresAt)).toEqual(expiresAt);
         });
 
         it("should move metadata to archive when expiry is added", async () => {
@@ -173,7 +173,7 @@ describe("Integration: Metadata Management Flow", () => {
             // ASSERT: Can read from archive via read method
             const metaFromArchive = await metadataService.read(domain, kid);
             expect(metaFromArchive).toBeDefined();
-            expect(metaFromArchive.expiredAt).toBeDefined();
+            expect(metaFromArchive.expiresAt).toBeDefined();
         });
 
         it("should identify expired metadata", async () => {
@@ -192,7 +192,7 @@ describe("Integration: Metadata Management Flow", () => {
             expect(expiredKids).toContain(kid);
 
             const expiredMeta = expiredMetas.find(m => m.kid === kid);
-            expect(new Date(expiredMeta.expiredAt).getTime()).toBeLessThan(Date.now());
+            expect(new Date(expiredMeta.expiresAt).getTime()).toBeLessThan(Date.now());
         });
 
         it("should not include future expiry in expired list", async () => {
@@ -237,7 +237,7 @@ describe("Integration: Metadata Management Flow", () => {
             const archivedMeta = await metadataService.read(domain, kid);
             expect(archivedMeta).toBeDefined();
             expect(archivedMeta.kid).toBe(kid);
-            expect(archivedMeta.expiredAt).toBeDefined();
+            expect(archivedMeta.expiresAt).toBeDefined();
         });
 
         it("should delete metadata from archive", async () => {
@@ -274,7 +274,7 @@ describe("Integration: Metadata Management Flow", () => {
             // ASSERT: Still readable from archive
             expect(meta).toBeDefined();
             expect(meta.kid).toBe(kid);
-            expect(meta.expiredAt).toBeDefined();
+            expect(meta.expiresAt).toBeDefined();
         });
     });
 
@@ -398,13 +398,13 @@ describe("Integration: Metadata Management Flow", () => {
             expect(meta).toHaveProperty("kid");
             expect(meta).toHaveProperty("domain");
             expect(meta).toHaveProperty("createdAt");
-            expect(meta).toHaveProperty("expiredAt");
+            expect(meta).toHaveProperty("expiresAt");
 
             // ASSERT: Types correct
             expect(typeof meta.kid).toBe("string");
             expect(typeof meta.domain).toBe("string");
             expect(typeof meta.createdAt).toBe("string"); // ISO string
-            expect(meta.expiredAt).toBeNull(); // null initially
+            expect(meta.expiresAt).toBeNull(); // null initially
         });
 
         it("should add expiry to archived metadata", async () => {
@@ -413,16 +413,16 @@ describe("Integration: Metadata Management Flow", () => {
 
             // Initial state - no expiry
             let meta = await metadataService.read(domain, kid);
-            expect(meta.expiredAt).toBeNull();
+            expect(meta.expiresAt).toBeNull();
 
             // ACT: Add expiry (writes to archive)
             const expiresAt = new Date(Date.now() + 86400000);
             const archivedMeta = await metadataService.addExpiry(domain, kid, expiresAt);
 
             // ASSERT: Archive metadata has expiry
-            expect(archivedMeta.expiredAt).toBeDefined();
+            expect(archivedMeta.expiresAt).toBeDefined();
             const expectedTime = expiresAt.getTime();
-            const actualTime = new Date(archivedMeta.expiredAt).getTime();
+            const actualTime = new Date(archivedMeta.expiresAt).getTime();
             expect(Math.abs(actualTime - expectedTime)).toBeLessThan(1000); // Within 1 second
         });
 

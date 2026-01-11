@@ -1,11 +1,11 @@
-import { MetaBuilder } from "./metaBuilder.js";
+import { MetadataBuilder } from "./metadataBuilder.js";
 import { isExpired } from "./utils.js";
 
 export class MetadataService {
 
     constructor(store) {
         this.store = store;
-        this.builder = new MetaBuilder();
+        this.builder = new MetadataBuilder();
     }
 
     /* --------- CRUD-Like Public API --------- */

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { rotationLockRepo } from '../../../../src/infrastructure/cache/rotationLockRepo.js';
+import { rotationLockRepo } from '../../../../src/infrastructure/cache/rotationLockRepository';
 import redis from '../../../../src/infrastructure/cache/redisClient.js';
 
 // Mock Redis client
@@ -364,7 +364,7 @@ describe('RotationLockRepo', () => {
         });
 
         it('should be the same instance across imports', async () => {
-            const { rotationLockRepo: instance2 } = await import('../../../../src/infrastructure/cache/rotationLockRepo.js');
+            const { rotationLockRepo: instance2 } = await import('../../../../src/infrastructure/cache/rotationLockRepository');
             expect(rotationLockRepo).toBe(instance2);
         });
     });

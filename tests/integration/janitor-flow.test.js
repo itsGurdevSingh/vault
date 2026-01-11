@@ -7,16 +7,16 @@ import {
     cleanupTestEnvironment,
     createTestKeyPaths,
 } from "./helpers/testSetup.js";
-import { Janitor } from "../../src/domain/key-manager/modules/Janitor/janitor.js";
-import { KeyFileJanitor } from "../../src/domain/key-manager/modules/Janitor/KeyFileJanitor.js";
-import { KeyDeleter } from "../../src/domain/key-manager/modules/Janitor/KeyDeleter.js";
-import { MetadataJanitor } from "../../src/domain/key-manager/modules/Janitor/MetadataJanitor.js";
-import { ExpiredKeyReaper } from "../../src/domain/key-manager/modules/Janitor/ExpiredKeyReaper.js";
-import { KeyPairGenerator } from "../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js";
+import { Janitor } from "../../src/domain/key-manager/modules/janitor/janitor.js";
+import { KeyFileJanitor } from "../../src/domain/key-manager/modules/janitor/KeyFileJanitor.js";
+import { KeyDeleter } from "../../src/domain/key-manager/modules/janitor/KeyDeleter.js";
+import { MetadataJanitor } from "../../src/domain/key-manager/modules/janitor/MetadataJanitor.js";
+import { ExpiredKeyReaper } from "../../src/domain/key-manager/modules/janitor/ExpiredKeyReaper.js";
+import { RSAKeyGenerator } from "../../src/domain/key-manager/modules/generator/RSAKeyGenerator.js";
 import { KeyWriter } from "../../src/domain/key-manager/modules/generator/KeyWriter.js";
 import { DirManager } from "../../src/domain/key-manager/modules/generator/DirManager.js";
 import { MetadataService } from "../../src/domain/key-manager/modules/metadata/MetadataService.js";
-import { MetaFileStore } from "../../src/domain/key-manager/modules/metadata/metaFileStore.js";
+import { MetadataFileStore } from "../../src/domain/key-manager/modules/metadata/metadataFileStore.js";
 import { CryptoEngine } from "../../src/infrastructure/cryptoEngine/CryptoEngine.js";
 import { CryptoConfig } from "../../src/infrastructure/cryptoEngine/cryptoConfig.js";
 import { KIDFactory } from "../../src/infrastructure/cryptoEngine/KIDFactory.js";
@@ -26,7 +26,7 @@ import { Cache } from "../../src/utils/cache.js";
 describe("Integration: Janitor Cleanup Flow", () => {
     let testPaths;
     let cryptoEngine;
-    let keyPairGenerator;
+    let rsaKeyGenerator;
     let metadataService;
     let janitor;
     let keyFileJanitor;
@@ -55,7 +55,7 @@ describe("Integration: Janitor Cleanup Flow", () => {
         const dirManager = new DirManager(testPaths, fs.mkdir);
 
         // Initialize metadata
-        const metaFileStore = new MetaFileStore(testPaths, {
+        const metadataFileStore = new MetadataFileStore(testPaths, {
             writeFile: fs.writeFile,
             readFile: fs.readFile,
             unlink: fs.unlink,
@@ -63,10 +63,10 @@ describe("Integration: Janitor Cleanup Flow", () => {
             mkdir: fs.mkdir,
             path: path,
         });
-        metadataService = new MetadataService(metaFileStore);
+        metadataService = new MetadataService(metadataFileStore);
 
         // Initialize generator
-        keyPairGenerator = new KeyPairGenerator(
+        rsaKeyGenerator = new RSAKeyGenerator(
             cryptoEngine,
             metadataService,
             keyWriter,
@@ -99,7 +99,7 @@ describe("Integration: Janitor Cleanup Flow", () => {
     });
 
     async function setupKey(domain) {
-        const kid = await keyPairGenerator.generate(domain);
+        const kid = await rsaKeyGenerator.generate(domain);
         return kid;
     }
 
@@ -187,8 +187,8 @@ describe("Integration: Janitor Cleanup Flow", () => {
             const archivedMeta = JSON.parse(
                 await fs.readFile(archivedPath, "utf-8")
             );
-            expect(archivedMeta.expiredAt).toBeDefined();
-            const expiryTime = new Date(archivedMeta.expiredAt).getTime();
+            expect(archivedMeta.expiresAt).toBeDefined();
+            const expiryTime = new Date(archivedMeta.expiresAt).getTime();
             expect(expiryTime).toBeGreaterThan(Date.now());
         });
 

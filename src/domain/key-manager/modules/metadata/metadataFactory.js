@@ -1,5 +1,5 @@
 import { MetadataService } from "./MetadataService";
-import { MetaFileStore } from "./metaFileStore";
+import { MetadataFileStore } from "./metadataFileStore";
 import { writeFile, readFile, unlink, readdir, mkdir } from "fs/promises";
 import path from "path";
 
@@ -18,7 +18,7 @@ class MetadataFactory {
     }
 
     create() {
-        const store = new MetaFileStore(this.pathsRepo, this.fsOps);
+        const store = new MetadataFileStore(this.pathsRepo, this.fsOps);
         return new MetadataService(store);
     }
 

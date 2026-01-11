@@ -1,5 +1,5 @@
-export class KeyPairGenerator {
-    constructor(cryptoEngine, metadataManager, keyWriter, dirManager) { 
+export class RSAKeyGenerator {
+    constructor(cryptoEngine, metadataManager, keyWriter, dirManager) {
         this.cryptoEngine = cryptoEngine;
         this.metadataManager = metadataManager;
         this.keyWriter = keyWriter;
