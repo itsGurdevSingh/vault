@@ -23,4 +23,9 @@ export class Builder {
         }
         return { keys };
     }
+
+    // Alias for KeyManager facade compatibility
+    async getJwks(domain) {
+        return await this.getJWKS(domain);
+    }
 }

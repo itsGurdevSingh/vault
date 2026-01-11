@@ -13,7 +13,7 @@ export class KeyReader {
         if (!pem) {
             const domain = this.cryptoEngine.getInfo(kid).domain;
             pem = await readFile(this.paths.privateKey(domain, kid), 'utf8');
-            this.cache.setPrivate(kid, pem);
+            this.cache.private.set(kid, pem);
         }
         return pem;
     }
@@ -23,7 +23,7 @@ export class KeyReader {
         if (!pem) {
             const domain = this.cryptoEngine.getInfo(kid).domain;
             pem = await readFile(this.paths.publicKey(domain, kid), 'utf8');
-            this.cache.setPublic(kid, pem);
+            this.cache.public.set(kid, pem);
         }
         return pem;
     }

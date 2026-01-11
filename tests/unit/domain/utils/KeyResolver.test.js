@@ -109,7 +109,8 @@ describe('KeyResolver', () => {
 
             expect(mockKidStore.getActiveKid).toHaveBeenCalledTimes(1);
             expect(mockLoader.getPvtKey).toHaveBeenCalledWith(kid);
-            expect(result).toBe(privateKey);
+            // getSigningKey wraps the result in { privateKey: ... }
+            expect(result).toEqual({ privateKey });
         });
 
         it('should propagate errors from getActiveKID', async () => {
@@ -137,7 +138,8 @@ describe('KeyResolver', () => {
             const result = await resolver.getSigningKey('DOMAIN_D');
 
             expect(mockLoader.getPvtKey).toHaveBeenCalledWith(null);
-            expect(result).toBeNull();
+            // getSigningKey wraps the result in { privateKey: ... }
+            expect(result).toEqual({ privateKey: null });
         });
 
         it('should work with different domain names', async () => {
@@ -322,7 +324,8 @@ describe('KeyResolver', () => {
             const signingKey = await resolver.getSigningKey('TEST');
 
             expect(activeKid).toBe(kid);
-            expect(signingKey).toBe(key);
+            // getSigningKey wraps the result
+            expect(signingKey).toEqual({ privateKey: key });
             expect(mockKidStore.getActiveKid).toHaveBeenCalledTimes(2);
         });
 
@@ -340,7 +343,8 @@ describe('KeyResolver', () => {
             await resolver.setActiveKid('DOMAIN', newKid);
             const signingKey = await resolver.getSigningKey('DOMAIN');
 
-            expect(signingKey).toBe(key);
+            // getSigningKey wraps the result
+            expect(signingKey).toEqual({ privateKey: key });
             expect(mockLoader.getPvtKey).toHaveBeenCalledWith(newKid);
         });
 
@@ -357,7 +361,8 @@ describe('KeyResolver', () => {
             const signingKey = await resolver.getSigningKey('DOMAIN');
             const verificationKey = await resolver.getVarificationKey('DOMAIN');
 
-            expect(signingKey.method).toBe('getPvtKey');
+            // getSigningKey wraps result, getVarificationKey doesn't
+            expect(signingKey.privateKey.method).toBe('getPvtKey');
             expect(verificationKey.method).toBe('loadPrivateKey');
             expect(mockLoader.getPvtKey).toHaveBeenCalledWith(kid);
             expect(mockLoader.loadPrivateKey).toHaveBeenCalledWith(kid);

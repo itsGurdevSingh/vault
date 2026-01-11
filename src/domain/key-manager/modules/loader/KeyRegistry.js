@@ -1,6 +1,6 @@
 export class KeyRegistry {
 
-constructor({reader, directory}) {
+    constructor({ reader, directory }) {
         this.reader = reader;
         this.directory = directory;
     }
@@ -39,5 +39,10 @@ constructor({reader, directory}) {
     async getPvtKey(kid) {
         return await this.reader.privateKey(kid);
     }
-    
+
+    // Alias for KeyManager facade compatibility
+    async getPublicKey(domain, kid) {
+        return await this.getPubKey(kid);
+    }
+
 }

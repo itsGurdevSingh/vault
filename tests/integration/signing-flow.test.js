@@ -93,7 +93,7 @@ describe('Integration: JWT Signing & Verification Flow', () => {
         loaderMock = {
             async getPvtKey(kid) {
                 const pem = await keyReader.privateKey(kid);
-                return { privateKey: pem };
+                return pem; // Return just the PEM string (KeyResolver will wrap it)
             },
             async getPubKeyMap(domain) {
                 // Return all public keys for domain (simplified - returns active key only)

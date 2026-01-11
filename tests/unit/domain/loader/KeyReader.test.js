@@ -20,9 +20,7 @@ describe('KeyReader', () => {
         // Create mock cache with get/set methods
         mockCache = {
             private: new Map(),
-            public: new Map(),
-            setPrivate: vi.fn((kid, pem) => mockCache.private.set(kid, pem)),
-            setPublic: vi.fn((kid, pem) => mockCache.public.set(kid, pem))
+            public: new Map()
         };
 
         // Create mock paths repository
@@ -81,7 +79,7 @@ describe('KeyReader', () => {
 
             await keyReader.privateKey(kid);
 
-            expect(mockCache.setPrivate).toHaveBeenCalledWith(kid, expectedPem);
+            // Verify key was cached using cache.private.set()
             expect(mockCache.private.get(kid)).toBe(expectedPem);
         });
 
@@ -178,7 +176,7 @@ describe('KeyReader', () => {
 
             await keyReader.publicKey(kid);
 
-            expect(mockCache.setPublic).toHaveBeenCalledWith(kid, expectedPem);
+            // Verify key was cached using cache.public.set()
             expect(mockCache.public.get(kid)).toBe(expectedPem);
         });
 
@@ -261,7 +259,7 @@ describe('KeyReader', () => {
 
             await expect(keyReader.privateKey(kid)).rejects.toThrow();
 
-            expect(mockCache.setPrivate).not.toHaveBeenCalled();
+            // Cache should not be updated on error
             expect(mockCache.private.has(kid)).toBe(false);
         });
 

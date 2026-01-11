@@ -37,35 +37,55 @@ export async function cleanupTestEnvironment() {
  * Create test-specific KeyPaths that point to test storage
  */
 export function createTestKeyPaths() {
-    return {
+    const paths = {
         base(domain) {
             return join(testPaths.keys, domain);
         },
         privateDir(domain) {
-            return join(this.base(domain), 'private');
+            return join(paths.base(domain), 'private');
         },
         publicDir(domain) {
-            return join(this.base(domain), 'public');
+            return join(paths.base(domain), 'public');
         },
         privateKey(domain, kid) {
-            return join(this.privateDir(domain), `${kid}.pem`);
+            return join(paths.privateDir(domain), `${kid}.pem`);
         },
         publicKey(domain, kid) {
-            return join(this.publicDir(domain), `${kid}.pem`);
+            return join(paths.publicDir(domain), `${kid}.pem`);
         },
         metaKeyDir(domain) {
             return join(testPaths.metadata, domain);
         },
         metaKeyFile(domain, kid) {
-            return join(this.metaKeyDir(domain), `${kid}.meta`);
+            return join(paths.metaKeyDir(domain), `${kid}.meta`);
         },
         metaArchivedDir() {
             return testPaths.metadataArchived;
         },
         metaArchivedKeyFile(kid) {
-            return join(this.metaArchivedDir(), `${kid}.meta`);
+            return join(paths.metaArchivedDir(), `${kid}.meta`);
+        },
+        // Aliases for compatibility with different naming conventions
+        getPvtKeyDir(domain) {
+            return paths.privateDir(domain);
+        },
+        getPubKeyDir(domain) {
+            return paths.publicDir(domain);
+        },
+        getPvtKeyPath(domain, kid) {
+            return paths.privateKey(domain, kid);
+        },
+        getPubKeyPath(domain, kid) {
+            return paths.publicKey(domain, kid);
+        },
+        getMetaKeyDir(domain) {
+            return paths.metaKeyDir(domain);
+        },
+        getMetaKeyPath(domain, kid) {
+            return paths.metaKeyFile(domain, kid);
         }
     };
+    return paths;
 }
 
 /**
