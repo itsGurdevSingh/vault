@@ -1,4 +1,4 @@
- *Architecture / Project Structure*.
+_Architecture / Project Structure_.
 
 # 📦 **Vault Service – Project Architecture**
 
@@ -59,10 +59,10 @@ Handles the **entire lifecycle of cryptographic keys**.
 
 Includes:
 
-* Key rotation (prepare → commit → rollback)
-* Active KID management
-* Upcoming / previous KID transitions
-* Coordination with KeyLoader + Janitor
+- Key rotation (prepare → commit → rollback)
+- Active KID management
+- Upcoming / previous KID transitions
+- Coordination with KeyLoader + Janitor
 
 Files:
 
@@ -110,7 +110,7 @@ Responsible for **JWT signing only**, using the active private key.
 
 # 🏗️ **infrastructure/**
 
-Everything that talks to the *outside world*: DB, Redis, filesystem, logging, crypto helpers.
+Everything that talks to the _outside world_: DB, Redis, filesystem, logging, crypto helpers.
 This layer **depends on nothing inside domain**, keeping the system clean.
 
 ---
@@ -144,11 +144,11 @@ MongoDB integration layer.
 
 Redis client + distributed locking.
 
-| File                  | Responsibility                        |
-| --------------------- | ------------------------------------- |
-| `redisClient.js`      | Initializes Redis (health, logging).  |
-| `rotationLockRepo.js` | Domain-specific locking for rotation. |
-| `index.js`            | Re-export.                            |
+| File                        | Responsibility                        |
+| --------------------------- | ------------------------------------- |
+| `redisClient.js`            | Initializes Redis (health, logging).  |
+| `rotationLockRepository.js` | Domain-specific locking for rotation. |
+| `index.js`                  | Re-export.                            |
 
 ---
 
@@ -230,10 +230,8 @@ Full production-grade test suite.
 
 This architecture ensures that:
 
-* Domain logic is **clean and deterministic**
-* Infrastructure (DB/Redis/FS) is **completely replaceable**
-* Testing is trivial because layers are separated
-* Services scale horizontally safely (distributed locking + stateless design)
-* Crypto operations remain isolated and reusable
-
-
+- Domain logic is **clean and deterministic**
+- Infrastructure (DB/Redis/FS) is **completely replaceable**
+- Testing is trivial because layers are separated
+- Services scale horizontally safely (distributed locking + stateless design)
+- Crypto operations remain isolated and reusable

@@ -25,15 +25,15 @@ describe('MetadataFactory', () => {
     });
 
     describe('constructor', () => {
-        it('should initialize with pathsRepo and fsOps', () => {
+        it('should initialize with pathService and fsOps', () => {
             const factory = new MetadataFactory(mockPathsRepo, mockFsOps);
-            expect(factory.pathsRepo).toBe(mockPathsRepo);
+            expect(factory.pathService).toBe(mockPathsRepo);
             expect(factory.fsOps).toBe(mockFsOps);
         });
 
         it('should use default fsOps if not provided', () => {
             const factory = new MetadataFactory(mockPathsRepo);
-            expect(factory.pathsRepo).toBe(mockPathsRepo);
+            expect(factory.pathService).toBe(mockPathsRepo);
             expect(factory.fsOps).toBeDefined();
             expect(factory.fsOps.writeFile).toBeDefined();
             expect(factory.fsOps.readFile).toBeDefined();
@@ -58,7 +58,7 @@ describe('MetadataFactory', () => {
             expect(service.builder).toBeDefined();
         });
 
-        it('should create MetaFileStore with pathsRepo and fsOps', () => {
+        it('should create MetaFileStore with pathService and fsOps', () => {
             const factory = new MetadataFactory(mockPathsRepo, mockFsOps);
 
             const service = factory.create();
@@ -107,10 +107,10 @@ describe('MetadataFactory', () => {
             expect(MetadataFactory._instance).toBe(instance);
         });
 
-        it('should initialize with pathsRepo and fsOps', () => {
+        it('should initialize with pathService and fsOps', () => {
             const instance = MetadataFactory.getInstance(mockPathsRepo, mockFsOps);
 
-            expect(instance.pathsRepo).toBe(mockPathsRepo);
+            expect(instance.pathService).toBe(mockPathsRepo);
             expect(instance.fsOps).toBe(mockFsOps);
         });
 
@@ -124,7 +124,7 @@ describe('MetadataFactory', () => {
             const instance2 = MetadataFactory.getInstance(paths2, fs2);
 
             expect(instance1).toBe(instance2);
-            expect(instance1.pathsRepo).toBe(paths1);
+            expect(instance1.pathService).toBe(paths1);
             expect(instance1.fsOps).toBe(fs1);
         });
     });

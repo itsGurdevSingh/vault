@@ -31,7 +31,7 @@ vi.mock('../../../../src/infrastructure/db/models/RotationPolicy.model.js', () =
 }));
 
 // Now import the repo (after the mock is set up)
-const { rotationPolicyRepo } = await import('../../../../src/infrastructure/db/repositories/rotationPolicyRepository');
+const { rotationPolicyRepository } = await import('../../../../src/infrastructure/db/repositories/rotationPolicyRepository');
 
 describe('RotationPolicyRepo', () => {
     beforeEach(() => {
@@ -40,8 +40,8 @@ describe('RotationPolicyRepo', () => {
 
     describe('constructor', () => {
         it('should initialize with model and db', () => {
-            expect(rotationPolicyRepo.model).toBeDefined();
-            expect(rotationPolicyRepo.db).toBeDefined();
+            expect(rotationPolicyRepository.model).toBeDefined();
+            expect(rotationPolicyRepository.db).toBeDefined();
         });
     });
 
@@ -49,7 +49,7 @@ describe('RotationPolicyRepo', () => {
         it('should normalize domain to uppercase and trim', async () => {
             mockFindOne.mockResolvedValue({ domain: 'EXAMPLE' });
 
-            await rotationPolicyRepo.findByDomain('  example  ');
+            await rotationPolicyRepository.findByDomain('  example  ');
 
             expect(mockFindOne).toHaveBeenCalledWith({ domain: 'EXAMPLE' });
         });
@@ -58,7 +58,7 @@ describe('RotationPolicyRepo', () => {
             const mockPolicy = { domain: 'TEST', intervalDays: 30 };
             mockFindOne.mockResolvedValue(mockPolicy);
 
-            const result = await rotationPolicyRepo.findByDomain('test');
+            const result = await rotationPolicyRepository.findByDomain('test');
 
             expect(result).toEqual(mockPolicy);
         });
@@ -66,7 +66,7 @@ describe('RotationPolicyRepo', () => {
         it('should return null when policy not found', async () => {
             mockFindOne.mockResolvedValue(null);
 
-            const result = await rotationPolicyRepo.findByDomain('nonexistent');
+            const result = await rotationPolicyRepository.findByDomain('nonexistent');
 
             expect(result).toBeNull();
         });
@@ -74,7 +74,7 @@ describe('RotationPolicyRepo', () => {
         it('should handle mixed case domains', async () => {
             mockFindOne.mockResolvedValue({ domain: 'MIXEDCASE' });
 
-            await rotationPolicyRepo.findByDomain('MiXeDcAsE');
+            await rotationPolicyRepository.findByDomain('MiXeDcAsE');
 
             expect(mockFindOne).toHaveBeenCalledWith({ domain: 'MIXEDCASE' });
         });
@@ -82,7 +82,7 @@ describe('RotationPolicyRepo', () => {
         it('should handle domains with whitespace', async () => {
             mockFindOne.mockResolvedValue({});
 
-            await rotationPolicyRepo.findByDomain('  domain_with_spaces  ');
+            await rotationPolicyRepository.findByDomain('  domain_with_spaces  ');
 
             expect(mockFindOne).toHaveBeenCalledWith({ domain: 'DOMAIN_WITH_SPACES' });
         });
@@ -91,7 +91,7 @@ describe('RotationPolicyRepo', () => {
             const error = new Error('Database connection failed');
             mockFindOne.mockRejectedValue(error);
 
-            await expect(rotationPolicyRepo.findByDomain('test'))
+            await expect(rotationPolicyRepository.findByDomain('test'))
                 .rejects.toThrow('Database connection failed');
         });
     });
@@ -103,7 +103,7 @@ describe('RotationPolicyRepo', () => {
 
             mockSave.mockResolvedValue(expected);
 
-            await rotationPolicyRepo.createPolicy(data);
+            await rotationPolicyRepository.createPolicy(data);
 
             // Verify save was called
             expect(mockSave).toHaveBeenCalled();
@@ -115,7 +115,7 @@ describe('RotationPolicyRepo', () => {
 
             mockSave.mockResolvedValue(mockPolicy);
 
-            const result = await rotationPolicyRepo.createPolicy(data);
+            const result = await rotationPolicyRepository.createPolicy(data);
 
             expect(result.domain).toBe('NEWDOMAIN');
         });
@@ -131,7 +131,7 @@ describe('RotationPolicyRepo', () => {
 
             mockSave.mockResolvedValue(saved);
 
-            const result = await rotationPolicyRepo.createPolicy(data);
+            const result = await rotationPolicyRepository.createPolicy(data);
 
             expect(result.intervalDays).toBe(90);
             expect(result.note).toBe('Test policy');
@@ -144,7 +144,7 @@ describe('RotationPolicyRepo', () => {
             const updates = { intervalDays: 120 };
             mockFindOneAndUpdate.mockResolvedValue({ domain: 'UPDATED', ...updates });
 
-            await rotationPolicyRepo.updatePolicy('  updated  ', updates);
+            await rotationPolicyRepository.updatePolicy('  updated  ', updates);
 
             expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
                 { domain: 'UPDATED' },
@@ -158,7 +158,7 @@ describe('RotationPolicyRepo', () => {
             const mockPolicy = { domain: 'TEST', intervalDays: 45 };
             mockFindOneAndUpdate.mockResolvedValue(mockPolicy);
 
-            const result = await rotationPolicyRepo.updatePolicy('test', updates);
+            const result = await rotationPolicyRepository.updatePolicy('test', updates);
 
             expect(result).toEqual(mockPolicy);
         });
@@ -166,13 +166,13 @@ describe('RotationPolicyRepo', () => {
         it('should return null if policy not found', async () => {
             mockFindOneAndUpdate.mockResolvedValue(null);
 
-            const result = await rotationPolicyRepo.updatePolicy('nonexistent', { intervalDays: 10 });
+            const result = await rotationPolicyRepository.updatePolicy('nonexistent', { intervalDays: 10 });
 
             expect(result).toBeNull();
         });
 
         it('should use new: true option to return updated document', async () => {
-            await rotationPolicyRepo.updatePolicy('test', { note: 'Updated' });
+            await rotationPolicyRepository.updatePolicy('test', { note: 'Updated' });
 
             expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
                 expect.any(Object),
@@ -184,7 +184,7 @@ describe('RotationPolicyRepo', () => {
 
     describe('deletePolicy', () => {
         it('should normalize domain and delete policy', async () => {
-            await rotationPolicyRepo.deletePolicy('  todelete  ');
+            await rotationPolicyRepository.deletePolicy('  todelete  ');
 
             expect(mockFindOneAndDelete).toHaveBeenCalledWith({ domain: 'TODELETE' });
         });
@@ -193,7 +193,7 @@ describe('RotationPolicyRepo', () => {
             const mockPolicy = { domain: 'DELETED', intervalDays: 30 };
             mockFindOneAndDelete.mockResolvedValue(mockPolicy);
 
-            const result = await rotationPolicyRepo.deletePolicy('deleted');
+            const result = await rotationPolicyRepository.deletePolicy('deleted');
 
             expect(result).toEqual(mockPolicy);
         });
@@ -201,7 +201,7 @@ describe('RotationPolicyRepo', () => {
         it('should return null if policy not found', async () => {
             mockFindOneAndDelete.mockResolvedValue(null);
 
-            const result = await rotationPolicyRepo.deletePolicy('nonexistent');
+            const result = await rotationPolicyRepository.deletePolicy('nonexistent');
 
             expect(result).toBeNull();
         });
@@ -209,7 +209,7 @@ describe('RotationPolicyRepo', () => {
 
     describe('enableRotation', () => {
         it('should normalize domain and enable rotation', async () => {
-            await rotationPolicyRepo.enableRotation('  example  ');
+            await rotationPolicyRepository.enableRotation('  example  ');
 
             expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
                 { domain: 'EXAMPLE' },
@@ -222,7 +222,7 @@ describe('RotationPolicyRepo', () => {
             const mockPolicy = { domain: 'EXAMPLE', enabled: true };
             mockFindOneAndUpdate.mockResolvedValue(mockPolicy);
 
-            const result = await rotationPolicyRepo.enableRotation('example');
+            const result = await rotationPolicyRepository.enableRotation('example');
 
             expect(result.enabled).toBe(true);
         });
@@ -230,7 +230,7 @@ describe('RotationPolicyRepo', () => {
 
     describe('disableRotation', () => {
         it('should normalize domain and disable rotation', async () => {
-            await rotationPolicyRepo.disableRotation('  example  ');
+            await rotationPolicyRepository.disableRotation('  example  ');
 
             expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
                 { domain: 'EXAMPLE' },
@@ -243,7 +243,7 @@ describe('RotationPolicyRepo', () => {
             const mockPolicy = { domain: 'EXAMPLE', enabled: false };
             mockFindOneAndUpdate.mockResolvedValue(mockPolicy);
 
-            const result = await rotationPolicyRepo.disableRotation('example');
+            const result = await rotationPolicyRepository.disableRotation('example');
 
             expect(result.enabled).toBe(false);
         });
@@ -257,7 +257,7 @@ describe('RotationPolicyRepo', () => {
             ];
             mockFind.mockResolvedValue(mockPolicies);
 
-            const result = await rotationPolicyRepo.getAllPolicies();
+            const result = await rotationPolicyRepository.getAllPolicies();
 
             expect(mockFind).toHaveBeenCalledWith({});
             expect(result).toEqual(mockPolicies);
@@ -266,7 +266,7 @@ describe('RotationPolicyRepo', () => {
         it('should return empty array when no policies exist', async () => {
             mockFind.mockResolvedValue([]);
 
-            const result = await rotationPolicyRepo.getAllPolicies();
+            const result = await rotationPolicyRepository.getAllPolicies();
 
             expect(result).toEqual([]);
         });
@@ -280,7 +280,7 @@ describe('RotationPolicyRepo', () => {
             ];
             mockFind.mockResolvedValue(mockPolicies);
 
-            const result = await rotationPolicyRepo.getEnabledPolicies();
+            const result = await rotationPolicyRepository.getEnabledPolicies();
 
             expect(mockFind).toHaveBeenCalledWith({ enabled: true });
             expect(result).toEqual(mockPolicies);
@@ -289,7 +289,7 @@ describe('RotationPolicyRepo', () => {
         it('should return empty array when no enabled policies', async () => {
             mockFind.mockResolvedValue([]);
 
-            const result = await rotationPolicyRepo.getEnabledPolicies();
+            const result = await rotationPolicyRepository.getEnabledPolicies();
 
             expect(result).toEqual([]);
         });
@@ -301,7 +301,7 @@ describe('RotationPolicyRepo', () => {
             const mockPolicies = [{ domain: 'DUE1', nextRotationAt: new Date('2024-01-10') }];
             mockFind.mockResolvedValue(mockPolicies);
 
-            const result = await rotationPolicyRepo.getDueForRotation(testDate);
+            const result = await rotationPolicyRepository.getDueForRotation(testDate);
 
             expect(mockFind).toHaveBeenCalledWith({
                 nextRotationAt: { $lte: testDate },
@@ -313,7 +313,7 @@ describe('RotationPolicyRepo', () => {
         it('should use current date by default', async () => {
             mockFind.mockResolvedValue([]);
 
-            await rotationPolicyRepo.getDueForRotation();
+            await rotationPolicyRepository.getDueForRotation();
 
             expect(mockFind).toHaveBeenCalledWith({
                 nextRotationAt: { $lte: expect.any(Date) },
@@ -322,7 +322,7 @@ describe('RotationPolicyRepo', () => {
         });
 
         it('should only return enabled policies', async () => {
-            await rotationPolicyRepo.getDueForRotation();
+            await rotationPolicyRepository.getDueForRotation();
 
             const callArgs = mockFind.mock.calls[0][0];
             expect(callArgs.enabled).toBe(true);
@@ -331,7 +331,7 @@ describe('RotationPolicyRepo', () => {
         it('should return empty array when no policies are due', async () => {
             mockFind.mockResolvedValue([]);
 
-            const result = await rotationPolicyRepo.getDueForRotation(new Date());
+            const result = await rotationPolicyRepository.getDueForRotation(new Date());
 
             expect(result).toEqual([]);
         });
@@ -340,7 +340,7 @@ describe('RotationPolicyRepo', () => {
             const customDate = new Date('2025-06-01');
             mockFind.mockResolvedValue([]);
 
-            await rotationPolicyRepo.getDueForRotation(customDate);
+            await rotationPolicyRepository.getDueForRotation(customDate);
 
             expect(mockFind).toHaveBeenCalledWith({
                 nextRotationAt: { $lte: customDate },
@@ -360,7 +360,7 @@ describe('RotationPolicyRepo', () => {
 
             mockFindOneAndUpdate.mockResolvedValue({ ...dates, domain: 'EXAMPLE' });
 
-            await rotationPolicyRepo.updateRotationDates(dates, mockSession);
+            await rotationPolicyRepository.updateRotationDates(dates, mockSession);
 
             expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
                 { domain: 'EXAMPLE' },
@@ -379,7 +379,7 @@ describe('RotationPolicyRepo', () => {
 
             mockFindOneAndUpdate.mockResolvedValue(dates);
 
-            await rotationPolicyRepo.updateRotationDates(dates);
+            await rotationPolicyRepository.updateRotationDates(dates);
 
             expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
                 { domain: 'TEST' },
@@ -395,7 +395,7 @@ describe('RotationPolicyRepo', () => {
             const params = { domain: 'example', intervalDays: 30 };
             mockFindOneAndUpdate.mockResolvedValue({});
 
-            await rotationPolicyRepo.acknowledgeSuccessfulRotation(params);
+            await rotationPolicyRepository.acknowledgeSuccessfulRotation(params);
 
             const call = mockFindOneAndUpdate.mock.calls[0];
             const updates = call[1];
@@ -412,7 +412,7 @@ describe('RotationPolicyRepo', () => {
             const params = { domain: 'example', intervalDays: 7 };
             mockFindOneAndUpdate.mockResolvedValue({});
 
-            await rotationPolicyRepo.acknowledgeSuccessfulRotation(params);
+            await rotationPolicyRepository.acknowledgeSuccessfulRotation(params);
 
             const afterCall = Date.now();
             const call = mockFindOneAndUpdate.mock.calls[0];
@@ -434,7 +434,7 @@ describe('RotationPolicyRepo', () => {
                 vi.clearAllMocks();
                 mockFindOneAndUpdate.mockResolvedValue({});
 
-                await rotationPolicyRepo.acknowledgeSuccessfulRotation({
+                await rotationPolicyRepository.acknowledgeSuccessfulRotation({
                     domain: 'test',
                     intervalDays
                 });
@@ -452,7 +452,7 @@ describe('RotationPolicyRepo', () => {
             const params = { domain: 'example', intervalDays: 30 };
             mockFindOneAndUpdate.mockResolvedValue({});
 
-            await rotationPolicyRepo.acknowledgeSuccessfulRotation(params, mockSession);
+            await rotationPolicyRepository.acknowledgeSuccessfulRotation(params, mockSession);
 
             const call = mockFindOneAndUpdate.mock.calls[0];
             expect(call[3]).toEqual({ session: mockSession });
@@ -462,7 +462,7 @@ describe('RotationPolicyRepo', () => {
             const params = { domain: '  MixedCase  ', intervalDays: 30 };
             mockFindOneAndUpdate.mockResolvedValue({});
 
-            await rotationPolicyRepo.acknowledgeSuccessfulRotation(params);
+            await rotationPolicyRepository.acknowledgeSuccessfulRotation(params);
 
             const call = mockFindOneAndUpdate.mock.calls[0];
             expect(call[0]).toEqual({ domain: 'MIXEDCASE' });
@@ -474,7 +474,7 @@ describe('RotationPolicyRepo', () => {
             const mockSession = { id: 'session789' };
             mockStartSession.mockResolvedValue(mockSession);
 
-            const result = await rotationPolicyRepo.getSession();
+            const result = await rotationPolicyRepository.getSession();
 
             expect(mockStartSession).toHaveBeenCalled();
             expect(result).toEqual(mockSession);
@@ -484,16 +484,16 @@ describe('RotationPolicyRepo', () => {
             const error = new Error('Session creation failed');
             mockStartSession.mockRejectedValue(error);
 
-            await expect(rotationPolicyRepo.getSession())
+            await expect(rotationPolicyRepository.getSession())
                 .rejects.toThrow('Session creation failed');
         });
     });
 
     describe('singleton instance', () => {
         it('should export singleton instance', () => {
-            expect(rotationPolicyRepo).toBeDefined();
-            expect(rotationPolicyRepo.model).toBeDefined();
-            expect(rotationPolicyRepo.findByDomain).toBeInstanceOf(Function);
+            expect(rotationPolicyRepository).toBeDefined();
+            expect(rotationPolicyRepository.model).toBeDefined();
+            expect(rotationPolicyRepository.findByDomain).toBeInstanceOf(Function);
         });
     });
 
@@ -508,21 +508,21 @@ describe('RotationPolicyRepo', () => {
             mockSave.mockResolvedValue({});
 
             // Test all methods that accept domain parameter
-            await rotationPolicyRepo.findByDomain(testDomain);
+            await rotationPolicyRepository.findByDomain(testDomain);
             expect(mockFindOne).toHaveBeenCalledWith({ domain: expectedDomain });
 
-            await rotationPolicyRepo.updatePolicy(testDomain, {});
+            await rotationPolicyRepository.updatePolicy(testDomain, {});
             expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
                 { domain: expectedDomain },
                 expect.any(Object),
                 expect.any(Object)
             );
 
-            await rotationPolicyRepo.deletePolicy(testDomain);
+            await rotationPolicyRepository.deletePolicy(testDomain);
             expect(mockFindOneAndDelete).toHaveBeenCalledWith({ domain: expectedDomain });
 
-            await rotationPolicyRepo.enableRotation(testDomain);
-            await rotationPolicyRepo.disableRotation(testDomain);
+            await rotationPolicyRepository.enableRotation(testDomain);
+            await rotationPolicyRepository.disableRotation(testDomain);
 
             // Both enable and disable should use the same normalized domain
             const enableCall = mockFindOneAndUpdate.mock.calls[mockFindOneAndUpdate.mock.calls.length - 2];

@@ -64,7 +64,7 @@ describe('JanitorFactory', () => {
             expect(factory.metadataManager).toBe(mockMetadataManager);
         });
 
-        it('should initialize with pathsRepo', () => {
+        it('should initialize with pathService', () => {
             // Test: PathsRepo dependency is stored
             const factory = new JanitorFactory(
                 { loaderCache: mockLoaderCache, builderCache: mockBuilderCache, signerCache: mockSignerCache },
@@ -72,7 +72,7 @@ describe('JanitorFactory', () => {
                 mockPathsRepo
             );
 
-            expect(factory.pathsRepo).toBe(mockPathsRepo);
+            expect(factory.pathService).toBe(mockPathsRepo);
         });
 
         it('should accept caches as destructured object', () => {
@@ -101,7 +101,7 @@ describe('JanitorFactory', () => {
             expect(factory.metadataManager).toBe(customManager);
         });
 
-        it('should accept pathsRepo as third parameter', () => {
+        it('should accept pathService as third parameter', () => {
             // Test: Paths repo dependency injection
             const customPaths = { custom: 'paths' };
             const factory = new JanitorFactory(
@@ -110,7 +110,7 @@ describe('JanitorFactory', () => {
                 customPaths
             );
 
-            expect(factory.pathsRepo).toBe(customPaths);
+            expect(factory.pathService).toBe(customPaths);
         });
     });
 
@@ -131,7 +131,7 @@ describe('JanitorFactory', () => {
             expect(janitor.expiredKeyReaper).toBeDefined();
         });
 
-        it('should create KeyDeleter with pathsRepo', () => {
+        it('should create KeyDeleter with pathService', () => {
             // Test: KeyDeleter receives paths dependency
             const factory = new JanitorFactory(
                 { loaderCache: mockLoaderCache, builderCache: mockBuilderCache, signerCache: mockSignerCache },
@@ -317,7 +317,7 @@ describe('JanitorFactory', () => {
             expect(instance.loaderCache).toBe(mockLoaderCache);
             expect(instance.builderCache).toBe(mockBuilderCache);
             expect(instance.metadataManager).toBe(mockMetadataManager);
-            expect(instance.pathsRepo).toBe(mockPathsRepo);
+            expect(instance.pathService).toBe(mockPathsRepo);
         });
     });
 

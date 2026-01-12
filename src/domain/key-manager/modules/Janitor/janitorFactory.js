@@ -8,16 +8,16 @@ import { KeyDeleter } from './KeyDeleter.js';
 
 class JanitorFactory {
     // in constructor we inject all outside dependencies
-    constructor({ loaderCache, builderCache, signerCache }, metadataManager, pathsRepo) {
+    constructor({ loaderCache, builderCache, signerCache }, metadataManager, pathService) {
         this.loaderCache = loaderCache;
         this.builderCache = builderCache;
         this.signerCache = signerCache;
         this.metadataManager = metadataManager;
-        this.pathsRepo = pathsRepo;
+        this.pathService = pathService;
     }
     create() {
         // prepare injections 
-        const keyDeleter = new KeyDeleter(this.pathsRepo);
+        const keyDeleter = new KeyDeleter(this.pathService);
         const keyFileJanitor = new KeyFileJanitor(this.loaderCache, this.builderCache, this.signerCache, keyDeleter);
         const metadataJanitor = new MetadataJanitor(this.metadataManager);
         const expiredKeyReaper = new ExpiredKeyReaper(keyFileJanitor, metadataJanitor);
@@ -26,9 +26,9 @@ class JanitorFactory {
         return new Janitor(keyFileJanitor, metadataJanitor, expiredKeyReaper);
     }
 
-    static getInstance(caches, metadataManager, pathsRepo) {
+    static getInstance(caches, metadataManager, pathService) {
         if (!JanitorFactory.instance) {
-            JanitorFactory.instance = new JanitorFactory(caches, metadataManager, pathsRepo);
+            JanitorFactory.instance = new JanitorFactory(caches, metadataManager, pathService);
         }
         return JanitorFactory.instance;
     }

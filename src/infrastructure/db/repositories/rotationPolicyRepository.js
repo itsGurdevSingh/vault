@@ -1,6 +1,6 @@
 import { rotationPolicy } from "../models/RotationPolicy.model.js";
 
-class RotationPolicyRepo {
+class RotationPolicyRepository {
 
     constructor() {
         this.model = rotationPolicy;
@@ -80,4 +80,4 @@ class RotationPolicyRepo {
 
 }
 
-export const rotationPolicyRepo = new RotationPolicyRepo();
+export const rotationPolicyRepository = new RotationPolicyRepository();

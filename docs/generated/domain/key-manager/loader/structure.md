@@ -73,7 +73,7 @@ The Key-Manager Loader follows a **three-layer architecture** that enforces sepa
 - Defined in `managerFactory.js`, serves as the composition root
 - Imports `KeyCache` from `utils/KeyCache.js` - independent singleton utility
 - Gets singleton `KeyCache` instance via `KeyCache.getInstance()`
-- Creates `LoaderFactory` singleton via `LoaderFactory.getInstance(keyCache, pathsRepo)`
+- Creates `LoaderFactory` singleton via `LoaderFactory.getInstance(keyCache, pathService)`
 - Factory creates single `KeyRegistry` that serves all domains
 - KeyCache shared across Janitor, Builder, and other services
 
@@ -83,23 +83,23 @@ The domain layer contains the core loader logic and is isolated from infrastruct
 
 - **LoaderFactory** (Singleton Pattern)
 
-  - Constructor accepts: `cache` (KeyCache singleton) and `pathsRepo`
+  - Constructor accepts: `cache` (KeyCache singleton) and `pathService`
   - `create()` method instantiates KeyReader and KeyDirectory, returns KeyRegistry
   - Injects cache and paths into Reader; only paths into Directory
-  - `getInstance(cache, pathsRepo)` ensures single factory instance
+  - `getInstance(cache, pathService)` ensures single factory instance
   - Returns single domain-independent KeyRegistry
 
 - **KeyRegistry** (Aggregate Root)
 
   - Constructor receives `reader` and `directory` via object destructuring
-  - Single-key methods: `getPubKey(kid)`, `getPvtKey(kid)` - delegates to Reader
-  - Map methods: `getPubKeyMap(domain)`, `getPvtKeyMap(domain)` - combines Directory + Reader
-  - List methods: `getAllPubKids(domain)`, `getAllPvtKids(domain)` - delegates to Directory
+  - Single-key methods: `getPublicKey(kid)`, `getPrivateKey(kid)` - delegates to Reader
+  - Map methods: `getPublicKeyMap(domain)`, `getPrivateKeyMap(domain)` - combines Directory + Reader
+  - List methods: `getAllPublicKids(domain)`, `getAllPrivateKids(domain)` - delegates to Directory
   - Stateless - domain passed as parameter or extracted from kid string
 
 - **KeyReader** (Stateless Service)
 
-  - Constructor: `cache` (KeyCache) and `paths` (pathsRepo)
+  - Constructor: `cache` (KeyCache) and `paths` (pathService)
   - Methods: `privateKey(kid)` and `publicKey(kid)`
   - Cache-first: checks `cache.getPrivate(kid)` / `cache.getPublic(kid)`
   - On miss: extracts domain via `kid.getDomain()`, reads file, caches result
@@ -108,7 +108,7 @@ The domain layer contains the core loader logic and is isolated from infrastruct
 
 - **KeyDirectory** (Stateless Service)
 
-  - Constructor: `paths` (pathsRepo) only
+  - Constructor: `paths` (pathService) only
   - Validation: `ensureDirectories(domain)` - checks 3 dirs exist, throws if missing
   - Listing: `listPrivateKids(domain)`, `listPublicKids(domain)`, `listMetadataKids(domain)`
   - Uses `fs/promises.readdir()`, filters `.pem` / `.json` files, strips extensions
@@ -139,7 +139,7 @@ These are concrete implementations providing technical capabilities to the domai
   - Provides `get(key)`, `set(key, value)`, `delete(key)`, `clear()` interface
   - Simple in-memory Map-based storage
 
-- **pathsRepo** (File System Abstraction)
+- **pathService** (File System Abstraction)
 
   - Injected from `src/infrastructure/filesystem/index.js`
   - Methods: `privateKey(domain, kid)`, `publicKey(domain, kid)`, `privateDir(domain)`, `publicDir(domain)`, `metaKeyDir(domain)`
@@ -168,10 +168,10 @@ These are concrete implementations providing technical capabilities to the domai
 
 1. **Bootstrap** imports KeyCache from `utils/KeyCache.js`
 2. **KeyCache** singleton created: `KeyCache.getInstance()`
-3. **LoaderFactory** singleton created: `LoaderFactory.getInstance(keyCache, pathsRepo)`
+3. **LoaderFactory** singleton created: `LoaderFactory.getInstance(keyCache, pathService)`
 4. **Registry** created by factory: `factory.create()`
 5. **Reader & Directory** instantiated with injected dependencies
-6. **Key retrieval**: `registry.getPubKey(kid)` → delegates to Reader
+6. **Key retrieval**: `registry.getPublicKey(kid)` → delegates to Reader
 7. **Cache check**: Reader checks `cache.getPublic(kid)`
 8. **Domain extraction**: On miss, `kid.getDomain()` extracts domain
 9. **File read**: `readFile(paths.publicKey(domain, kid))`
@@ -196,7 +196,7 @@ classDiagram
     class Bootstrap {
         <<module>>
         +keyCache KeyCache
-        +pathsRepo PathsRepo
+        +pathService PathsRepo
         +loaderFactory LoaderFactory
         +loader KeyRegistry
     }
@@ -205,10 +205,10 @@ classDiagram
     class LoaderFactory {
         -LoaderFactory _instance$
         -KeyCache KeyCache
-        -PathsRepo pathsRepo
-        +constructor(cache, pathsRepo)
+        -PathsRepo pathService
+        +constructor(cache, pathService)
         +create() KeyRegistry
-        +getInstance(cache, pathsRepo)$ LoaderFactory
+        +getInstance(cache, pathService)$ LoaderFactory
     }
 
     %% Domain - Aggregate Root
@@ -216,12 +216,12 @@ classDiagram
         -KeyReader reader
         -KeyDirectory directory
         +constructor(reader, directory)
-        +getPubKey(kid) string
-        +getPvtKey(kid) string
-        +getPubKeyMap(domain) Object
-        +getPvtKeyMap(domain) Object
-        +getAllPubKids(domain) Array
-        +getAllPvtKids(domain) Array
+        +getPublicKey(kid) string
+        +getPrivateKey(kid) string
+        +getPublicKeyMap(domain) Object
+        +getPrivateKeyMap(domain) Object
+        +getAllPublicKids(domain) Array
+        +getAllPrivateKids(domain) Array
     }
 
     %% Domain - Services
@@ -319,9 +319,9 @@ The loader system has **5 distinct execution flows** identified from the actual 
 ### Flow Index
 
 1. **Registry Creation Flow** - `LoaderFactory.createRegistry(domain)` creates and wires components
-2. **Single Key Retrieval Flow** - `KeyRegistry.getPubKey(kid)` / `getPvtKey(kid)` with cache-first strategy
-3. **Key Map Generation Flow** - `KeyRegistry.getPubKeyMap()` / `getPvtKeyMap()` batch loads all keys
-4. **Directory Listing Flow** - `KeyRegistry.getAllPubKids()` / `getAllPvtKids()` lists available KIDs
+2. **Single Key Retrieval Flow** - `KeyRegistry.getPublicKey(kid)` / `getPrivateKey(kid)` with cache-first strategy
+3. **Key Map Generation Flow** - `KeyRegistry.getPublicKeyMap()` / `getPrivateKeyMap()` batch loads all keys
+4. **Directory Listing Flow** - `KeyRegistry.getAllPublicKids()` / `getAllPrivateKids()` lists available KIDs
 5. **Directory Validation Flow** - `KeyDirectory.ensureDirectories()` validates directory structure
 
 ---
@@ -343,7 +343,7 @@ sequenceDiagram
     Bootstrap->>Cache: getInstance()
     Cache-->>Bootstrap: keyCache singleton
 
-    Bootstrap->>Factory: getInstance(keyCache, pathsRepo)
+    Bootstrap->>Factory: getInstance(keyCache, pathService)
     Factory-->>Bootstrap: factory singleton
 
     Bootstrap->>Factory: create()
@@ -365,7 +365,7 @@ sequenceDiagram
 **Implementation:**
 
 - KeyCache from `utils/KeyCache.js` - singleton with two Maps (private/public)
-- LoaderFactory singleton pattern - stores cache and pathsRepo
+- LoaderFactory singleton pattern - stores cache and pathService
 - Factory `create()` instantiates Reader (cache + paths) and Directory (paths only)
 - Returns single KeyRegistry serving all domains
 
@@ -373,7 +373,7 @@ sequenceDiagram
 
 ### Flow 2: Single Key Retrieval Flow
 
-**Source:** `KeyRegistry.js` → `getPubKey(kid)` → `KeyReader.js` → `publicKey(kid)`
+**Source:** `KeyRegistry.js` → `getPublicKey(kid)` → `KeyReader.js` → `publicKey(kid)`
 
 ```mermaid
 sequenceDiagram
@@ -383,7 +383,7 @@ sequenceDiagram
     participant Cache as KeyCache
     participant FS as fs/promises
 
-    Client->>Registry: getPubKey(kidString)
+    Client->>Registry: getPublicKey(kidString)
     Registry->>Reader: publicKey(kidString)
 
     Reader->>Cache: getPublic(kidString)
@@ -411,7 +411,7 @@ sequenceDiagram
 
 ### Flow 3: Key Map Generation Flow
 
-**Source:** `KeyRegistry.js` → `getPubKeyMap(domain)`
+**Source:** `KeyRegistry.js` → `getPublicKeyMap(domain)`
 
 ```mermaid
 sequenceDiagram
@@ -421,7 +421,7 @@ sequenceDiagram
     participant Reader as KeyReader
     participant Cache as KeyCache
 
-    Client->>Registry: getPubKeyMap("auth")
+    Client->>Registry: getPublicKeyMap("auth")
 
     Registry->>Directory: listPublicKids("auth")
     Directory-->>Registry: ["auth-20260105-143022-A1B2", ...]
@@ -451,7 +451,7 @@ sequenceDiagram
 
 ### Flow 4: Directory Listing Flow
 
-**Source:** `KeyRegistry.js` → `getAllPubKids(domain)` → `KeyDirectory.js` → `listPublicKids(domain)`
+**Source:** `KeyRegistry.js` → `getAllPublicKids(domain)` → `KeyDirectory.js` → `listPublicKids(domain)`
 
 ```mermaid
 sequenceDiagram
@@ -460,7 +460,7 @@ sequenceDiagram
     participant Directory as KeyDirectory
     participant FS as fs/promises
 
-    Client->>Registry: getAllPubKids("auth")
+    Client->>Registry: getAllPublicKids("auth")
     Registry->>Directory: listPublicKids("auth")
 
     Directory->>FS: readdir(publicDir)
@@ -476,7 +476,7 @@ sequenceDiagram
 
 - Direct filesystem scan, no caching
 - Filters `.pem` files, returns kid strings
-- Also available: `getAllPvtKids(domain)`, `listMetadataKids(domain)`
+- Also available: `getAllPrivateKids(domain)`, `listMetadataKids(domain)`
 
 ---
 
@@ -520,9 +520,9 @@ sequenceDiagram
 | Flow                 | Entry Point                 | Cache     | Returns       |
 | -------------------- | --------------------------- | --------- | ------------- |
 | Registry Creation    | `factory.create()`          | No        | KeyRegistry   |
-| Single Key Retrieval | `getPubKey(kid)`            | Yes (Map) | string        |
-| Key Map Generation   | `getPubKeyMap(domain)`      | Yes       | Object        |
-| Directory Listing    | `getAllPubKids(domain)`     | No        | Array<string> |
+| Single Key Retrieval | `getPublicKey(kid)`         | Yes (Map) | string        |
+| Key Map Generation   | `getPublicKeyMap(domain)`   | Yes       | Object        |
+| Directory Listing    | `getAllPublicKids(domain)`  | No        | Array<string> |
 | Directory Validation | `ensureDirectories(domain)` | No        | void          |
 
 **Key Characteristics:**

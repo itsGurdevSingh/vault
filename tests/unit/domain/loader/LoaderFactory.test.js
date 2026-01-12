@@ -42,7 +42,7 @@ describe('LoaderFactory', () => {
             const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
 
             expect(factory.KeyChache).toBe(mockCache);
-            expect(factory.pathsRepo).toBe(mockPaths);
+            expect(factory.pathService).toBe(mockPaths);
             expect(factory.cryptoEngine).toBe(mockCryptoEngine);
         });
 
@@ -59,7 +59,7 @@ describe('LoaderFactory', () => {
             const customPaths = { custom: true };
             const factory = new LoaderFactory(mockCache, customPaths, mockCryptoEngine);
 
-            expect(factory.pathsRepo).toBe(customPaths);
+            expect(factory.pathService).toBe(customPaths);
         });
 
         it('should accept cryptoEngine as third parameter', () => {
@@ -204,7 +204,7 @@ describe('LoaderFactory', () => {
             const instance = LoaderFactory.getInstance(mockCache, mockPaths, mockCryptoEngine);
 
             expect(instance.KeyChache).toBe(mockCache);
-            expect(instance.pathsRepo).toBe(mockPaths);
+            expect(instance.pathService).toBe(mockPaths);
             expect(instance.cryptoEngine).toBe(mockCryptoEngine);
         });
 

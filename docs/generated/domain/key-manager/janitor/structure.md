@@ -166,7 +166,7 @@ The Key-Manager Janitor follows a **three-layer architecture** with four special
 - Defined in `managerFactory.js`, serves as composition root
 - Gets singleton `LoaderCache` instance via `KeyCache.getInstance()`
 - Gets singleton `BuilderCache` instance (separate cache for builder operations)
-- Creates `JanitorFactory` singleton via `JanitorFactory.getInstance(loaderCache, builderCache, metadataManager, pathsRepo)`
+- Creates `JanitorFactory` singleton via `JanitorFactory.getInstance(loaderCache, builderCache, metadataManager, pathService)`
 - Factory creates single `Janitor` orchestrator that coordinates all cleanup operations
 - Both caches shared across multiple services (Loader, Builder, Janitor)
 
@@ -180,13 +180,13 @@ The Janitor domain contains all cleanup and deletion logic, organized by respons
 
 - **JanitorFactory** (Singleton Pattern)
 
-  - Constructor accepts: `loaderCache` (KeyCache), `builderCache` (Builder's cache), `metadataManager`, and `pathsRepo`
+  - Constructor accepts: `loaderCache` (KeyCache), `builderCache` (Builder's cache), `metadataManager`, and `pathService`
   - `create()` method wires all internal components in correct dependency order
-  - Creates `KeyDeleter(pathsRepo)` for filesystem operations
+  - Creates `KeyDeleter(pathService)` for filesystem operations
   - Creates `KeyFileJanitor(loaderCache, builderCache, keyDeleter)` for cache invalidation
   - Creates `MetadataJanitor(metadataManager)` for metadata cleanup
   - Creates `ExpiredKeyReaper(fileJanitor, metadataJanitor)` for scheduled cleanup
-  - `getInstance(loaderCache, builderCache, metadataManager, pathsRepo)` ensures singleton
+  - `getInstance(loaderCache, builderCache, metadataManager, pathService)` ensures singleton
   - Returns single `Janitor` coordinating all services
 
 - **Janitor** (Aggregate Root & Orchestrator)
@@ -233,7 +233,7 @@ The Janitor domain contains all cleanup and deletion logic, organized by respons
 
 - **KeyDeleter** (Stateless Infrastructure Handler)
 
-  - Constructor: `pathsRepo` (file system abstraction)
+  - Constructor: `pathService` (file system abstraction)
   - **Delete private key**: `deletePrivateKey(domain, kid)`
     - Uses `fs/promises.unlink(paths.privateKey(domain, kid))`
     - Ignores ENOENT errors (file already deleted)
@@ -330,7 +330,7 @@ classDiagram
         +loaderCache KeyCache
         +builderCache Cache
         +metadataManager MetadataManager
-        +pathsRepo PathsRepo
+        +pathService PathsRepo
         +janitorFactory JanitorFactory
         +janitor Janitor
     }
@@ -341,10 +341,10 @@ classDiagram
         -KeyCache loaderCache
         -Cache builderCache
         -MetadataManager metadataManager
-        -PathsRepo pathsRepo
-        +constructor(loaderCache, builderCache, metadataManager, pathsRepo)
+        -PathsRepo pathService
+        +constructor(loaderCache, builderCache, metadataManager, pathService)
         +create() Janitor
-        +getInstance(loaderCache, builderCache, metadataManager, pathsRepo)$ JanitorFactory
+        +getInstance(loaderCache, builderCache, metadataManager, pathService)$ JanitorFactory
     }
 
     %% Domain - Aggregate Root
@@ -515,13 +515,13 @@ sequenceDiagram
     Bootstrap->>Cache: getInstance()
     Cache-->>Bootstrap: singleton instances
 
-    Bootstrap->>Factory: getInstance(loaderCache, builderCache, metaManager, pathsRepo)
+    Bootstrap->>Factory: getInstance(loaderCache, builderCache, metaManager, pathService)
     Factory-->>Bootstrap: factory singleton
 
     Bootstrap->>Factory: create()
     activate Factory
 
-    Factory->>Deleter: new KeyDeleter(pathsRepo)
+    Factory->>Deleter: new KeyDeleter(pathService)
     Deleter-->>Factory: deleter instance
 
     Factory->>FileJanitor: new KeyFileJanitor(loaderCache, builderCache, deleter)

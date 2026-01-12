@@ -5,8 +5,8 @@ import path from "path";
 
 class MetadataFactory {
 
-    constructor(pathsRepo, fsOps = null) {
-        this.pathsRepo = pathsRepo;
+    constructor(pathService, fsOps = null) {
+        this.pathService = pathService;
         this.fsOps = fsOps || {
             writeFile,
             readFile,
@@ -18,13 +18,13 @@ class MetadataFactory {
     }
 
     create() {
-        const store = new MetadataFileStore(this.pathsRepo, this.fsOps);
+        const store = new MetadataFileStore(this.pathService, this.fsOps);
         return new MetadataService(store);
     }
 
-    static getInstance(pathsRepo, fsOps = null) {
+    static getInstance(pathService, fsOps = null) {
         if (!this._instance) {
-            this._instance = new MetadataFactory(pathsRepo, fsOps);
+            this._instance = new MetadataFactory(pathService, fsOps);
         }
         return this._instance;
     }

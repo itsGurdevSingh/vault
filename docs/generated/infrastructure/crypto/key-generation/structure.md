@@ -27,7 +27,7 @@ classDiagram
     }
     class KeyPaths:::infra {
     }
-    class pathsRepo:::infra {
+    class pathService:::infra {
     }
 
     KeyPairGenerator ..> DirManager
@@ -37,5 +37,5 @@ classDiagram
     KeyPairGenerator ..> metadataManager : VIOLATION (Infra -> Domain)
 
     DirManager ..> KeyPaths
-    KeyWriter ..> pathsRepo
+    KeyWriter ..> pathService
 ```

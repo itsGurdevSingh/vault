@@ -1,7 +1,7 @@
 import redis from "./redisClient.js";
 import crypto from 'crypto';
 
-class RotationLockRepo {
+class RotationLockRepository {
 
     /** acquire lock for rotation domain base */
     async acquire(domain, ttlSeconds) {
@@ -27,4 +27,4 @@ class RotationLockRepo {
     }
 }
 
-export const rotationLockRepo = new RotationLockRepo();
+export const rotationLockRepository = new RotationLockRepository();
