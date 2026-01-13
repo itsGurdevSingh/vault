@@ -73,6 +73,8 @@ export function createTestInfrastructure(testPaths) {
     const lockRepo = {
         acquireLock: async (domain) => true,
         releaseLock: async (domain) => true,
+        acquire: async (domain, ttl) => 'mock-lock-token',
+        release: async (domain, token) => true,
     };
 
     // 4. POLICY REPOSITORY (Mock MongoDB for rotation policies)
@@ -80,7 +82,19 @@ export function createTestInfrastructure(testPaths) {
         findDueForRotation: async () => [],
         updateLastRotated: async (domain) => true,
         getPolicy: async (domain) => null,
+        findByDomain: async (domain) => ({
+            domain,
+            rotationInterval: 90 * 24 * 60 * 60 * 1000, // 90 days 
+            lastRotated: new Date()
+        }),
         savePolicy: async (domain, policy) => true,
+        getSession: async () => ({
+            startTransaction: () => { },
+            commitTransaction: async () => { },
+            abortTransaction: async () => { },
+            endSession: async () => { }
+        }),
+        acknowledgeSuccessfulRotation: async (data, session) => true,
     };
 
     // 5. CACHE CONSTRUCTOR (For creating cache instances)
