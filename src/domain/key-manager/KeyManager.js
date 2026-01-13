@@ -1,21 +1,18 @@
 export class KeyManager {
     constructor({
-        loader, generator, janitor, builder, signer, // Workers
-        keyRotator, rotationScheduler, // Orchestrators
+        generator, builder, signer, // Workers
+        rotationScheduler, // Orchestrators
         keyResolver,
         configManager, // The Config Object
         normalizer
     }) {
-        this.loader = loader;
-        this.generator = generator;
-        this.janitor = janitor;
-        this.builder = builder;
-        this.signer = signer;
-        this.rotator = keyRotator;
-        this.scheduler = rotationScheduler;
-        this.keyResolver = keyResolver;
-        this.config = configManager;
-        this.normalizer = normalizer;
+        this.generator = generator; // for initial key generation
+        this.builder = builder; // for jwks building
+        this.signer = signer; // for signing
+        this.scheduler = rotationScheduler; // for scheduling rotations
+        this.keyResolver = keyResolver; // for resolving active kids (initial setup)
+        this.config = configManager; // for configuration management
+        this.normalizer = normalizer; // for domain normalization
     }
 
     // --- 1. CORE USAGE ---
@@ -27,11 +24,6 @@ export class KeyManager {
     async getJwks(domain) {
         const d = this.normalizer.normalizeDomain(domain);
         return this.builder.getJwks(d);
-    }
-
-    async getPublicKey(domain, kid) {
-        const d = this.normalizer.normalizeDomain(domain);
-        return this.loader.getPublicKey(kid);
     }
 
     // --- 2. LIFECYCLE (Admin/Cron) ---
@@ -65,8 +57,8 @@ export class KeyManager {
     // domain sepecific rotation
     async rotateDomain(domain) {
         const d = this.normalizer.normalizeDomain(domain);
-        // Delegates to the Atomic Rotator
-        return this.rotator.triggerDomainRotation(d);
+        // Delegates to the Scheduler
+        return this.scheduler.triggerDomainRotation(d);
     }
 
     /**

@@ -5,7 +5,7 @@ import { mkdir, writeFile } from "fs/promises";
 
 export class GeneratorFactory {
 
-    constructor(cryptoEngine, metadataManager, paths) {
+    constructor({ cryptoEngine, metadataManager, paths }) {
         this.cryptoEngine = cryptoEngine;
         this.metadataManager = metadataManager;
         this.paths = paths;

@@ -5,7 +5,7 @@ import { KeyRegistry } from "./KeyRegistry.js";
 
 class LoaderFactory {
 
-    constructor(chache, pathService, cryptoEngine) {
+    constructor({ chache, pathService, cryptoEngine }) {
         this.KeyChache = chache;
         this.pathService = pathService;
         this.cryptoEngine = cryptoEngine;

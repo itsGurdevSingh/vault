@@ -16,26 +16,26 @@ import { RotationConfig } from "./config/RotationConfig.js";
 import { KeyManager } from "./KeyManager.js";
 
 class ManagerFactory {
-    // unfra and outsider utils 
-    constructor(pathService, cryptoEngine, lockRepository, policyRepo, cache, state) {
+    // Infra and outsider utils 
+    constructor({ pathService, cryptoEngine, lockRepo, policyRepo, Cache, activeKidStore }) {
         this.pathService = pathService;
         this.cryptoEngine = cryptoEngine;
-        this.lockRepository = lockRepository;
-        this.policyRepo = policyRepo;
-        this.cache = cache;
-        this.kidStore = state;
+        this.lockRepository = lockRepo;
+        this.policyRepository = policyRepo;
+        this.cache = Cache;
+        this.kidStore = activeKidStore;
     }
 
-    static getInstance(pathService, cryptoEngine, lockRepository, policyRepo, cache) {
+    static getInstance({ pathService, cryptoEngine, LockRepo, policyRepo, Cache, activeKidStore }) {
         if (!this._instance) {
-            this._instance = new ManagerFactory(pathService, cryptoEngine, lockRepository, policyRepo, cache);
+            this._instance = new ManagerFactory({ pathService, cryptoEngine, LockRepo, policyRepo, Cache, activeKidStore });
         }
         return this._instance;
     }
 
     create() {
         // 1. INFRASTRUCTURE (The Foundation)
-        const cryptoEngine = new this.cryptoEngine(); // Or .getInstance() if singleton
+        const cryptoEngine = this.cryptoEngine; // Use the instance directly
 
         // 2. SHARED STATE (The Memory)
         const builderCache = new this.cache();
@@ -48,55 +48,52 @@ class ManagerFactory {
 
         // 3. EXTERNAL DOMAINS (Dependencies from neighbors)
         // We must create MetadataManager first because Janitor & Generator need it.
-        const metaFactory = MetadataFactory.getInstance(this.pathService);
+        const metaFactory = MetadataFactory.getInstance({ pathService: this.pathService });
         const metadataManager = metaFactory.create();
 
         // 4. SUB-DOMAIN: LOADER (Read Access)
-        const loaderFactory = LoaderFactory.getInstance(loaderCache, this.pathService, cryptoEngine);
+        const loaderFactory = LoaderFactory.getInstance({ loaderCache, pathService: this.pathService, cryptoEngine });
         const loader = loaderFactory.create();
 
         // 5. INTERNAL SERVICE: RESOLVER (Helper)
         const keyResolver = new KeyResolver({ loader, kidStore: this.kidStore });
 
         // 6. SUB-DOMAIN: GENERATOR (Write Access)
-        const generatorFactory = GeneratorFactory.getInstance(cryptoEngine, metadataManager);
+        const generatorFactory = GeneratorFactory.getInstance({ cryptoEngine, metadataManager, pathService: this.pathService });
         const generator = generatorFactory.create();
 
         // 7. SUB-DOMAIN: JANITOR (Cleanup)
-        const janitorFactory = JanitorFactory.getInstance({ loaderCache, builderCache, signerCache }, metadataManager, this.pathService);
+        const janitorFactory = JanitorFactory.getInstance({ cache: { loaderCache, builderCache, signerCache }, metadataManager, pathService: this.pathService });
         const janitor = janitorFactory.create();
 
         // 8. SUB-DOMAIN: BUILDER (Construction)
-        const builderFactory = BuilderFactory.getInstance(builderCache, loader, cryptoEngine);
+        const builderFactory = BuilderFactory.getInstance({ cache: builderCache, loader, cryptoEngine });
         const builder = builderFactory.create();
 
         // 9. SUB-DOMAIN: SIGNER (Usage)
-        const signerFactory = SignerFactory.getInstance(signerCache, keyResolver, cryptoEngine);
+        const signerFactory = SignerFactory.getInstance({ cache: signerCache, keyResolver, cryptoEngine });
         const signer = signerFactory.create();
 
         //10. sub-DOMAIN: Rotation scheduler (Key Rotation)
         const rotationFactory = RotationFactory.getInstance(
             { keyGenerator: generator, keyJanitor: janitor, keyResolver, metadataManager, lockRepository: this.lockRepository },
-            { state: RotationState, policyRepo: this.policyRepo }
+            { state: RotationState, policyRepo: this.policyRepository }
         );
         const rotationScheduler = rotationFactory.create();
 
         // 11. config manager 
-        const configManager = RotationConfig.getInstance({ RotationState });
+        const configManager = RotationConfig.getInstance({ state: RotationState });
 
 
-        // 11. THE AGGREGATE ROOT (The Boss)
+        // 12. THE AGGREGATE ROOT (The Boss)
         // We inject all the working parts into the Manager
         return new KeyManager({
-            loader,
             generator,
-            janitor,
             builder,
             signer,
-            keyResolver,
             rotationScheduler,
             keyResolver,
-            configManager: configManager,
+            configManager,
             normalizer: domainNormalizer
         });
     }

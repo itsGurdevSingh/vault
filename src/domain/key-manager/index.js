@@ -1,14 +1,16 @@
 // infrastructure imports
 import { pathService } from "../../infrastructure/filesystem/index.js";
-import { CryptoEngine } from "../../infrastructure/cryptoEngine/index.js";
+import { cryptoEngine } from "../../infrastructure/cryptoEngine/index.js";
 import { rotationLockRepository as LockRepo } from "../../infrastructure/cache/index.js";
 import { rotationPolicyRepository as policyRepo } from "../../infrastructure/db/index.js";
 // outsider utils imports
 import { Cache } from "../../utils/cache.js"; // in memory cache
+// state imports
+import { activeKidStore } from "../../state/ActiveKIDState.js";
 
 import { ManagerFactory } from './managerFactory.js';
 
-const managerFactory = ManagerFactory.getInstance(pathService, CryptoEngine, LockRepo, policyRepo, Cache);
+const managerFactory = ManagerFactory.getInstance({ pathService, cryptoEngine, LockRepo, policyRepo, Cache, activeKidStore });
 const manager = managerFactory.create();
 
 

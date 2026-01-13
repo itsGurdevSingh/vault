@@ -1,14 +1,14 @@
 import { JwksBuilder } from "./jwksBuilder.js";
 
 class BuilderFactory {
-    static getInstance(cache, loader, cryptoEngine) {
+    static getInstance({ cache, loader, cryptoEngine }) {
         if (!this._instance) {
-            this._instance = new BuilderFactory(cache, loader, cryptoEngine);
+            this._instance = new BuilderFactory({ cache, loader, cryptoEngine });
         }
         return this._instance;
     }
 
-    constructor(cache, loader, cryptoEngine) {
+    constructor({ cache, loader, cryptoEngine }) {
         this.cache = cache;
         this.loader = loader;
         this.cryptoEngine = cryptoEngine;

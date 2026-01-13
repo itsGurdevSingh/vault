@@ -8,7 +8,7 @@ import { KeyDeleter } from './KeyDeleter.js';
 
 class JanitorFactory {
     // in constructor we inject all outside dependencies
-    constructor({ loaderCache, builderCache, signerCache }, metadataManager, pathService) {
+    constructor({ cache: { loaderCache, builderCache, signerCache }, metadataManager, pathService }) {
         this.loaderCache = loaderCache;
         this.builderCache = builderCache;
         this.signerCache = signerCache;
@@ -26,9 +26,9 @@ class JanitorFactory {
         return new Janitor(keyFileJanitor, metadataJanitor, expiredKeyReaper);
     }
 
-    static getInstance(caches, metadataManager, pathService) {
+    static getInstance({ caches, metadataManager, pathService }) {
         if (!JanitorFactory.instance) {
-            JanitorFactory.instance = new JanitorFactory(caches, metadataManager, pathService);
+            JanitorFactory.instance = new JanitorFactory({ caches, metadataManager, pathService });
         }
         return JanitorFactory.instance;
     }

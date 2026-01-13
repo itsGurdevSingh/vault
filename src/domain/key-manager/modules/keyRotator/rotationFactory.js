@@ -1,5 +1,5 @@
-import { RotationScheduler } from "./RotationScheduler";
-import { Rotator } from "./rotator";
+import { RotationScheduler } from "./rotationScheduler.js";
+import { Rotator } from "./rotator.js";
 
 class RotationFactory {
     constructor({ keyGenerator, keyJanitor, keyResolver, metadataManager, lockRepository }, { state, policyRepo }) {
@@ -25,7 +25,7 @@ class RotationFactory {
         return new RotationScheduler(keyRotator, this.policyRepo, this.state);
     }
 
-    static getInstances({ keyGenerator, keyJanitor, keyResolver, metadataManager, lockRepository }, { state, policyRepo }) {
+    static getInstance({ keyGenerator, keyJanitor, keyResolver, metadataManager, lockRepository }, { state, policyRepo }) {
         if (!this.schedulerInstance) {
             this.schedulerInstance = new RotationFactory({ keyGenerator, keyJanitor, keyResolver, metadataManager, lockRepository }, { state, policyRepo });
         }

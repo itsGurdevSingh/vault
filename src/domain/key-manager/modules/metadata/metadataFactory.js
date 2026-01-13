@@ -1,11 +1,11 @@
-import { MetadataService } from "./MetadataService";
-import { MetadataFileStore } from "./metadataFileStore";
+import { MetadataService } from "./MetadataService.js";
+import { MetadataFileStore } from "./metadataFileStore.js";
 import { writeFile, readFile, unlink, readdir, mkdir } from "fs/promises";
 import path from "path";
 
 class MetadataFactory {
 
-    constructor(pathService, fsOps = null) {
+    constructor({ pathService, fsOps = null }) {
         this.pathService = pathService;
         this.fsOps = fsOps || {
             writeFile,

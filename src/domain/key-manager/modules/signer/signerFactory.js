@@ -1,7 +1,7 @@
 import { Signer } from "./Signer.js";
 
 class SignerFactory {
-    constructor(cache, keyResolver, cryptoEngine, opts = { logger: console }) {
+    constructor({ cache, keyResolver, cryptoEngine, opts = { logger: console } }) {
         this.cache = cache;
         this.keyResolver = keyResolver;
         this.cryptoEngine = cryptoEngine;
@@ -15,9 +15,9 @@ class SignerFactory {
             this.opts
         );
     }
-    static getInstance(cache, keyResolver, cryptoEngine, opts = {}) {
+    static getInstance({ cache, keyResolver, cryptoEngine, opts = {} }) {
         if (!this._instance) {
-            this._instance = new SignerFactory(cache, keyResolver, cryptoEngine, opts);
+            this._instance = new SignerFactory({ cache, keyResolver, cryptoEngine, opts });
         }
         return this._instance;
     }

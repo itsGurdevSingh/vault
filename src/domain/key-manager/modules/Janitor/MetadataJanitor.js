@@ -1,4 +1,4 @@
-import { KEY_GRACE_MS, KEY_PUBLIC_TTL_MS } from "../../../../config/keys";
+import { KEY_GRACE_MS, KEY_PUBLIC_TTL_MS } from "../../../../config/keys.js";
 
 export class MetadataJanitor {
 

@@ -11,7 +11,7 @@ class RotationConfig {
 
     static getInstance(state) {
         if (!this.instance) {
-            this.instance = new RotationConfigManager(state);
+            this.instance = new RotationConfig(state);
         }
         return this.instance;
     }
