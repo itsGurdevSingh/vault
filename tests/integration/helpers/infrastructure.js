@@ -80,6 +80,7 @@ export function createTestInfrastructure(testPaths) {
     // 4. POLICY REPOSITORY (Mock MongoDB for rotation policies)
     const policyRepo = {
         findDueForRotation: async () => [],
+        getDueForRotation: async () => [], // For scheduleRotation
         updateLastRotated: async (domain) => true,
         getPolicy: async (domain) => null,
         findByDomain: async (domain) => ({
