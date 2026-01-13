@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package vault;
+
+// VaultSigner provides cryptographic signing operations for JWT tokens.
+// It manages domain-specific key resolution and signature generation.
+service VaultSigner {
+  // Health check to verify mTLS connection
+  rpc Health (HealthRequest) returns (HealthResponse);
+  
+  // Sign creates a cryptographically signed JWT token for the given domain and payload.
+  // It uses the domain-specific private key to generate the signature.
+  rpc Sign (SignRequest) returns (SignResponse);
+}
+
+// HealthRequest for connection testing
+message HealthRequest {
+  string ping = 1;
+}
+
+// HealthResponse confirms connection
+message HealthResponse {
+  string status = 1;
+  string message = 2;
+}
+
+// SignRequest contains the domain and payload to be signed.
+message SignRequest {
+  string domain = 1;
+  string payload = 2;
+}
+
+// SignResponse contains the signed JWT token.
+message SignResponse {
+  string token = 1;
+}
