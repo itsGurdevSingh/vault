@@ -26,9 +26,9 @@ class ManagerFactory {
         this.kidStore = activeKidStore;
     }
 
-    static getInstance({ pathService, cryptoEngine, LockRepo, policyRepo, Cache, activeKidStore }) {
+    static getInstance({ pathService, cryptoEngine, lockRepo, policyRepo, Cache, activeKidStore }) {
         if (!this._instance) {
-            this._instance = new ManagerFactory({ pathService, cryptoEngine, LockRepo, policyRepo, Cache, activeKidStore });
+            this._instance = new ManagerFactory({ pathService, cryptoEngine, lockRepo, policyRepo, Cache, activeKidStore });
         }
         return this._instance;
     }
