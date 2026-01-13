@@ -26,9 +26,9 @@ class JanitorFactory {
         return new Janitor(keyFileJanitor, metadataJanitor, expiredKeyReaper);
     }
 
-    static getInstance({ caches, metadataManager, pathService }) {
+    static getInstance({ cache, metadataManager, pathService }) {
         if (!JanitorFactory.instance) {
-            JanitorFactory.instance = new JanitorFactory({ caches, metadataManager, pathService });
+            JanitorFactory.instance = new JanitorFactory({ cache, metadataManager, pathService });
         }
         return JanitorFactory.instance;
     }

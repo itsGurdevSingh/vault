@@ -33,7 +33,7 @@ class ManagerFactory {
         return this._instance;
     }
 
-    create() {
+    async create() {
         // 1. INFRASTRUCTURE (The Foundation)
         const cryptoEngine = this.cryptoEngine; // Use the instance directly
 
@@ -53,7 +53,7 @@ class ManagerFactory {
 
         // 4. SUB-DOMAIN: LOADER (Read Access)
         const loaderFactory = LoaderFactory.getInstance({ loaderCache, pathService: this.pathService, cryptoEngine });
-        const loader = loaderFactory.create();
+        const loader = await loaderFactory.create();
 
         // 5. INTERNAL SERVICE: RESOLVER (Helper)
         const keyResolver = new KeyResolver({ loader, kidStore: this.kidStore });

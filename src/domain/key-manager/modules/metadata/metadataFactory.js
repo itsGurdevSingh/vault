@@ -22,9 +22,9 @@ class MetadataFactory {
         return new MetadataService(store);
     }
 
-    static getInstance(pathService, fsOps = null) {
+    static getInstance({ pathService, fsOps = null }) {
         if (!this._instance) {
-            this._instance = new MetadataFactory(pathService, fsOps);
+            this._instance = new MetadataFactory({ pathService, fsOps });
         }
         return this._instance;
     }

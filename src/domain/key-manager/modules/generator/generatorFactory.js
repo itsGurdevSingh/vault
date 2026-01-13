@@ -17,9 +17,9 @@ export class GeneratorFactory {
         return new RSAKeyGenerator(this.cryptoEngine, this.metadataManager, keyWriter, dirManager);
     }
 
-    static getInstance(cryptoEngine, metadataManager, paths) {
+    static getInstance({ cryptoEngine, metadataManager, pathService }) {
         if (!this.instance) {
-            this.instance = new GeneratorFactory(cryptoEngine, metadataManager, paths);
+            this.instance = new GeneratorFactory({ cryptoEngine, metadataManager, paths: pathService });
         }
         return this.instance;
     }
