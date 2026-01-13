@@ -1463,7 +1463,7 @@
 							"content": [
 								{
 									"type": "text",
-									"text": "pathsRepo"
+									"text": "pathService"
 								}
 							]
 						}
