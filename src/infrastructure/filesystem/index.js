@@ -1,1 +1,1 @@
-export * as pathService from './KeyPaths.js';
+export * as pathService from './pathService.js';

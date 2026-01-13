@@ -3,7 +3,7 @@ import { join } from 'path';
 const BASE_KEYS_DIR = join(process.cwd(), 'storage/keys');
 const BASE_KEYS_META_DIR = join(process.cwd(), 'storage/metadata/keys');
 
-export const KeyPaths = {
+export const pathService = {
 
     //====================== key file paths ======================//
     /**base key directory */
