@@ -10,6 +10,8 @@ import { activeKidStore } from "../../state/ActiveKIDState.js";
 
 import { ManagerFactory } from './managerFactory.js';
 
+export { ManagerFactory }; // export for testing purposes.
+
 const managerFactory = ManagerFactory.getInstance({ pathService, cryptoEngine, LockRepo, policyRepo, Cache, activeKidStore });
 const manager = managerFactory.create();
 
