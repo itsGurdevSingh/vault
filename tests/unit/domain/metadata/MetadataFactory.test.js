@@ -26,13 +26,13 @@ describe('MetadataFactory', () => {
 
     describe('constructor', () => {
         it('should initialize with pathService and fsOps', () => {
-            const factory = new MetadataFactory(mockPathsRepo, mockFsOps);
+            const factory = new MetadataFactory({ pathService: mockPathsRepo, fsOps: mockFsOps });
             expect(factory.pathService).toBe(mockPathsRepo);
             expect(factory.fsOps).toBe(mockFsOps);
         });
 
         it('should use default fsOps if not provided', () => {
-            const factory = new MetadataFactory(mockPathsRepo);
+            const factory = new MetadataFactory({ pathService: mockPathsRepo });
             expect(factory.pathService).toBe(mockPathsRepo);
             expect(factory.fsOps).toBeDefined();
             expect(factory.fsOps.writeFile).toBeDefined();
@@ -42,14 +42,14 @@ describe('MetadataFactory', () => {
 
         it('should accept custom fsOps parameter', () => {
             const customFs = { custom: 'fs' };
-            const factory = new MetadataFactory(mockPathsRepo, customFs);
+            const factory = new MetadataFactory({ pathService: mockPathsRepo, fsOps: customFs });
             expect(factory.fsOps).toBe(customFs);
         });
     });
 
     describe('create', () => {
         it('should create MetadataService with MetaFileStore', () => {
-            const factory = new MetadataFactory(mockPathsRepo, mockFsOps);
+            const factory = new MetadataFactory({ pathService: mockPathsRepo, fsOps: mockFsOps });
 
             const service = factory.create();
 
@@ -59,7 +59,7 @@ describe('MetadataFactory', () => {
         });
 
         it('should create MetaFileStore with pathService and fsOps', () => {
-            const factory = new MetadataFactory(mockPathsRepo, mockFsOps);
+            const factory = new MetadataFactory({ pathService: mockPathsRepo, fsOps: mockFsOps });
 
             const service = factory.create();
 
@@ -68,7 +68,7 @@ describe('MetadataFactory', () => {
         });
 
         it('should create new MetadataService instance each time', () => {
-            const factory = new MetadataFactory(mockPathsRepo, mockFsOps);
+            const factory = new MetadataFactory({ pathService: mockPathsRepo, fsOps: mockFsOps });
 
             const service1 = factory.create();
             const service2 = factory.create();
@@ -77,7 +77,7 @@ describe('MetadataFactory', () => {
         });
 
         it('should create working MetadataService with all methods', () => {
-            const factory = new MetadataFactory(mockPathsRepo, mockFsOps);
+            const factory = new MetadataFactory({ pathService: mockPathsRepo, fsOps: mockFsOps });
 
             const service = factory.create();
 
@@ -92,8 +92,8 @@ describe('MetadataFactory', () => {
 
     describe('getInstance (singleton)', () => {
         it('should return same instance on multiple calls', () => {
-            const instance1 = MetadataFactory.getInstance(mockPathsRepo, mockFsOps);
-            const instance2 = MetadataFactory.getInstance(mockPathsRepo, mockFsOps);
+            const instance1 = MetadataFactory.getInstance({ pathService: mockPathsRepo, fsOps: mockFsOps });
+            const instance2 = MetadataFactory.getInstance({ pathService: mockPathsRepo, fsOps: mockFsOps });
 
             expect(instance1).toBe(instance2);
         });
@@ -101,14 +101,14 @@ describe('MetadataFactory', () => {
         it('should create instance on first call', () => {
             expect(MetadataFactory._instance).toBeNull();
 
-            const instance = MetadataFactory.getInstance(mockPathsRepo, mockFsOps);
+            const instance = MetadataFactory.getInstance({ pathService: mockPathsRepo, fsOps: mockFsOps });
 
             expect(instance).toBeDefined();
             expect(MetadataFactory._instance).toBe(instance);
         });
 
         it('should initialize with pathService and fsOps', () => {
-            const instance = MetadataFactory.getInstance(mockPathsRepo, mockFsOps);
+            const instance = MetadataFactory.getInstance({ pathService: mockPathsRepo, fsOps: mockFsOps });
 
             expect(instance.pathService).toBe(mockPathsRepo);
             expect(instance.fsOps).toBe(mockFsOps);
@@ -120,8 +120,8 @@ describe('MetadataFactory', () => {
             const fs1 = { id: 'fs1' };
             const fs2 = { id: 'fs2' };
 
-            const instance1 = MetadataFactory.getInstance(paths1, fs1);
-            const instance2 = MetadataFactory.getInstance(paths2, fs2);
+            const instance1 = MetadataFactory.getInstance({ pathService: paths1, fsOps: fs1 });
+            const instance2 = MetadataFactory.getInstance({ pathService: paths2, fsOps: fs2 });
 
             expect(instance1).toBe(instance2);
             expect(instance1.pathService).toBe(paths1);
@@ -131,14 +131,14 @@ describe('MetadataFactory', () => {
 
     describe('factory pattern', () => {
         it('should follow factory pattern conventions', () => {
-            const factory = MetadataFactory.getInstance(mockPathsRepo);
+            const factory = MetadataFactory.getInstance({ pathService: mockPathsRepo });
 
             expect(typeof factory.create).toBe('function');
             expect(typeof MetadataFactory.getInstance).toBe('function');
         });
 
         it('should encapsulate service creation', () => {
-            const factory = new MetadataFactory(mockPathsRepo);
+            const factory = new MetadataFactory({ pathService: mockPathsRepo });
 
             const service = factory.create();
 

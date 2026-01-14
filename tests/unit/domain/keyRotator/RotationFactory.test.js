@@ -103,10 +103,10 @@ describe('RotationFactory', () => {
     });
   });
 
-  describe('getInstances (singleton)', () => {
+  describe('getInstance (singleton)', () => {
     it('should return same instance on multiple calls', () => {
-      const instance1 = RotationFactory.getInstances(mockRotatorDeps, mockSchedulerDeps);
-      const instance2 = RotationFactory.getInstances(mockRotatorDeps, mockSchedulerDeps);
+      const instance1 = RotationFactory.getInstance(mockRotatorDeps, mockSchedulerDeps);
+      const instance2 = RotationFactory.getInstance(mockRotatorDeps, mockSchedulerDeps);
 
       expect(instance1).toBe(instance2);
     });
@@ -114,14 +114,14 @@ describe('RotationFactory', () => {
     it('should create instance on first call', () => {
       expect(RotationFactory.schedulerInstance).toBeNull();
 
-      const instance = RotationFactory.getInstances(mockRotatorDeps, mockSchedulerDeps);
+      const instance = RotationFactory.getInstance(mockRotatorDeps, mockSchedulerDeps);
 
       expect(instance).toBeDefined();
       expect(RotationFactory.schedulerInstance).toBe(instance);
     });
 
     it('should initialize with rotator dependencies', () => {
-      const instance = RotationFactory.getInstances(mockRotatorDeps, mockSchedulerDeps);
+      const instance = RotationFactory.getInstance(mockRotatorDeps, mockSchedulerDeps);
 
       expect(instance.keyGenerator).toBe(mockRotatorDeps.keyGenerator);
       expect(instance.keyJanitor).toBe(mockRotatorDeps.keyJanitor);
@@ -131,7 +131,7 @@ describe('RotationFactory', () => {
     });
 
     it('should initialize with scheduler dependencies', () => {
-      const instance = RotationFactory.getInstances(mockRotatorDeps, mockSchedulerDeps);
+      const instance = RotationFactory.getInstance(mockRotatorDeps, mockSchedulerDeps);
 
       expect(instance.state).toBe(mockSchedulerDeps.state);
       expect(instance.policyRepo).toBe(mockSchedulerDeps.policyRepo);
@@ -141,8 +141,8 @@ describe('RotationFactory', () => {
       const deps1 = { ...mockRotatorDeps, keyGenerator: { id: 1 } };
       const deps2 = { ...mockRotatorDeps, keyGenerator: { id: 2 } };
 
-      const instance1 = RotationFactory.getInstances(deps1, mockSchedulerDeps);
-      const instance2 = RotationFactory.getInstances(deps2, mockSchedulerDeps);
+      const instance1 = RotationFactory.getInstance(deps1, mockSchedulerDeps);
+      const instance2 = RotationFactory.getInstance(deps2, mockSchedulerDeps);
 
       expect(instance1).toBe(instance2);
       expect(instance1.keyGenerator).toBe(deps1.keyGenerator);

@@ -36,7 +36,7 @@ describe('SignerFactory', () => {
     describe('constructor', () => {
         it('should initialize with all required dependencies', () => {
             // Test: Verify all dependencies are stored
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             expect(factory.cache).toBe(mockCache);
             expect(factory.keyResolver).toBe(mockKeyResolver);
@@ -45,7 +45,7 @@ describe('SignerFactory', () => {
 
         it('should set default opts with console logger if not provided', () => {
             // Test: Default logger is console
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             expect(factory.opts).toEqual({ logger: console });
         });
@@ -53,7 +53,7 @@ describe('SignerFactory', () => {
         it('should use provided opts', () => {
             // Test: Custom opts are stored
             const customOpts = { logger: mockLogger, defaultTTL: 3600 };
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine, customOpts);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine, opts: customOpts });
 
             expect(factory.opts).toBe(customOpts);
         });
@@ -61,7 +61,7 @@ describe('SignerFactory', () => {
         it('should accept cache as first parameter', () => {
             // Test: Cache dependency injection
             const customCache = { custom: 'cache' };
-            const factory = new SignerFactory(customCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: customCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             expect(factory.cache).toBe(customCache);
         });
@@ -69,7 +69,7 @@ describe('SignerFactory', () => {
         it('should accept keyResolver as second parameter', () => {
             // Test: KeyResolver dependency injection
             const customResolver = { custom: 'resolver' };
-            const factory = new SignerFactory(mockCache, customResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: customResolver, cryptoEngine: mockCryptoEngine });
 
             expect(factory.keyResolver).toBe(customResolver);
         });
@@ -77,7 +77,7 @@ describe('SignerFactory', () => {
         it('should accept cryptoEngine as third parameter', () => {
             // Test: CryptoEngine dependency injection
             const customEngine = { custom: 'engine' };
-            const factory = new SignerFactory(mockCache, mockKeyResolver, customEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: customEngine });
 
             expect(factory.cryptoEngine).toBe(customEngine);
         });
@@ -86,7 +86,7 @@ describe('SignerFactory', () => {
     describe('create', () => {
         it('should create Signer instance with proper dependencies', () => {
             // Test: Factory assembles Signer with injected components
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine, { logger: mockLogger });
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine, opts: { logger: mockLogger } });
 
             const signer = factory.create();
 
@@ -98,7 +98,7 @@ describe('SignerFactory', () => {
 
         it('should inject cache into Signer', () => {
             // Test: Cache flows from factory to signer
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             const signer = factory.create();
 
@@ -107,7 +107,7 @@ describe('SignerFactory', () => {
 
         it('should inject keyResolver into Signer', () => {
             // Test: KeyResolver flows from factory to signer
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             const signer = factory.create();
 
@@ -116,7 +116,7 @@ describe('SignerFactory', () => {
 
         it('should inject cryptoEngine into Signer', () => {
             // Test: CryptoEngine flows from factory to signer
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             const signer = factory.create();
 
@@ -126,7 +126,7 @@ describe('SignerFactory', () => {
         it('should pass opts to Signer', () => {
             // Test: Options are forwarded to signer
             const opts = { logger: mockLogger, defaultTTL: 7200 };
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine, opts);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine, opts });
 
             const signer = factory.create();
 
@@ -136,7 +136,7 @@ describe('SignerFactory', () => {
 
         it('should create new Signer instance each time', () => {
             // Test: Each create() call returns new instance
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             const signer1 = factory.create();
             const signer2 = factory.create();
@@ -146,7 +146,7 @@ describe('SignerFactory', () => {
 
         it('should return signer with working sign method', () => {
             // Test: Created signer has functional sign method
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             const signer = factory.create();
 
@@ -155,7 +155,7 @@ describe('SignerFactory', () => {
 
         it('should share cache across multiple signers', () => {
             // Test: All signers from same factory use same cache
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             const signer1 = factory.create();
             const signer2 = factory.create();
@@ -167,8 +167,8 @@ describe('SignerFactory', () => {
     describe('getInstance (singleton pattern)', () => {
         it('should return the same factory instance on multiple calls', () => {
             // Test: Singleton behavior - one factory per application
-            const instance1 = SignerFactory.getInstance(mockCache, mockKeyResolver, mockCryptoEngine);
-            const instance2 = SignerFactory.getInstance(mockCache, mockKeyResolver, mockCryptoEngine);
+            const instance1 = SignerFactory.getInstance({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
+            const instance2 = SignerFactory.getInstance({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             expect(instance1).toBe(instance2);
         });
@@ -177,7 +177,7 @@ describe('SignerFactory', () => {
             // Test: Lazy instantiation
             expect(SignerFactory._instance).toBeNull();
 
-            const instance = SignerFactory.getInstance(mockCache, mockKeyResolver, mockCryptoEngine);
+            const instance = SignerFactory.getInstance({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             expect(instance).toBeDefined();
             expect(SignerFactory._instance).toBe(instance);
@@ -185,9 +185,9 @@ describe('SignerFactory', () => {
 
         it('should not create new instance on subsequent calls', () => {
             // Test: Singleton persists across calls
-            const instance1 = SignerFactory.getInstance(mockCache, mockKeyResolver, mockCryptoEngine);
-            const instance2 = SignerFactory.getInstance(mockCache, mockKeyResolver, mockCryptoEngine);
-            const instance3 = SignerFactory.getInstance(mockCache, mockKeyResolver, mockCryptoEngine);
+            const instance1 = SignerFactory.getInstance({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
+            const instance2 = SignerFactory.getInstance({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
+            const instance3 = SignerFactory.getInstance({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             expect(instance1).toBe(instance2);
             expect(instance2).toBe(instance3);
@@ -195,7 +195,7 @@ describe('SignerFactory', () => {
 
         it('should initialize with provided dependencies', () => {
             // Test: Singleton uses injected dependencies
-            const instance = SignerFactory.getInstance(mockCache, mockKeyResolver, mockCryptoEngine, { logger: mockLogger });
+            const instance = SignerFactory.getInstance({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine, opts: { logger: mockLogger } });
 
             expect(instance.cache).toBe(mockCache);
             expect(instance.keyResolver).toBe(mockKeyResolver);
@@ -208,8 +208,8 @@ describe('SignerFactory', () => {
             const cache1 = { id: 1 };
             const cache2 = { id: 2 };
 
-            const instance1 = SignerFactory.getInstance(cache1, mockKeyResolver, mockCryptoEngine);
-            const instance2 = SignerFactory.getInstance(cache2, mockKeyResolver, mockCryptoEngine);
+            const instance1 = SignerFactory.getInstance({ cache: cache1, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
+            const instance2 = SignerFactory.getInstance({ cache: cache2, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             expect(instance1).toBe(instance2);
             expect(instance1.cache).toBe(cache1); // Uses first call's cache
@@ -218,7 +218,7 @@ describe('SignerFactory', () => {
         it('should handle opts parameter in getInstance', () => {
             // Test: Options are passed through getInstance
             const opts = { logger: mockLogger, defaultTTL: 3600 };
-            const instance = SignerFactory.getInstance(mockCache, mockKeyResolver, mockCryptoEngine, opts);
+            const instance = SignerFactory.getInstance({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine, opts });
 
             expect(instance.opts).toBe(opts);
         });
@@ -227,7 +227,7 @@ describe('SignerFactory', () => {
     describe('factory pattern adherence', () => {
         it('should follow factory pattern conventions', () => {
             // Test: Factory has create method and getInstance static
-            const factory = SignerFactory.getInstance(mockCache, mockKeyResolver, mockCryptoEngine);
+            const factory = SignerFactory.getInstance({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             expect(typeof factory.create).toBe('function');
             expect(typeof SignerFactory.getInstance).toBe('function');
@@ -235,7 +235,7 @@ describe('SignerFactory', () => {
 
         it('should encapsulate instantiation logic', () => {
             // Test: Consumer doesn't need to know about Signer internals
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             const signer = factory.create();
 
@@ -253,7 +253,7 @@ describe('SignerFactory', () => {
             const customEngine = { custom: 'engine' };
             const customOpts = { logger: mockLogger };
 
-            const factory = new SignerFactory(customCache, customResolver, customEngine, customOpts);
+            const factory = new SignerFactory({ cache: customCache, keyResolver: customResolver, cryptoEngine: customEngine, opts: customOpts });
             const signer = factory.create();
 
             expect(signer.cache).toBe(customCache);
@@ -266,7 +266,7 @@ describe('SignerFactory', () => {
     describe('integration scenarios', () => {
         it('should create working signer that can coordinate components', () => {
             // Test: Full integration - factory produces functional signer
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine, { logger: mockLogger });
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine, opts: { logger: mockLogger } });
 
             const signer = factory.create();
 
@@ -279,7 +279,7 @@ describe('SignerFactory', () => {
 
         it('should handle concurrent signer creation', () => {
             // Test: Multiple signers can be created simultaneously
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             const signers = [
                 factory.create(),
@@ -301,8 +301,8 @@ describe('SignerFactory', () => {
             const cache1 = { id: 'cache1' };
             const cache2 = { id: 'cache2' };
 
-            const factory1 = new SignerFactory(cache1, mockKeyResolver, mockCryptoEngine);
-            const factory2 = new SignerFactory(cache2, mockKeyResolver, mockCryptoEngine);
+            const factory1 = new SignerFactory({ cache: cache1, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
+            const factory2 = new SignerFactory({ cache: cache2, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             const signer1 = factory1.create();
             const signer2 = factory2.create();
@@ -322,7 +322,7 @@ describe('SignerFactory', () => {
             });
             mockCryptoEngine.sign.mockResolvedValue('sig');
 
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
             const signer1 = factory.create();
             const signer2 = factory.create();
 
@@ -338,12 +338,12 @@ describe('SignerFactory', () => {
     describe('error handling', () => {
         it('should handle missing dependencies gracefully', () => {
             // Test: Factory accepts null/undefined dependencies
-            expect(() => new SignerFactory(null, null, null)).not.toThrow();
+            expect(() => new SignerFactory({ cache: null, keyResolver: null, cryptoEngine: null })).not.toThrow();
         });
 
         it('should create signer even with minimal dependencies', () => {
             // Test: Factory creates signer with minimal deps
-            const minimalFactory = new SignerFactory({}, {}, {});
+            const minimalFactory = new SignerFactory({ cache: {}, keyResolver: {}, cryptoEngine: {} });
 
             const signer = minimalFactory.create();
 
@@ -352,7 +352,7 @@ describe('SignerFactory', () => {
 
         it('should propagate errors from Signer construction', () => {
             // Test: Construction errors bubble up
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             // Should not throw during creation with valid deps
             expect(() => factory.create()).not.toThrow();
@@ -363,7 +363,7 @@ describe('SignerFactory', () => {
         it('should share cache between all signers from same factory', () => {
             // Test: Cache is shared resource
             const sharedCache = new Map();
-            const factory = new SignerFactory(sharedCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: sharedCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             const signer1 = factory.create();
             const signer2 = factory.create();
@@ -378,7 +378,7 @@ describe('SignerFactory', () => {
             const sharedCache = new Map();
             sharedCache.set('test-kid', { type: 'private' });
 
-            const factory = new SignerFactory(sharedCache, mockKeyResolver, mockCryptoEngine);
+            const factory = new SignerFactory({ cache: sharedCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
             const signer = factory.create();
 
             expect(signer.cache.get('test-kid')).toEqual({ type: 'private' });
@@ -391,8 +391,8 @@ describe('SignerFactory', () => {
             const cache1 = new Map();
             const cache2 = new Map();
 
-            const factory1 = new SignerFactory(cache1, mockKeyResolver, mockCryptoEngine);
-            const factory2 = new SignerFactory(cache2, mockKeyResolver, mockCryptoEngine);
+            const factory1 = new SignerFactory({ cache: cache1, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
+            const factory2 = new SignerFactory({ cache: cache2, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine });
 
             const signer1 = factory1.create();
             const signer2 = factory2.create();
@@ -404,7 +404,7 @@ describe('SignerFactory', () => {
     describe('options propagation', () => {
         it('should propagate defaultTTL option to signer', () => {
             // Test: Custom TTL is passed through
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine, { defaultTTL: 1800 });
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine, opts: { defaultTTL: 1800 } });
             const signer = factory.create();
 
             expect(signer.defaultTTL).toBe(1800);
@@ -412,7 +412,7 @@ describe('SignerFactory', () => {
 
         it('should propagate maxPayloadBytes option to signer', () => {
             // Test: Custom max payload is passed through
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine, { maxPayloadBytes: 8192 });
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine, opts: { maxPayloadBytes: 8192 } });
             const signer = factory.create();
 
             expect(signer.maxPayloadBytes).toBe(8192);
@@ -420,7 +420,7 @@ describe('SignerFactory', () => {
 
         it('should propagate logger option to signer', () => {
             // Test: Custom logger is passed through
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine, { logger: mockLogger });
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine, opts: { logger: mockLogger } });
             const signer = factory.create();
 
             expect(signer.logger).toBe(mockLogger);
@@ -433,7 +433,7 @@ describe('SignerFactory', () => {
                 defaultTTL: 3600,
                 maxPayloadBytes: 16384
             };
-            const factory = new SignerFactory(mockCache, mockKeyResolver, mockCryptoEngine, opts);
+            const factory = new SignerFactory({ cache: mockCache, keyResolver: mockKeyResolver, cryptoEngine: mockCryptoEngine, opts });
             const signer = factory.create();
 
             expect(signer.logger).toBe(mockLogger);

@@ -25,7 +25,7 @@ describe('BuilderFactory', () => {
     describe('constructor', () => {
         it('should initialize with all required dependencies', () => {
             // Test: Verify all dependencies are stored
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             expect(factory.cache).toBe(mockCache);
             expect(factory.loader).toBe(mockLoader);
@@ -35,7 +35,7 @@ describe('BuilderFactory', () => {
         it('should accept cache as first parameter', () => {
             // Test: Cache dependency injection
             const customCache = { custom: 'cache' };
-            const factory = new BuilderFactory(customCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: customCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             expect(factory.cache).toBe(customCache);
         });
@@ -43,7 +43,7 @@ describe('BuilderFactory', () => {
         it('should accept loader as second parameter', () => {
             // Test: Loader dependency injection
             const customLoader = { custom: 'loader' };
-            const factory = new BuilderFactory(mockCache, customLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: customLoader, cryptoEngine: mockCryptoEngine });
 
             expect(factory.loader).toBe(customLoader);
         });
@@ -51,7 +51,7 @@ describe('BuilderFactory', () => {
         it('should accept cryptoEngine as third parameter', () => {
             // Test: CryptoEngine dependency injection
             const customEngine = { custom: 'engine' };
-            const factory = new BuilderFactory(mockCache, mockLoader, customEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: customEngine });
 
             expect(factory.cryptoEngine).toBe(customEngine);
         });
@@ -60,7 +60,7 @@ describe('BuilderFactory', () => {
     describe('create', () => {
         it('should create Builder instance with proper dependencies', () => {
             // Test: Factory assembles Builder with injected components
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builder = factory.create();
 
@@ -72,7 +72,7 @@ describe('BuilderFactory', () => {
 
         it('should inject cache into Builder', () => {
             // Test: Cache flows from factory to builder
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builder = factory.create();
 
@@ -81,7 +81,7 @@ describe('BuilderFactory', () => {
 
         it('should inject loader into Builder', () => {
             // Test: Loader flows from factory to builder
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builder = factory.create();
 
@@ -90,7 +90,7 @@ describe('BuilderFactory', () => {
 
         it('should inject cryptoEngine into Builder', () => {
             // Test: CryptoEngine flows from factory to builder
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builder = factory.create();
 
@@ -99,7 +99,7 @@ describe('BuilderFactory', () => {
 
         it('should create new Builder instance each time', () => {
             // Test: Each create() call returns new instance
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builder1 = factory.create();
             const builder2 = factory.create();
@@ -109,7 +109,7 @@ describe('BuilderFactory', () => {
 
         it('should return builder with working getJWKS method', () => {
             // Test: Created builder has functional getJWKS method
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builder = factory.create();
 
@@ -118,7 +118,7 @@ describe('BuilderFactory', () => {
 
         it('should share cache across multiple builders', () => {
             // Test: All builders from same factory use same cache
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builder1 = factory.create();
             const builder2 = factory.create();
@@ -128,7 +128,7 @@ describe('BuilderFactory', () => {
 
         it('should share loader across multiple builders', () => {
             // Test: All builders from same factory use same loader
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builder1 = factory.create();
             const builder2 = factory.create();
@@ -140,8 +140,8 @@ describe('BuilderFactory', () => {
     describe('getInstance (singleton pattern)', () => {
         it('should return the same factory instance on multiple calls', () => {
             // Test: Singleton behavior - one factory per application
-            const instance1 = BuilderFactory.getInstance(mockCache, mockLoader, mockCryptoEngine);
-            const instance2 = BuilderFactory.getInstance(mockCache, mockLoader, mockCryptoEngine);
+            const instance1 = BuilderFactory.getInstance({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
+            const instance2 = BuilderFactory.getInstance({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             expect(instance1).toBe(instance2);
         });
@@ -150,7 +150,7 @@ describe('BuilderFactory', () => {
             // Test: Lazy instantiation
             expect(BuilderFactory._instance).toBeNull();
 
-            const instance = BuilderFactory.getInstance(mockCache, mockLoader, mockCryptoEngine);
+            const instance = BuilderFactory.getInstance({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             expect(instance).toBeDefined();
             expect(BuilderFactory._instance).toBe(instance);
@@ -158,9 +158,9 @@ describe('BuilderFactory', () => {
 
         it('should not create new instance on subsequent calls', () => {
             // Test: Singleton persists across calls
-            const instance1 = BuilderFactory.getInstance(mockCache, mockLoader, mockCryptoEngine);
-            const instance2 = BuilderFactory.getInstance(mockCache, mockLoader, mockCryptoEngine);
-            const instance3 = BuilderFactory.getInstance(mockCache, mockLoader, mockCryptoEngine);
+            const instance1 = BuilderFactory.getInstance({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
+            const instance2 = BuilderFactory.getInstance({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
+            const instance3 = BuilderFactory.getInstance({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             expect(instance1).toBe(instance2);
             expect(instance2).toBe(instance3);
@@ -168,7 +168,7 @@ describe('BuilderFactory', () => {
 
         it('should initialize with provided dependencies', () => {
             // Test: Singleton uses injected dependencies
-            const instance = BuilderFactory.getInstance(mockCache, mockLoader, mockCryptoEngine);
+            const instance = BuilderFactory.getInstance({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             expect(instance.cache).toBe(mockCache);
             expect(instance.loader).toBe(mockLoader);
@@ -180,8 +180,8 @@ describe('BuilderFactory', () => {
             const cache1 = { id: 1 };
             const cache2 = { id: 2 };
 
-            const instance1 = BuilderFactory.getInstance(cache1, mockLoader, mockCryptoEngine);
-            const instance2 = BuilderFactory.getInstance(cache2, mockLoader, mockCryptoEngine);
+            const instance1 = BuilderFactory.getInstance({ cache: cache1, loader: mockLoader, cryptoEngine: mockCryptoEngine });
+            const instance2 = BuilderFactory.getInstance({ cache: cache2, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             expect(instance1).toBe(instance2);
             expect(instance1.cache).toBe(cache1); // Uses first call's cache
@@ -191,7 +191,7 @@ describe('BuilderFactory', () => {
     describe('factory pattern adherence', () => {
         it('should follow factory pattern conventions', () => {
             // Test: Factory has create method and getInstance static
-            const factory = BuilderFactory.getInstance(mockCache, mockLoader, mockCryptoEngine);
+            const factory = BuilderFactory.getInstance({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             expect(typeof factory.create).toBe('function');
             expect(typeof BuilderFactory.getInstance).toBe('function');
@@ -199,7 +199,7 @@ describe('BuilderFactory', () => {
 
         it('should encapsulate instantiation logic', () => {
             // Test: Consumer doesn't need to know about Builder internals
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builder = factory.create();
 
@@ -216,7 +216,7 @@ describe('BuilderFactory', () => {
             const customLoader = { custom: 'loader' };
             const customEngine = { custom: 'engine' };
 
-            const factory = new BuilderFactory(customCache, customLoader, customEngine);
+            const factory = new BuilderFactory({ cache: customCache, loader: customLoader, cryptoEngine: customEngine });
             const builder = factory.create();
 
             expect(builder.cache).toBe(customCache);
@@ -228,7 +228,7 @@ describe('BuilderFactory', () => {
     describe('integration scenarios', () => {
         it('should create working builder that can coordinate components', () => {
             // Test: Full integration - factory produces functional builder
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builder = factory.create();
 
@@ -241,7 +241,7 @@ describe('BuilderFactory', () => {
 
         it('should handle concurrent builder creation', () => {
             // Test: Multiple builders can be created simultaneously
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builders = [
                 factory.create(),
@@ -263,8 +263,8 @@ describe('BuilderFactory', () => {
             const cache1 = { id: 'cache1' };
             const cache2 = { id: 'cache2' };
 
-            const factory1 = new BuilderFactory(cache1, mockLoader, mockCryptoEngine);
-            const factory2 = new BuilderFactory(cache2, mockLoader, mockCryptoEngine);
+            const factory1 = new BuilderFactory({ cache: cache1, loader: mockLoader, cryptoEngine: mockCryptoEngine });
+            const factory2 = new BuilderFactory({ cache: cache2, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builder1 = factory1.create();
             const builder2 = factory2.create();
@@ -281,7 +281,7 @@ describe('BuilderFactory', () => {
             });
             mockCryptoEngine.pemToJWK.mockResolvedValue({ kty: 'RSA' });
 
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
             const builder1 = factory.create();
             const builder2 = factory.create();
 
@@ -297,12 +297,12 @@ describe('BuilderFactory', () => {
     describe('error handling', () => {
         it('should handle missing dependencies gracefully', () => {
             // Test: Factory accepts null/undefined dependencies
-            expect(() => new BuilderFactory(null, null, null)).not.toThrow();
+            expect(() => new BuilderFactory({ cache: null, loader: null, cryptoEngine: null })).not.toThrow();
         });
 
         it('should create builder even with minimal dependencies', () => {
             // Test: Factory creates builder with minimal deps
-            const minimalFactory = new BuilderFactory({}, {}, {});
+            const minimalFactory = new BuilderFactory({ cache: {}, loader: {}, cryptoEngine: {} });
 
             const builder = minimalFactory.create();
 
@@ -311,7 +311,7 @@ describe('BuilderFactory', () => {
 
         it('should propagate errors from Builder construction', () => {
             // Test: Construction errors bubble up
-            const factory = new BuilderFactory(mockCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: mockCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             // Should not throw during creation with valid deps
             expect(() => factory.create()).not.toThrow();
@@ -322,7 +322,7 @@ describe('BuilderFactory', () => {
         it('should share cache between all builders from same factory', () => {
             // Test: Cache is shared resource
             const sharedCache = new Map();
-            const factory = new BuilderFactory(sharedCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: sharedCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builder1 = factory.create();
             const builder2 = factory.create();
@@ -337,7 +337,7 @@ describe('BuilderFactory', () => {
             const sharedCache = new Map();
             sharedCache.set('test-kid', { kty: 'RSA', kid: 'test-kid' });
 
-            const factory = new BuilderFactory(sharedCache, mockLoader, mockCryptoEngine);
+            const factory = new BuilderFactory({ cache: sharedCache, loader: mockLoader, cryptoEngine: mockCryptoEngine });
             const builder = factory.create();
 
             expect(builder.cache.get('test-kid')).toEqual({ kty: 'RSA', kid: 'test-kid' });
@@ -350,8 +350,8 @@ describe('BuilderFactory', () => {
             const cache1 = new Map();
             const cache2 = new Map();
 
-            const factory1 = new BuilderFactory(cache1, mockLoader, mockCryptoEngine);
-            const factory2 = new BuilderFactory(cache2, mockLoader, mockCryptoEngine);
+            const factory1 = new BuilderFactory({ cache: cache1, loader: mockLoader, cryptoEngine: mockCryptoEngine });
+            const factory2 = new BuilderFactory({ cache: cache2, loader: mockLoader, cryptoEngine: mockCryptoEngine });
 
             const builder1 = factory1.create();
             const builder2 = factory2.create();

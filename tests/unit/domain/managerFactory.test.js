@@ -12,31 +12,31 @@ describe('ManagerFactory', () => {
             const mockCache = vi.fn();
             const mockState = {};
 
-            const factory = new ManagerFactory(
-                mockPathsRepo,
-                mockCryptoEngine,
-                mockLockRepo,
-                mockPolicyRepo,
-                mockCache,
-                mockState
-            );
+            const factory = new ManagerFactory({
+                pathService: mockPathsRepo,
+                cryptoEngine: mockCryptoEngine,
+                lockRepo: mockLockRepo,
+                policyRepo: mockPolicyRepo,
+                Cache: mockCache,
+                activeKidStore: mockState
+            });
 
             expect(factory).toBeInstanceOf(ManagerFactory);
             expect(factory.pathService).toBe(mockPathsRepo);
             expect(factory.cryptoEngine).toBe(mockCryptoEngine);
             expect(factory.lockRepository).toBe(mockLockRepo);
-            expect(factory.policyRepo).toBe(mockPolicyRepo);
+            expect(factory.policyRepository).toBe(mockPolicyRepo);
             expect(factory.cache).toBe(mockCache);
             expect(factory.kidStore).toBe(mockState);
         });
 
         it('should accept undefined dependencies (no validation)', () => {
-            const factory = new ManagerFactory();
+            const factory = new ManagerFactory({});
 
             expect(factory.pathService).toBeUndefined();
             expect(factory.cryptoEngine).toBeUndefined();
             expect(factory.lockRepository).toBeUndefined();
-            expect(factory.policyRepo).toBeUndefined();
+            expect(factory.policyRepository).toBeUndefined();
             expect(factory.cache).toBeUndefined();
             expect(factory.kidStore).toBeUndefined();
         });
@@ -55,13 +55,13 @@ describe('ManagerFactory', () => {
             const mockPolicyRepo = {};
             const mockCache = vi.fn();
 
-            const instance1 = ManagerFactory.getInstance(
-                mockPathsRepo,
-                mockCryptoEngine,
-                mockLockRepo,
-                mockPolicyRepo,
-                mockCache
-            );
+            const instance1 = ManagerFactory.getInstance({
+                pathService: mockPathsRepo,
+                cryptoEngine: mockCryptoEngine,
+                lockRepo: mockLockRepo,
+                policyRepo: mockPolicyRepo,
+                Cache: mockCache
+            });
 
             expect(instance1).toBeInstanceOf(ManagerFactory);
         });
@@ -73,20 +73,20 @@ describe('ManagerFactory', () => {
             const mockPolicyRepo = {};
             const mockCache = vi.fn();
 
-            const instance1 = ManagerFactory.getInstance(
-                mockPathsRepo,
-                mockCryptoEngine,
-                mockLockRepo,
-                mockPolicyRepo,
-                mockCache
-            );
-            const instance2 = ManagerFactory.getInstance(
-                mockPathsRepo,
-                mockCryptoEngine,
-                mockLockRepo,
-                mockPolicyRepo,
-                mockCache
-            );
+            const instance1 = ManagerFactory.getInstance({
+                pathService: mockPathsRepo,
+                cryptoEngine: mockCryptoEngine,
+                lockRepo: mockLockRepo,
+                policyRepo: mockPolicyRepo,
+                Cache: mockCache
+            });
+            const instance2 = ManagerFactory.getInstance({
+                pathService: mockPathsRepo,
+                cryptoEngine: mockCryptoEngine,
+                lockRepo: mockLockRepo,
+                policyRepo: mockPolicyRepo,
+                Cache: mockCache
+            });
 
             expect(instance1).toBe(instance2);
         });
@@ -99,20 +99,20 @@ describe('ManagerFactory', () => {
             const mockPolicyRepo = {};
             const mockCache = vi.fn();
 
-            const instance1 = ManagerFactory.getInstance(
-                firstPathsRepo,
-                mockCryptoEngine,
-                mockLockRepo,
-                mockPolicyRepo,
-                mockCache
-            );
-            const instance2 = ManagerFactory.getInstance(
-                secondPathsRepo,
-                mockCryptoEngine,
-                mockLockRepo,
-                mockPolicyRepo,
-                mockCache
-            );
+            const instance1 = ManagerFactory.getInstance({
+                pathService: firstPathsRepo,
+                cryptoEngine: mockCryptoEngine,
+                lockRepo: mockLockRepo,
+                policyRepo: mockPolicyRepo,
+                Cache: mockCache
+            });
+            const instance2 = ManagerFactory.getInstance({
+                pathService: secondPathsRepo,
+                cryptoEngine: mockCryptoEngine,
+                lockRepo: mockLockRepo,
+                policyRepo: mockPolicyRepo,
+                Cache: mockCache
+            });
 
             expect(instance1.pathService.name).toBe('first');
             expect(instance2.pathService.name).toBe('first');
@@ -121,7 +121,7 @@ describe('ManagerFactory', () => {
 
     describe('create method existence', () => {
         it('should have create method', () => {
-            const factory = new ManagerFactory();
+            const factory = new ManagerFactory({});
 
             expect(typeof factory.create).toBe('function');
         });
@@ -130,7 +130,7 @@ describe('ManagerFactory', () => {
             // This test validates that create() is wired correctly in real usage
             // Full integration tests are in integration/ folder
             expect(() => {
-                const factory = new ManagerFactory();
+                const factory = new ManagerFactory({});
                 expect(factory.create).toBeDefined();
             }).not.toThrow();
         });
@@ -147,26 +147,26 @@ describe('ManagerFactory', () => {
                 state: {}
             };
 
-            const factory = new ManagerFactory(
-                deps.pathService,
-                deps.cryptoEngine,
-                deps.lockRepository,
-                deps.policyRepo,
-                deps.cache,
-                deps.state
-            );
+            const factory = new ManagerFactory({
+                pathService: deps.pathService,
+                cryptoEngine: deps.cryptoEngine,
+                lockRepo: deps.lockRepository,
+                policyRepo: deps.policyRepo,
+                Cache: deps.cache,
+                activeKidStore: deps.state
+            });
 
             expect(factory.pathService).toBe(deps.pathService);
             expect(factory.cryptoEngine).toBe(deps.cryptoEngine);
             expect(factory.lockRepository).toBe(deps.lockRepository);
-            expect(factory.policyRepo).toBe(deps.policyRepo);
+            expect(factory.policyRepository).toBe(deps.policyRepo);
             expect(factory.cache).toBe(deps.cache);
             expect(factory.kidStore).toBe(deps.state);
         });
 
         it('should pass injected dependencies to created modules', () => {
             // This validates the DI pattern works at construction time
-            const factory = new ManagerFactory({}, class { }, {}, {}, class { }, {});
+            const factory = new ManagerFactory({});
 
             expect(factory.create).toBeDefined();
         });
@@ -179,12 +179,12 @@ describe('ManagerFactory', () => {
                 'pathService',
                 'cryptoEngine',
                 'lockRepository',
-                'policyRepo',
+                'policyRepository',
                 'cache',
                 'kidStore'
             ];
 
-            const factory = new ManagerFactory();
+            const factory = new ManagerFactory({});
 
             expectedDependencies.forEach(dep => {
                 expect(Object.prototype.hasOwnProperty.call(factory, dep)).toBe(true);
@@ -193,7 +193,7 @@ describe('ManagerFactory', () => {
 
         it('should create fresh KeyManager instances on each create() call', () => {
             // Validates that create() is a factory method, not returning singleton
-            const factory = new ManagerFactory();
+            const factory = new ManagerFactory({});
 
             expect(typeof factory.create).toBe('function');
         });

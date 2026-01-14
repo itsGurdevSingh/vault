@@ -38,7 +38,7 @@ describe('GeneratorFactory', () => {
     describe('constructor', () => {
         it('should initialize with all required dependencies', () => {
             // Test: Verify all dependencies are stored
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             expect(factory.cryptoEngine).toBe(mockCryptoEngine);
             expect(factory.metadataManager).toBe(mockMetadataManager);
@@ -48,7 +48,7 @@ describe('GeneratorFactory', () => {
         it('should accept cryptoEngine as first parameter', () => {
             // Test: CryptoEngine dependency injection
             const customEngine = { custom: 'engine' };
-            const factory = new GeneratorFactory(customEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: customEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             expect(factory.cryptoEngine).toBe(customEngine);
         });
@@ -56,7 +56,7 @@ describe('GeneratorFactory', () => {
         it('should accept metadataManager as second parameter', () => {
             // Test: MetadataManager dependency injection
             const customManager = { custom: 'manager' };
-            const factory = new GeneratorFactory(mockCryptoEngine, customManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: customManager, paths: mockPaths });
 
             expect(factory.metadataManager).toBe(customManager);
         });
@@ -64,7 +64,7 @@ describe('GeneratorFactory', () => {
         it('should accept paths as third parameter', () => {
             // Test: Paths repository dependency injection
             const customPaths = { custom: 'paths' };
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, customPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: customPaths });
 
             expect(factory.paths).toBe(customPaths);
         });
@@ -73,7 +73,7 @@ describe('GeneratorFactory', () => {
     describe('create', () => {
         it('should create RSAKeyGenerator instance with proper dependencies', () => {
             // Test: Factory assembles RSAKeyGenerator with injected components
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             const generator = factory.create();
 
@@ -86,7 +86,7 @@ describe('GeneratorFactory', () => {
 
         it('should inject cryptoEngine into RSAKeyGenerator', () => {
             // Test: CryptoEngine flows from factory to generator
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             const generator = factory.create();
 
@@ -95,7 +95,7 @@ describe('GeneratorFactory', () => {
 
         it('should inject metadataManager into RSAKeyGenerator', () => {
             // Test: MetadataManager flows from factory to generator
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             const generator = factory.create();
 
@@ -104,7 +104,7 @@ describe('GeneratorFactory', () => {
 
         it('should create KeyWriter with paths and writeFile', () => {
             // Test: KeyWriter is created with correct dependencies
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             const generator = factory.create();
 
@@ -115,7 +115,7 @@ describe('GeneratorFactory', () => {
 
         it('should create DirManager with paths and mkdir', () => {
             // Test: DirManager is created with correct dependencies
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             const generator = factory.create();
 
@@ -126,7 +126,7 @@ describe('GeneratorFactory', () => {
 
         it('should create new RSAKeyGenerator instance each time', () => {
             // Test: Each create() call returns new instance
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             const generator1 = factory.create();
             const generator2 = factory.create();
@@ -136,7 +136,7 @@ describe('GeneratorFactory', () => {
 
         it('should create new KeyWriter instance each time', () => {
             // Test: Fresh KeyWriter for each generator
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             const generator1 = factory.create();
             const generator2 = factory.create();
@@ -146,7 +146,7 @@ describe('GeneratorFactory', () => {
 
         it('should create new DirManager instance each time', () => {
             // Test: Fresh DirManager for each generator
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             const generator1 = factory.create();
             const generator2 = factory.create();
@@ -156,7 +156,7 @@ describe('GeneratorFactory', () => {
 
         it('should return generator with working generate method', () => {
             // Test: Created generator has functional generate method
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             const generator = factory.create();
 
@@ -167,8 +167,8 @@ describe('GeneratorFactory', () => {
     describe('getInstance (singleton pattern)', () => {
         it('should return the same factory instance on multiple calls', () => {
             // Test: Singleton behavior - one factory per application
-            const instance1 = GeneratorFactory.getInstance(mockCryptoEngine, mockMetadataManager, mockPaths);
-            const instance2 = GeneratorFactory.getInstance(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const instance1 = GeneratorFactory.getInstance({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, pathService: mockPaths });
+            const instance2 = GeneratorFactory.getInstance({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, pathService: mockPaths });
 
             expect(instance1).toBe(instance2);
         });
@@ -177,7 +177,7 @@ describe('GeneratorFactory', () => {
             // Test: Lazy instantiation
             expect(GeneratorFactory.instance).toBeNull();
 
-            const instance = GeneratorFactory.getInstance(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const instance = GeneratorFactory.getInstance({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, pathService: mockPaths });
 
             expect(instance).toBeDefined();
             expect(GeneratorFactory.instance).toBe(instance);
@@ -185,9 +185,9 @@ describe('GeneratorFactory', () => {
 
         it('should not create new instance on subsequent calls', () => {
             // Test: Singleton persists across calls
-            const instance1 = GeneratorFactory.getInstance(mockCryptoEngine, mockMetadataManager, mockPaths);
-            const instance2 = GeneratorFactory.getInstance(mockCryptoEngine, mockMetadataManager, mockPaths);
-            const instance3 = GeneratorFactory.getInstance(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const instance1 = GeneratorFactory.getInstance({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, pathService: mockPaths });
+            const instance2 = GeneratorFactory.getInstance({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, pathService: mockPaths });
+            const instance3 = GeneratorFactory.getInstance({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, pathService: mockPaths });
 
             expect(instance1).toBe(instance2);
             expect(instance2).toBe(instance3);
@@ -195,7 +195,7 @@ describe('GeneratorFactory', () => {
 
         it('should initialize with provided dependencies', () => {
             // Test: Singleton uses injected dependencies
-            const instance = GeneratorFactory.getInstance(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const instance = GeneratorFactory.getInstance({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, pathService: mockPaths });
 
             expect(instance.cryptoEngine).toBe(mockCryptoEngine);
             expect(instance.metadataManager).toBe(mockMetadataManager);
@@ -207,8 +207,8 @@ describe('GeneratorFactory', () => {
             const engine1 = { id: 1 };
             const engine2 = { id: 2 };
 
-            const instance1 = GeneratorFactory.getInstance(engine1, mockMetadataManager, mockPaths);
-            const instance2 = GeneratorFactory.getInstance(engine2, mockMetadataManager, mockPaths);
+            const instance1 = GeneratorFactory.getInstance({ cryptoEngine: engine1, metadataManager: mockMetadataManager, pathService: mockPaths });
+            const instance2 = GeneratorFactory.getInstance({ cryptoEngine: engine2, metadataManager: mockMetadataManager, pathService: mockPaths });
 
             expect(instance1).toBe(instance2);
             expect(instance1.cryptoEngine).toBe(engine1); // Uses first call's engine
@@ -218,7 +218,7 @@ describe('GeneratorFactory', () => {
     describe('factory pattern adherence', () => {
         it('should follow factory pattern conventions', () => {
             // Test: Factory has create method and getInstance static
-            const factory = GeneratorFactory.getInstance(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = GeneratorFactory.getInstance({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, pathService: mockPaths });
 
             expect(typeof factory.create).toBe('function');
             expect(typeof GeneratorFactory.getInstance).toBe('function');
@@ -226,7 +226,7 @@ describe('GeneratorFactory', () => {
 
         it('should encapsulate instantiation logic', () => {
             // Test: Consumer doesn't need to know about internal components
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             const generator = factory.create();
 
@@ -242,7 +242,7 @@ describe('GeneratorFactory', () => {
             const customManager = { custom: 'manager' };
             const customPaths = { custom: 'paths' };
 
-            const factory = new GeneratorFactory(customEngine, customManager, customPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: customEngine, metadataManager: customManager, paths: customPaths });
             const generator = factory.create();
 
             expect(generator.cryptoEngine).toBe(customEngine);
@@ -255,7 +255,7 @@ describe('GeneratorFactory', () => {
     describe('integration scenarios', () => {
         it('should create working generator that can coordinate components', () => {
             // Test: Full integration - factory produces functional generator
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             const generator = factory.create();
 
@@ -269,7 +269,7 @@ describe('GeneratorFactory', () => {
 
         it('should handle concurrent generator creation', () => {
             // Test: Multiple generators can be created simultaneously
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             const generators = [
                 factory.create(),
@@ -292,8 +292,8 @@ describe('GeneratorFactory', () => {
             const engine1 = { id: 'engine1' };
             const engine2 = { id: 'engine2' };
 
-            const factory1 = new GeneratorFactory(engine1, mockMetadataManager, mockPaths);
-            const factory2 = new GeneratorFactory(engine2, mockMetadataManager, mockPaths);
+            const factory1 = new GeneratorFactory({ cryptoEngine: engine1, metadataManager: mockMetadataManager, paths: mockPaths });
+            const factory2 = new GeneratorFactory({ cryptoEngine: engine2, metadataManager: mockMetadataManager, paths: mockPaths });
 
             const generator1 = factory1.create();
             const generator2 = factory2.create();
@@ -306,12 +306,12 @@ describe('GeneratorFactory', () => {
     describe('error handling', () => {
         it('should handle missing dependencies gracefully', () => {
             // Test: Factory accepts null/undefined dependencies
-            expect(() => new GeneratorFactory(null, null, null)).not.toThrow();
+            expect(() => new GeneratorFactory({ cryptoEngine: null, metadataManager: null, paths: null })).not.toThrow();
         });
 
         it('should create generator even with minimal dependencies', () => {
             // Test: Factory creates generator with minimal deps
-            const minimalFactory = new GeneratorFactory({}, {}, {});
+            const minimalFactory = new GeneratorFactory({ cryptoEngine: {}, metadataManager: {}, paths: {} });
 
             const generator = minimalFactory.create();
 
@@ -320,7 +320,7 @@ describe('GeneratorFactory', () => {
 
         it('should propagate errors from component construction', () => {
             // Test: Construction errors bubble up
-            const factory = new GeneratorFactory(mockCryptoEngine, mockMetadataManager, mockPaths);
+            const factory = new GeneratorFactory({ cryptoEngine: mockCryptoEngine, metadataManager: mockMetadataManager, paths: mockPaths });
 
             // Should not throw during creation with valid deps
             expect(() => factory.create()).not.toThrow();

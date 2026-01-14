@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { join } from 'path';
 
-// Import the KeyPaths module
-const { KeyPaths } = await import('../../../../src/infrastructure/filesystem/KeyPaths.js');
+// Import the pathService module
+const { pathService: KeyPaths } = await import('../../../../src/infrastructure/filesystem/pathService.js');
 
 describe('KeyPaths', () => {
     const testDomain = 'example.com';

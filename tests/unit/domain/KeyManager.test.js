@@ -20,12 +20,9 @@ describe('KeyManager', () => {
             const manager = new KeyManager(deps);
 
             expect(manager).toBeInstanceOf(KeyManager);
-            expect(manager.loader).toBe(deps.loader);
             expect(manager.generator).toBe(deps.generator);
-            expect(manager.janitor).toBe(deps.janitor);
             expect(manager.builder).toBe(deps.builder);
             expect(manager.signer).toBe(deps.signer);
-            expect(manager.rotator).toBe(deps.keyRotator);
             expect(manager.scheduler).toBe(deps.rotationScheduler);
             expect(manager.keyResolver).toBe(deps.keyResolver);
             expect(manager.config).toBe(deps.configManager);
@@ -39,12 +36,8 @@ describe('KeyManager', () => {
             expect(manager.scheduler).toBe(mockScheduler);
         });
 
-        it('should map keyRotator to rotator', () => {
-            const mockRotator = { rotate: vi.fn() };
-            const manager = new KeyManager({ keyRotator: mockRotator });
-
-            expect(manager.rotator).toBe(mockRotator);
-        });
+        // Note: keyRotator is not stored as 'rotator' property in KeyManager
+        // It's passed to rotationScheduler via RotationFactory
 
         it('should map configManager to config', () => {
             const mockConfig = { configure: vi.fn() };
@@ -154,42 +147,8 @@ describe('KeyManager', () => {
         });
     });
 
-    describe('getPublicKey', () => {
-        let manager;
-        let mockNormalizer;
-        let mockLoader;
-
-        beforeEach(() => {
-            mockNormalizer = {
-                normalizeDomain: vi.fn().mockImplementation(d => d.toUpperCase())
-            };
-            mockLoader = {
-                getPublicKey: vi.fn().mockResolvedValue({ key: 'public' })
-            };
-            manager = new KeyManager({ normalizer: mockNormalizer, loader: mockLoader });
-        });
-
-        it('should normalize domain and delegate to loader', async () => {
-            const result = await manager.getPublicKey('example', 'kid-123');
-
-            expect(mockNormalizer.normalizeDomain).toHaveBeenCalledWith('example');
-            expect(mockLoader.getPublicKey).toHaveBeenCalledWith('kid-123');
-            expect(result).toEqual({ key: 'public' });
-        });
-
-        it('should pass kid parameter correctly', async () => {
-            await manager.getPublicKey('domain', 'specific-kid-456');
-
-            expect(mockLoader.getPublicKey).toHaveBeenCalledWith('specific-kid-456');
-        });
-
-        it('should propagate errors from loader', async () => {
-            mockLoader.getPublicKey.mockRejectedValue(new Error('Key not found'));
-
-            await expect(manager.getPublicKey('domain', 'missing-kid'))
-                .rejects.toThrow('Key not found');
-        });
-    });
+    // Note: getPublicKey is not a method on KeyManager
+    // Public key retrieval is handled via getJwks() which returns the full JWKS
 
     describe('initialSetup', () => {
         let manager;
@@ -292,26 +251,26 @@ describe('KeyManager', () => {
     describe('rotateDomain (domain-specific rotation)', () => {
         let manager;
         let mockNormalizer;
-        let mockRotator;
+        let mockScheduler;
 
         beforeEach(() => {
             mockNormalizer = {
                 normalizeDomain: vi.fn().mockImplementation(d => d.toUpperCase())
             };
-            mockRotator = {
+            mockScheduler = {
                 triggerDomainRotation: vi.fn().mockResolvedValue({ success: true })
             };
             manager = new KeyManager({
                 normalizer: mockNormalizer,
-                keyRotator: mockRotator
+                rotationScheduler: mockScheduler
             });
         });
 
-        it('should normalize domain and delegate to rotator', async () => {
+        it('should normalize domain and delegate to scheduler', async () => {
             const result = await manager.rotateDomain('specific-domain');
 
             expect(mockNormalizer.normalizeDomain).toHaveBeenCalledWith('specific-domain');
-            expect(mockRotator.triggerDomainRotation).toHaveBeenCalledWith('SPECIFIC-DOMAIN');
+            expect(mockScheduler.triggerDomainRotation).toHaveBeenCalledWith('SPECIFIC-DOMAIN');
             expect(result).toEqual({ success: true });
         });
 
@@ -319,11 +278,11 @@ describe('KeyManager', () => {
             await manager.rotateDomain('test-123');
 
             expect(mockNormalizer.normalizeDomain).toHaveBeenCalledWith('test-123');
-            expect(mockRotator.triggerDomainRotation).toHaveBeenCalledWith('TEST-123');
+            expect(mockScheduler.triggerDomainRotation).toHaveBeenCalledWith('TEST-123');
         });
 
-        it('should propagate errors from rotator', async () => {
-            mockRotator.triggerDomainRotation.mockRejectedValue(new Error('Domain rotation failed'));
+        it('should propagate errors from scheduler', async () => {
+            mockScheduler.triggerDomainRotation.mockRejectedValue(new Error('Domain rotation failed'));
 
             await expect(manager.rotateDomain('domain'))
                 .rejects.toThrow('Domain rotation failed');
@@ -388,15 +347,12 @@ describe('KeyManager', () => {
         });
     });
 
-    describe('integration - facade pattern', () => {
+    describe('integration - facade pattern)', () => {
         it('should act as facade over multiple sub-domains', () => {
             const manager = new KeyManager({
-                loader: {},
                 generator: {},
-                janitor: {},
                 builder: {},
                 signer: {},
-                keyRotator: {},
                 rotationScheduler: {},
                 keyResolver: {},
                 configManager: {},
@@ -404,12 +360,9 @@ describe('KeyManager', () => {
             });
 
             // Verify all sub-domain access points exist
-            expect(manager.loader).toBeDefined();
             expect(manager.generator).toBeDefined();
-            expect(manager.janitor).toBeDefined();
             expect(manager.builder).toBeDefined();
             expect(manager.signer).toBeDefined();
-            expect(manager.rotator).toBeDefined();
             expect(manager.scheduler).toBeDefined();
             expect(manager.keyResolver).toBeDefined();
             expect(manager.config).toBeDefined();
@@ -417,11 +370,11 @@ describe('KeyManager', () => {
         });
 
         it('should provide public API methods', () => {
-            const manager = new KeyManager({ normalizer: {}, signer: {}, builder: {}, loader: {} });
+            const manager = new KeyManager({ normalizer: {}, signer: {}, builder: {} });
 
             expect(typeof manager.sign).toBe('function');
             expect(typeof manager.getJwks).toBe('function');
-            expect(typeof manager.getPublicKey).toBe('function');
+            // Note: getPublicKey is not exposed, use getJwks instead
         });
 
         it('should provide lifecycle API methods', () => {
@@ -456,20 +409,18 @@ describe('KeyManager', () => {
                 normalizer: mockNormalizer,
                 signer: { sign: vi.fn().mockResolvedValue({}) },
                 builder: { getJwks: vi.fn().mockResolvedValue({}) },
-                loader: { getPublicKey: vi.fn().mockResolvedValue({}) },
                 generator: { generate: vi.fn().mockResolvedValue('kid') },
                 keyResolver: { setActiveKid: vi.fn().mockResolvedValue(true) },
-                keyRotator: { triggerDomainRotation: vi.fn().mockResolvedValue({}) }
+                rotationScheduler: { triggerDomainRotation: vi.fn().mockResolvedValue({}) }
             });
 
             await manager.sign('test', {}, {});
             await manager.getJwks('test');
-            await manager.getPublicKey('test', 'kid');
             await manager.initialSetup('test');
             await manager.rotateDomain('test');
 
             // Verify normalization was called for each domain-aware method
-            expect(mockNormalizer.normalizeDomain).toHaveBeenCalledTimes(5);
+            expect(mockNormalizer.normalizeDomain).toHaveBeenCalledTimes(4);
             mockNormalizer.normalizeDomain.mock.calls.forEach(call => {
                 expect(call[0]).toBe('test');
             });

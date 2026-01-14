@@ -39,9 +39,9 @@ describe('LoaderFactory', () => {
     describe('constructor', () => {
         it('should initialize with injected dependencies', () => {
             // Test: Verify factory stores all dependencies
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
-            expect(factory.KeyChache).toBe(mockCache);
+            expect(factory.KeyCache).toBe(mockCache);
             expect(factory.pathService).toBe(mockPaths);
             expect(factory.cryptoEngine).toBe(mockCryptoEngine);
         });
@@ -49,15 +49,15 @@ describe('LoaderFactory', () => {
         it('should accept cache as first parameter', () => {
             // Test: Cache dependency injection
             const customCache = { custom: true };
-            const factory = new LoaderFactory(customCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: customCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
-            expect(factory.KeyChache).toBe(customCache);
+            expect(factory.KeyCache).toBe(customCache);
         });
 
         it('should accept paths as second parameter', () => {
             // Test: Paths repository dependency injection
             const customPaths = { custom: true };
-            const factory = new LoaderFactory(mockCache, customPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: customPaths, cryptoEngine: mockCryptoEngine });
 
             expect(factory.pathService).toBe(customPaths);
         });
@@ -65,7 +65,7 @@ describe('LoaderFactory', () => {
         it('should accept cryptoEngine as third parameter', () => {
             // Test: CryptoEngine dependency injection
             const customEngine = { custom: true };
-            const factory = new LoaderFactory(mockCache, mockPaths, customEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: customEngine });
 
             expect(factory.cryptoEngine).toBe(customEngine);
         });
@@ -74,7 +74,7 @@ describe('LoaderFactory', () => {
     describe('create', () => {
         it('should create KeyRegistry instance with proper dependencies', async () => {
             // Test: Factory assembles KeyRegistry with injected components
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const registry = await factory.create();
 
@@ -85,7 +85,7 @@ describe('LoaderFactory', () => {
 
         it('should inject cache into KeyReader', async () => {
             // Test: Cache flows from factory to KeyReader
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const registry = await factory.create();
 
@@ -94,7 +94,7 @@ describe('LoaderFactory', () => {
 
         it('should inject paths into KeyReader', async () => {
             // Test: Paths repository flows to KeyReader
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const registry = await factory.create();
 
@@ -103,7 +103,7 @@ describe('LoaderFactory', () => {
 
         it('should inject cryptoEngine into KeyReader', async () => {
             // Test: CryptoEngine flows to KeyReader
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const registry = await factory.create();
 
@@ -112,7 +112,7 @@ describe('LoaderFactory', () => {
 
         it('should inject paths into KeyDirectory', async () => {
             // Test: Paths repository flows to KeyDirectory
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const registry = await factory.create();
 
@@ -121,7 +121,7 @@ describe('LoaderFactory', () => {
 
         it('should create new KeyRegistry instance each time', async () => {
             // Test: Each create() call returns new instance
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const registry1 = await factory.create();
             const registry2 = await factory.create();
@@ -131,7 +131,7 @@ describe('LoaderFactory', () => {
 
         it('should create new KeyReader instance each time', async () => {
             // Test: Fresh KeyReader for each registry
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const registry1 = await factory.create();
             const registry2 = await factory.create();
@@ -141,7 +141,7 @@ describe('LoaderFactory', () => {
 
         it('should create new KeyDirectory instance each time', async () => {
             // Test: Fresh KeyDirectory for each registry
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const registry1 = await factory.create();
             const registry2 = await factory.create();
@@ -151,7 +151,7 @@ describe('LoaderFactory', () => {
 
         it('should return registry with working reader', async () => {
             // Test: Created registry has functional reader
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const registry = await factory.create();
 
@@ -161,7 +161,7 @@ describe('LoaderFactory', () => {
 
         it('should return registry with working directory', async () => {
             // Test: Created registry has functional directory
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const registry = await factory.create();
 
@@ -173,8 +173,8 @@ describe('LoaderFactory', () => {
     describe('getInstance (singleton pattern)', () => {
         it('should return the same factory instance on multiple calls', () => {
             // Test: Singleton behavior - one factory per application
-            const instance1 = LoaderFactory.getInstance(mockCache, mockPaths, mockCryptoEngine);
-            const instance2 = LoaderFactory.getInstance(mockCache, mockPaths, mockCryptoEngine);
+            const instance1 = LoaderFactory.getInstance({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
+            const instance2 = LoaderFactory.getInstance({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             expect(instance1).toBe(instance2);
         });
@@ -201,9 +201,9 @@ describe('LoaderFactory', () => {
 
         it('should initialize with provided dependencies', () => {
             // Test: Singleton uses injected dependencies
-            const instance = LoaderFactory.getInstance(mockCache, mockPaths, mockCryptoEngine);
+            const instance = LoaderFactory.getInstance({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
-            expect(instance.KeyChache).toBe(mockCache);
+            expect(instance.KeyCache).toBe(mockCache);
             expect(instance.pathService).toBe(mockPaths);
             expect(instance.cryptoEngine).toBe(mockCryptoEngine);
         });
@@ -213,18 +213,18 @@ describe('LoaderFactory', () => {
             const cache1 = { id: 1 };
             const cache2 = { id: 2 };
 
-            const instance1 = LoaderFactory.getInstance(cache1, mockPaths, mockCryptoEngine);
-            const instance2 = LoaderFactory.getInstance(cache2, mockPaths, mockCryptoEngine);
+            const instance1 = LoaderFactory.getInstance({ loaderCache: cache1, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
+            const instance2 = LoaderFactory.getInstance({ loaderCache: cache2, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             expect(instance1).toBe(instance2);
-            expect(instance1.KeyChache).toBe(cache1); // Uses first call's cache
+            expect(instance1.KeyCache).toBe(cache1); // Uses first call's cache
         });
     });
 
     describe('factory pattern adherence', () => {
         it('should follow factory pattern conventions', () => {
             // Test: Factory has create method and getInstance static
-            const factory = LoaderFactory.getInstance(mockCache, mockPaths, mockCryptoEngine);
+            const factory = LoaderFactory.getInstance({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             expect(typeof factory.create).toBe('function');
             expect(typeof LoaderFactory.getInstance).toBe('function');
@@ -232,7 +232,7 @@ describe('LoaderFactory', () => {
 
         it('should encapsulate instantiation logic', async () => {
             // Test: Consumer doesn't need to know about internal components
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const registry = await factory.create();
 
@@ -248,7 +248,7 @@ describe('LoaderFactory', () => {
             const customPaths = { custom: 'paths' };
             const customEngine = { custom: 'engine', getInfo: vi.fn() };
 
-            const factory = new LoaderFactory(customCache, customPaths, customEngine);
+            const factory = new LoaderFactory({ loaderCache: customCache, pathService: customPaths, cryptoEngine: customEngine });
             const registry = await factory.create();
 
             expect(registry.reader.cache).toBe(customCache);
@@ -261,7 +261,7 @@ describe('LoaderFactory', () => {
     describe('integration scenarios', () => {
         it('should create working registry that can coordinate components', async () => {
             // Test: Full integration - factory produces functional registry
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const registry = await factory.create();
 
@@ -276,7 +276,7 @@ describe('LoaderFactory', () => {
 
         it('should handle concurrent registry creation', async () => {
             // Test: Multiple registries can be created simultaneously
-            const factory = new LoaderFactory(mockCache, mockPaths, mockCryptoEngine);
+            const factory = new LoaderFactory({ loaderCache: mockCache, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const promises = [
                 factory.create(),
@@ -301,8 +301,8 @@ describe('LoaderFactory', () => {
             const cache1 = { id: 'cache1' };
             const cache2 = { id: 'cache2' };
 
-            const factory1 = new LoaderFactory(cache1, mockPaths, mockCryptoEngine);
-            const factory2 = new LoaderFactory(cache2, mockPaths, mockCryptoEngine);
+            const factory1 = new LoaderFactory({ loaderCache: cache1, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
+            const factory2 = new LoaderFactory({ loaderCache: cache2, pathService: mockPaths, cryptoEngine: mockCryptoEngine });
 
             const registry1 = await factory1.create();
             const registry2 = await factory2.create();
@@ -315,12 +315,12 @@ describe('LoaderFactory', () => {
     describe('error handling', () => {
         it('should handle missing dependencies gracefully', () => {
             // Test: Factory accepts null/undefined dependencies
-            expect(() => new LoaderFactory(null, null, null)).not.toThrow();
+            expect(() => new LoaderFactory({ loaderCache: null, pathService: null, cryptoEngine: null })).not.toThrow();
         });
 
         it('should create registry even with minimal dependencies', async () => {
             // Test: Factory creates registry with minimal deps
-            const minimalFactory = new LoaderFactory({}, {}, { getInfo: vi.fn() });
+            const minimalFactory = new LoaderFactory({ loaderCache: {}, pathService: {}, cryptoEngine: { getInfo: vi.fn() } });
 
             const registry = await minimalFactory.create();
 
