@@ -1,5 +1,5 @@
 import grpc from "@grpc/grpc-js";
-import { manager as keyManager } from "../../../domain/key-manager/index.js";
+import { manager as keyManager } from "../../../../domain/key-manager/index.js";
 
 /**
  * gRPC Sign RPC handler

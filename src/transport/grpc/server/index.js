@@ -1,0 +1,1 @@
+export * as grpcServer from "./server.js";
