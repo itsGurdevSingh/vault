@@ -94,6 +94,7 @@ class ManagerFactory {
             rotationScheduler,
             keyResolver,
             configManager,
+            policyRepo: this.policyRepository,
             normalizer: domainNormalizer
         });
     }

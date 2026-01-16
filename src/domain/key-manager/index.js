@@ -12,16 +12,22 @@ import { ManagerFactory } from './managerFactory.js';
 
 export { ManagerFactory }; // export for testing purposes.
 
-// Note: pathService export is { pathService: actualMethods }, so we need to unwrap it
-const managerFactory = ManagerFactory.getInstance({
-    pathService: pathServiceExport.pathService,
-    cryptoEngine,
-    lockRepo: LockRepo,
-    policyRepo,
-    Cache,
-    activeKidStore
-});
-const manager = await managerFactory.create();
 
+const createKeyManager = async () => {
+    // Note: pathService export is { pathService: actualMethods }, so we need to unwrap it
+    const managerFactory = ManagerFactory.getInstance({
+        pathService: pathServiceExport.pathService,
+        cryptoEngine,
+        lockRepo: LockRepo,
+        policyRepo,
+        Cache,
+        activeKidStore
+    });
+    const manager = await managerFactory.create();
+    return manager;
+}
 
-export { manager };
+export { createKeyManager };
+
+// for testing purposes
+export const manager = createKeyManager();

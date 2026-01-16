@@ -4,6 +4,7 @@ export class KeyManager {
         rotationScheduler, // Orchestrators
         keyResolver,
         configManager, // The Config Object
+        policyRepo,
         normalizer
     }) {
         this.generator = generator; // for initial key generation
@@ -12,6 +13,7 @@ export class KeyManager {
         this.scheduler = rotationScheduler; // for scheduling rotations
         this.keyResolver = keyResolver; // for resolving active kids (initial setup)
         this.config = configManager; // for configuration management
+        this.policyRepo = policyRepo; // for intial setup policy creation
         this.normalizer = normalizer; // for domain normalization
     }
 
@@ -33,6 +35,13 @@ export class KeyManager {
      * It bypasses the "Rotation" logic because there is no "Old Key" to rotate.
      */
     async initialSetup(domain) {
+        // check if policy already exists
+        const existingPolicy = await this.policyRepo.findByDomain(d);
+        if (existingPolicy) {
+            console.log(`Rotation policy for domain ${d} already exists.`);
+            return {message: "Policy already exists" };
+        }
+        
         const d = this.normalizer.normalizeDomain(domain);
         // 1. Generate
         const newKid = await this.generator.generate(d);
@@ -40,8 +49,18 @@ export class KeyManager {
         // 2. Set Active (Directly)
         await this.keyResolver.setActiveKid(d, newKid);
 
-        // 3. Create Rotation Policy (Default)
-        // (Optional: call PolicyRepo to create initial schedule)
+        // 3. Create Rotation Policy 
+        const policyData = {
+            domain: d,
+            rotationInterval: 90,
+            rotatedAt: Date.now(),
+            nextRotationAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
+            enabled: true,
+            note: "Initial setup policy"
+        };
+
+        
+        await this.policyRepo.createPolicy(policyData);
 
         return { success: true, kid: newKid };
     }
