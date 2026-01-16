@@ -1,6 +1,6 @@
 export class KeyManager {
     constructor({
-        generator, builder, signer, // Workers
+        generator, builder, signer, janitor, // Workers
         rotationScheduler, // Orchestrators
         keyResolver,
         configManager, // The Config Object
@@ -41,7 +41,7 @@ export class KeyManager {
             console.log(`Rotation policy for domain ${d} already exists.`);
             return {message: "Policy already exists" };
         }
-        
+
         const d = this.normalizer.normalizeDomain(domain);
         // 1. Generate
         const newKid = await this.generator.generate(d);
@@ -86,6 +86,10 @@ export class KeyManager {
     async scheduleRotation() {
         // Delegates to the Policy Manager
         return this.scheduler.runScheduledRotation();
+    }
+
+    async cleanupExpiredKeys() {
+        return this.janitor.runCleanup();
     }
 
     // --- 3. CONFIGURATION ---

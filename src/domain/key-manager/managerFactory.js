@@ -91,6 +91,7 @@ class ManagerFactory {
             generator,
             builder,
             signer,
+            janitor,
             rotationScheduler,
             keyResolver,
             configManager,

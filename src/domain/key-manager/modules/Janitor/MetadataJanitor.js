@@ -21,4 +21,10 @@ export class MetadataJanitor {
 
         return await this.metadataManager.addExpiry(domain, kid, expirationDate);
     }
+
+    async getExpiredKeys(currentDate = new Date()) {
+        const expiredMetadata = await this.metadataManager.getExpiredMetadata(currentDate);
+        // filter only array of {domain, kid}
+        return expiredMetadata.map(meta => ({ domain: meta.domain, kid: meta.kid }) );
+    }
 }

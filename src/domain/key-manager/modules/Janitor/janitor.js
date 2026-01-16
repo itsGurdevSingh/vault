@@ -8,7 +8,7 @@ export class Janitor {
 
     //=============== expired key reaper ===============//
 
-    async cleanDomain() {
+    async runCleanup() {
         return this.expiredKeyReaper.cleanup();
     }
 
