@@ -3,6 +3,8 @@
 # ============================================================================
 # This .gitignore file is configured to exclude common files and directories
 internal/keys/*/private/*.pem
+# Exclude storage files( this will generate on runtime )
+src/storage/* 
 
 # ============================================================================
 # Node.js Dependencies
