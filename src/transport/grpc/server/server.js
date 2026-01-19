@@ -4,7 +4,7 @@ import grpc from "@grpc/grpc-js";
 import protoLoader from "@grpc/proto-loader";
 
 import { authInterceptor } from "./interceptors/authInterceptor.js";
-import { createSignHandler, createHealthHandler } from "./handlers/index.js";
+import { createSignHandler, createJwksHandler, createHealthHandler, createRotateAllHandler, createRotateDomainHandler } from "./handlers/index.js";
 
 /* ---------- Proto loader ---------- */
 
@@ -22,7 +22,7 @@ const proto = grpc.loadPackageDefinition(packageDef).vault;
 
 /* ---------- Server factory ---------- */
 
-export function startGrpcServer({ certDir, port = 50051, services: { signerService } }) {
+export function startGrpcServer({ certDir, port = 50051, services: { jwksService, signerService, rotatorService } }) {
   return new Promise((resolve, reject) => {
     /* --- Load certs --- */
     const ca = fs.readFileSync(path.join(certDir, "ca.crt"));
@@ -45,12 +45,18 @@ export function startGrpcServer({ certDir, port = 50051, services: { signerServi
 
     /* --- Create handlers --- */
     const signHandler = createSignHandler({ signerService });
+    const jwksHandler = createJwksHandler({ jwksService });
+    const rotateAllHandler = createRotateAllHandler({ rotatorService });
+    const rotateDomainHandler = createRotateDomainHandler({ rotatorService });
     const healthHandler = createHealthHandler();
 
     /* --- Register services --- */
     server.addService(proto.VaultSigner.service, {
-      health: healthHandler,
-      sign: authInterceptor(signHandler)
+      Health: healthHandler,
+      Sign: authInterceptor(signHandler),
+      jwks: authInterceptor(jwksHandler),
+      RotateAll: authInterceptor(rotateAllHandler),
+      RotateDomain: authInterceptor(rotateDomainHandler)
     });
 
     /* --- Start server --- */

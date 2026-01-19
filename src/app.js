@@ -2,7 +2,13 @@ import { startGrpcServer } from "./transport/grpc/server/server.js";
 import { startHttpServer } from "./transport/http/server.js";
 
 import { createKeyManager } from "./domain/key-manager/index.js";
-import { JwksService, SignerService, RotationService, JanitorService } from "./application/services/index.js";
+import {
+  JwksService,
+  SignerService,
+  RotationService,
+  JanitorService,
+  AdminService
+} from "./application/services/index.js";
 
 import { startCron } from "./corn/index.js";
 
@@ -19,15 +25,16 @@ async function bootstrap() {
     const keyManager = await createKeyManager();
 
     // intilize test postman api
-    keyManager.initialSetup("user");
-    keyManager.initialSetup("service");
+    keyManager.initialSetupDomain("user");
+    keyManager.initialSetupDomain("service");
 
 
     /* ---------- Application ---------- */
-        // transport services
+    // transport services
     const jwksService = new JwksService({ keyManager });
     const signerService = new SignerService({ keyManager });
-        // cron services
+    const rotatorService = new AdminService({ keyManager });
+    // cron services
     const rotationService = new RotationService({ keyManager });
     const janitorService = new JanitorService({ keyManager });
 
@@ -39,7 +46,7 @@ async function bootstrap() {
       await startGrpcServer({
         certDir: "certs",
         port: 50051,
-        services: { jwksService, signerService }
+        services: { jwksService, signerService, rotatorService }
       });
 
     console.log(`Vault gRPC listening on :${grpcPort}`);
@@ -81,7 +88,7 @@ bootstrap();
   NOTES:
   what to do next 
    everything is working till now . 
-   we have to add corn jobs config with deeloper upper and lower bound 
+   we have to add corn jobs config with developer upper and lower bound 
    while initial setup we should pass interval time for roatation for initial policy build 
    
    above are our main priorties 

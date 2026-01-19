@@ -6,7 +6,7 @@ import grpc from "@grpc/grpc-js";
  *  - call domain
  *  - map errors to gRPC status codes
  */
-export async function createSignHandler({ signerService }) {
+export function createSignHandler({ signerService }) {
   return async function signHandler(call, callback) {
     const start = Date.now();
 

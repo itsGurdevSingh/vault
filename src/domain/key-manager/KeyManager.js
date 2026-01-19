@@ -32,7 +32,7 @@ export class KeyManager {
      * Run this ONCE when onboarding a new domain.
      * It bypasses the "Rotation" logic because there is no "Old Key" to rotate.
      */
-    async initialSetup(domain, policyOpts = {}) {
+    async initialSetupDomain(domain, policyOpts = {}) {
         const d = this.normalizer.normalizeDomain(domain);
         return this.domainInitializer.setupDomain({ domain: d, policyOpts });
     }

@@ -11,6 +11,17 @@ service VaultSigner {
   // Sign creates a cryptographically signed JWT token for the given domain and payload.
   // It uses the domain-specific private key to generate the signature.
   rpc Sign (SignRequest) returns (SignResponse);
+
+  // JWKS retrieves the JSON Web Key Set for the specified domain.
+  rpc jwks (JWKSRequest) returns (JWKSResponse);
+
+  // RotateAll rotates all domain keys across the vault.
+  // This operation regenerates keys for all configured domains.
+  rpc RotateAll (RotateAllRequest) returns (RotateAllResponse);
+
+  // RotateDomain rotates the key for a specific domain.
+  // This operation regenerates the key only for the specified domain.
+  rpc RotateDomain (RotateDomainRequest) returns (RotateDomainResponse);
 }
 
 // HealthRequest for connection testing
@@ -33,4 +44,30 @@ message SignRequest {
 // SignResponse contains the signed JWT token.
 message SignResponse {
   string token = 1;
+}
+
+message JWKSRequest {
+  string domain = 1;
+}
+
+message JWKSResponse {
+  string jwks = 1;
+}
+
+message RotateAllRequest {
+// req msg is empty
+}
+
+message RotateAllResponse {
+  string status = 1;
+  string message = 2;
+}
+
+message RotateDomainRequest {
+  string domain = 1;
+}
+
+message RotateDomainResponse {
+  string status = 1;
+  string message = 2;  
 }
