@@ -9,6 +9,8 @@ import { BuilderFactory } from "./modules/builder/index.js";
 import { GeneratorFactory } from "./modules/generator/index.js";
 import { SignerFactory } from "./modules/signer/index.js";
 import { RotationFactory } from "./modules/keyRotator/index.js";
+// domain init import
+import { initializeDomain } from "./init/initlizeDomain.js";
 // state and config imports
 import { RotationState } from "./config/RotationState.js";
 import { RotationConfig } from "./config/RotationConfig.js";
@@ -84,18 +86,18 @@ class ManagerFactory {
         // 11. config manager 
         const configManager = RotationConfig.getInstance({ state: RotationState });
 
+        //12. intial setup of doamin .
+        const domainInitializer = initializeDomain.getInstance({ state: RotationState, generator, keyResolver, policyRepo: this.policyRepository });
 
-        // 12. THE AGGREGATE ROOT (The Boss)
+        // 13. THE AGGREGATE ROOT (The Boss)
         // We inject all the working parts into the Manager
         return new KeyManager({
-            generator,
             builder,
             signer,
             janitor,
             rotationScheduler,
-            keyResolver,
             configManager,
-            policyRepo: this.policyRepository,
+            domainInitializer,
             normalizer: domainNormalizer
         });
     }

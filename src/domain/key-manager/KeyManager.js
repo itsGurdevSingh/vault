@@ -1,19 +1,17 @@
 export class KeyManager {
     constructor({
-        generator, builder, signer, janitor, // Workers
+        builder, signer, janitor, // Workers
         rotationScheduler, // Orchestrators
-        keyResolver,
         configManager, // The Config Object
-        policyRepo,
+        domainInitializer, // Domain Setup
         normalizer
     }) {
-        this.generator = generator; // for initial key generation
         this.builder = builder; // for jwks building
         this.signer = signer; // for signing
         this.scheduler = rotationScheduler; // for scheduling rotations
-        this.keyResolver = keyResolver; // for resolving active kids (initial setup)
         this.config = configManager; // for configuration management
-        this.policyRepo = policyRepo; // for intial setup policy creation
+        this.janitor = janitor; // for cleaning up expired keys
+        this.domainInitializer = domainInitializer; // for initial domain setup
         this.normalizer = normalizer; // for domain normalization
     }
 
@@ -34,34 +32,9 @@ export class KeyManager {
      * Run this ONCE when onboarding a new domain.
      * It bypasses the "Rotation" logic because there is no "Old Key" to rotate.
      */
-    async initialSetup(domain) {
+    async initialSetup(domain, policyOpts = {}) {
         const d = this.normalizer.normalizeDomain(domain);
-        // check if policy already exists
-        const existingPolicy = await this.policyRepo.findByDomain(d);
-        if (existingPolicy) {
-            console.log(`Rotation policy for domain ${d} already exists.`);
-            return { message: "Policy already exists" };
-        }
-        // 1. Generate
-        const newKid = await this.generator.generate(d);
-
-        // 2. Set Active (Directly)
-        await this.keyResolver.setActiveKid(d, newKid);
-
-        // 3. Create Rotation Policy 
-        const policyData = {
-            domain: d,
-            rotationInterval: 90,
-            rotatedAt: Date.now(),
-            nextRotationAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
-            enabled: true,
-            note: "Initial setup policy"
-        };
-
-
-        await this.policyRepo.createPolicy(policyData);
-
-        return { success: true, kid: newKid };
+        return this.domainInitializer.setupDomain({ domain: d, policyOpts });
     }
 
     /**

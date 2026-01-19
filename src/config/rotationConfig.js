@@ -13,12 +13,18 @@ const developerRotationConfig = {
     RETRIES_LIMIT: {
         minRetries: 1,               // Must try at least once
         maxRetries: 10               // Prevent infinite retry loops
+    },
+    // in days 
+    ROTATION_INTERVAL_LIMIT: {
+        minInterval: 1,    // 24 Hours
+        maxInterval: 365 // 1 Year
     }
 };
 
 // Freeze to prevent accidental modification
 Object.freeze(developerRotationConfig.RETRY_INTERVAL_LIMIT);
 Object.freeze(developerRotationConfig.RETRIES_LIMIT);
+Object.freeze(developerRotationConfig.ROTATION_INTERVAL_LIMIT);
 
 export { developerRotationConfig };
 
@@ -28,5 +34,6 @@ export { developerRotationConfig };
  */
 export const defaultRotationConfig = {
     RETRY_INTERVAL_MS: 5 * 60 * 1000, // 5 Minutes
-    MAX_RETRIES: 3                    // 3 Attempts
+    MAX_RETRIES: 3,                    // 3 Attempts
+    ROTATION_INTERVAL_MS: 90  // 90 Days
 };
