@@ -4,7 +4,7 @@ import grpc from "@grpc/grpc-js";
 import protoLoader from "@grpc/proto-loader";
 
 import { authInterceptor } from "./interceptors/authInterceptor.js";
-import { signHandler, healthHandler } from "./handlers/index.js";
+import { createSignHandler, createHealthHandler } from "./handlers/index.js";
 
 /* ---------- Proto loader ---------- */
 
@@ -22,7 +22,7 @@ const proto = grpc.loadPackageDefinition(packageDef).vault;
 
 /* ---------- Server factory ---------- */
 
-export function startGrpcServer({ certDir, port = 50051 }) {
+export function startGrpcServer({ certDir, port = 50051, services: { signerService } }) {
   return new Promise((resolve, reject) => {
     /* --- Load certs --- */
     const ca = fs.readFileSync(path.join(certDir, "ca.crt"));
@@ -42,6 +42,10 @@ export function startGrpcServer({ certDir, port = 50051 }) {
       "grpc.keepalive_timeout_ms": 10_000,
       "grpc.keepalive_permit_without_calls": 1
     });
+
+    /* --- Create handlers --- */
+    const signHandler = createSignHandler({ signerService });
+    const healthHandler = createHealthHandler();
 
     /* --- Register services --- */
     server.addService(proto.VaultSigner.service, {

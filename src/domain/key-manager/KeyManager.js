@@ -35,14 +35,13 @@ export class KeyManager {
      * It bypasses the "Rotation" logic because there is no "Old Key" to rotate.
      */
     async initialSetup(domain) {
+        const d = this.normalizer.normalizeDomain(domain);
         // check if policy already exists
         const existingPolicy = await this.policyRepo.findByDomain(d);
         if (existingPolicy) {
             console.log(`Rotation policy for domain ${d} already exists.`);
-            return {message: "Policy already exists" };
+            return { message: "Policy already exists" };
         }
-
-        const d = this.normalizer.normalizeDomain(domain);
         // 1. Generate
         const newKid = await this.generator.generate(d);
 
@@ -59,7 +58,7 @@ export class KeyManager {
             note: "Initial setup policy"
         };
 
-        
+
         await this.policyRepo.createPolicy(policyData);
 
         return { success: true, kid: newKid };
