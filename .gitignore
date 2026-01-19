@@ -1,10 +1,6 @@
 # ============================================================================
 # Git Ignore File
 # ============================================================================
-# This .gitignore file is configured to exclude common files and directories
-internal/keys/*/private/*.pem
-# Exclude storage files( this will generate on runtime )
-src/storage/* 
 
 # ============================================================================
 # Node.js Dependencies
@@ -160,6 +156,10 @@ docker-compose.override.yml
 # ============================================================================
 # Project Specific
 # ============================================================================
+# Storage (runtime generated)
+storage/
+test-storage/
+
 # Documentation (auto-generated)
 .PR_REFERENCE.md
 TEST_COVERAGE_REPORT.md
