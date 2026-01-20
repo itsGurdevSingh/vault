@@ -39,7 +39,7 @@ export class initializeDomain {
 
     }
 
-    getInstance({ state, generator,keyResolver, policyRepo }) {
+    static getInstance({ state, generator,keyResolver, policyRepo }) {
         if (!this.instance) {
             this.instance = new initializeDomain({ state, generator,keyResolver, policyRepo });
         }
