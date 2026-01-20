@@ -29,6 +29,7 @@ import { BuilderFactory } from '../../../src/domain/key-manager/modules/builder/
 import { SignerFactory } from '../../../src/domain/key-manager/modules/signer/index.js';
 import { JanitorFactory } from '../../../src/domain/key-manager/modules/janitor/index.js';
 import { RotationFactory } from '../../../src/domain/key-manager/modules/keyRotator/index.js';
+import { initializeDomain } from '../../../src/domain/key-manager/init/initlizeDomain.js';
 
 /**
  * Clears all factory singletons to ensure tests start with fresh instances
@@ -42,6 +43,18 @@ export function clearFactorySingletons() {
     SignerFactory._instance = null;
     JanitorFactory.instance = null;
     RotationFactory.schedulerInstance = null;
+    initializeDomain.instance = null; // Clear domainInitializer singleton
+}
+
+// Shared policy store across test infrastructure instances
+// This allows initialSetupDomain to create a policy that rotateDomain can later find
+const globalPolicyStore = new Map();
+
+/**
+ * Clears the shared policy store (call in afterEach)
+ */
+export function clearPolicyStore() {
+    globalPolicyStore.clear();
 }
 
 /**
@@ -78,17 +91,28 @@ export function createTestInfrastructure(testPaths) {
     };
 
     // 4. POLICY REPOSITORY (Mock MongoDB for rotation policies)
+    // Uses global policy store to persist across infrastructure instances
     const policyRepo = {
         findDueForRotation: async () => [],
         getDueForRotation: async () => [], // For scheduleRotation
         updateLastRotated: async (domain) => true,
-        getPolicy: async (domain) => null,
-        findByDomain: async (domain) => ({
-            domain,
-            rotationInterval: 90 * 24 * 60 * 60 * 1000, // 90 days 
-            lastRotated: new Date()
-        }),
-        savePolicy: async (domain, policy) => true,
+        getPolicy: async (domain) => {
+            // Return stored policy if exists, null otherwise
+            return globalPolicyStore.get(domain) || null;
+        },
+        findByDomain: async (domain) => {
+            // Return null for initial setup (before policy created)
+            return globalPolicyStore.get(domain) || null;
+        },
+        createPolicy: async (policyData) => {
+            // Store the policy for later retrieval
+            globalPolicyStore.set(policyData.domain, policyData);
+            return true;
+        },
+        savePolicy: async (domain, policy) => {
+            globalPolicyStore.set(domain, policy);
+            return true;
+        },
         getSession: async () => ({
             startTransaction: () => { },
             commitTransaction: async () => { },

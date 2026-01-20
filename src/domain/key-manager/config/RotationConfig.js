@@ -19,7 +19,7 @@ class RotationConfig {
     /**
      * Public API to update configuration
      */
-    configure({ retryIntervalMs, maxRetries }) {
+    configure({ retryIntervalMs, maxRetries, rotationIntervalMs }) {
         if (retryIntervalMs != null) this._setRetryInterval(retryIntervalMs);
         if (maxRetries != null) this._setMaxRetries(maxRetries);
         if (rotationIntervalMs != null) this._setRotationInterval(rotationIntervalMs);
@@ -29,7 +29,12 @@ class RotationConfig {
 
     _validateIntegrity() {
         const { retryInterval, maxRetries, rotationInterval } = this.state.constraints;
-        if (!retryInterval || !maxRetries || !rotationInterval) {
+        // Check if constraint objects exist and have required properties
+        const hasRetryInterval = retryInterval && typeof retryInterval.minInterval === 'number' && typeof retryInterval.maxInterval === 'number';
+        const hasMaxRetries = maxRetries && typeof maxRetries.minRetries === 'number' && typeof maxRetries.maxRetries === 'number';
+        const hasRotationInterval = rotationInterval && typeof rotationInterval.minInterval === 'number' && typeof rotationInterval.maxInterval === 'number';
+
+        if (!hasRetryInterval || !hasMaxRetries || !hasRotationInterval) {
             throw new Error("RotationConfigManager: Constraints are not properly set.");
         }
     }
@@ -64,7 +69,7 @@ class RotationConfig {
         }
         this.state.rotationIntervalMs = ms;
     }
-    
+
 }
 
 export { RotationConfig };

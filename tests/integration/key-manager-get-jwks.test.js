@@ -50,7 +50,7 @@ describe('Integration: KeyManager getJwks() Method', () => {
         it('should generate JWKS with correct structure', async () => {
             const domain = 'JWKS_TEST';
 
-            const { kid } = await keyManager.initialSetup(domain);
+            const { kid } = await keyManager.initialSetupDomain(domain);
             const jwks = await keyManager.getJwks(domain);
 
             expect(jwks).toBeDefined();
@@ -62,7 +62,7 @@ describe('Integration: KeyManager getJwks() Method', () => {
         it('should include correct JWK properties', async () => {
             const domain = 'JWK_PROPS_TEST';
 
-            const { kid } = await keyManager.initialSetup(domain);
+            const { kid } = await keyManager.initialSetupDomain(domain);
             const jwks = await keyManager.getJwks(domain);
 
             const jwk = jwks.keys[0];
@@ -77,7 +77,7 @@ describe('Integration: KeyManager getJwks() Method', () => {
         it('should not include private key components', async () => {
             const domain = 'NO_PRIVATE_TEST';
 
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
             const jwks = await keyManager.getJwks(domain);
 
             const jwk = jwks.keys[0];
@@ -91,7 +91,7 @@ describe('Integration: KeyManager getJwks() Method', () => {
         it('should normalize domain names', async () => {
             const domain = 'lowercase_jwks';
 
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
 
             const jwks1 = await keyManager.getJwks('lowercase_jwks');
             const jwks2 = await keyManager.getJwks('LOWERCASE_JWKS');
@@ -125,7 +125,7 @@ describe('Integration: KeyManager getJwks() Method', () => {
             const domain = 'VERIFY_WITH_JWK';
             const payload = { test: 'data' };
 
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
             const jwt = await keyManager.sign(domain, payload);
             const jwks = await keyManager.getJwks(domain);
             const jwk = jwks.keys[0];

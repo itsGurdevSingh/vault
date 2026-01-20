@@ -16,7 +16,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'fs/promises';
 import path from 'path';
 import { ManagerFactory } from '../../src/domain/key-manager/index.js';
-import { clearFactorySingletons, createTestInfrastructure } from './helpers/infrastructure.js';
+import { clearFactorySingletons, createTestInfrastructure, clearPolicyStore } from './helpers/infrastructure.js';
 
 describe('Integration: KeyManager rotate Method', () => {
     let infrastructure;
@@ -59,6 +59,9 @@ describe('Integration: KeyManager rotate Method', () => {
     });
 
     afterEach(async () => {
+        // Clear policy store
+        clearPolicyStore();
+
         // Cleanup test storage
         try {
             await fs.rm(TEST_STORAGE, { recursive: true, force: true });
@@ -72,7 +75,7 @@ describe('Integration: KeyManager rotate Method', () => {
             const domain = 'ROTATE_TEST';
 
             // Setup: Create initial key
-            const setupResult = await keyManager.initialSetup(domain);
+            const setupResult = await keyManager.initialSetupDomain(domain);
             const initialKid = setupResult.kid;
 
             // Trigger rotation for this specific domain
@@ -91,11 +94,12 @@ describe('Integration: KeyManager rotate Method', () => {
         it('should handle rotation request gracefully when no keys exist', async () => {
             const domain = 'NO_KEYS_DOMAIN';
 
-            // Rotation logs error but doesn't throw when no keys exist
-            // It completes gracefully (no rejection)
-            await keyManager.rotateDomain(domain);
+            // Rotation throws error when no policy exists
+            await expect(keyManager.rotateDomain(domain))
+                .rejects
+                .toThrow(/No policy found/);
 
-            // Verify no active kid was set (rotation failed internally)
+            // Verify no active kid was set (rotation failed)
             const activeKid = await infrastructure.activeKidStore.getActiveKid(domain);
             expect(activeKid).toBeUndefined();
         });

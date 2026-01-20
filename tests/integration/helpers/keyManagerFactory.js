@@ -18,6 +18,7 @@ import { RotationFactory } from '../../../src/domain/key-manager/modules/keyRota
 import { RotationState } from '../../../src/domain/key-manager/config/RotationState.js';
 import { RotationConfig } from '../../../src/domain/key-manager/config/RotationConfig.js';
 import { KeyManager } from '../../../src/domain/key-manager/KeyManager.js';
+import { initializeDomain } from '../../../src/domain/key-manager/init/initlizeDomain.js';
 import { CryptoEngine } from '../../../src/infrastructure/cryptoEngine/CryptoEngine.js';
 import { CryptoConfig } from '../../../src/infrastructure/cryptoEngine/cryptoConfig.js';
 import { KIDFactory } from '../../../src/infrastructure/cryptoEngine/KIDFactory.js';
@@ -105,6 +106,8 @@ export async function createTestKeyManager(testPaths, options = {}) {
     const mockPolicyRepo = options.policyRepo || {
         findDueForRotation: async () => [],
         updateLastRotated: async (domain) => true,
+        findByDomain: async (domain) => null, // Allow initial setup
+        createPolicy: async (policyData) => true, // Allow policy creation
     };
 
     const rotationFactory = new RotationFactory(
@@ -121,7 +124,15 @@ export async function createTestKeyManager(testPaths, options = {}) {
     // 11. CONFIGURATION MANAGER
     const configManager = new RotationConfig({ state: RotationState });
 
-    // 12. ASSEMBLE KEY MANAGER FACADE
+    // 12. DOMAIN INITIALIZER (for initial setup)
+    const domainInitializer = new initializeDomain({
+        state: RotationState,
+        generator,
+        keyResolver,
+        policyRepo: mockPolicyRepo
+    });
+
+    // 13. ASSEMBLE KEY MANAGER FACADE
     const keyManager = new KeyManager({
         loader,
         generator,
@@ -132,6 +143,7 @@ export async function createTestKeyManager(testPaths, options = {}) {
         rotationScheduler: scheduler,
         keyResolver,
         configManager,
+        domainInitializer,
         normalizer: domainNormalizer,
     });
 
@@ -188,6 +200,19 @@ export async function createMinimalKeyManager(testPaths) {
 
     const configManager = new RotationConfig({ state: RotationState });
 
+    // Mock policy repo for minimal setup
+    const mockPolicyRepo = {
+        findByDomain: async () => null,
+        createPolicy: async () => true,
+    };
+
+    const domainInitializer = new initializeDomain({
+        state: RotationState,
+        generator,
+        keyResolver,
+        policyRepo: mockPolicyRepo
+    });
+
     return new KeyManager({
         loader,
         generator,
@@ -198,6 +223,7 @@ export async function createMinimalKeyManager(testPaths) {
         rotationScheduler: null,
         keyResolver,
         configManager,
+        domainInitializer,
         normalizer: domainNormalizer,
     });
 }

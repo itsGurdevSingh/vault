@@ -7,7 +7,8 @@ describe('RotationConfig', () => {
             const mockState = {
                 constraints: {
                     retryInterval: { minInterval: 1000, maxInterval: 60000 },
-                    maxRetries: { minRetries: 1, maxRetries: 10 }
+                    maxRetries: { minRetries: 1, maxRetries: 10 },
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 }
             };
 
@@ -67,7 +68,8 @@ describe('RotationConfig', () => {
             mockState = {
                 constraints: {
                     retryInterval: { minInterval: 1000, maxInterval: 60000 },
-                    maxRetries: { minRetries: 1, maxRetries: 10 }
+                    maxRetries: { minRetries: 1, maxRetries: 10 },
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 },
                 retryIntervalMs: 5000,
                 maxRetries: 3
@@ -139,7 +141,8 @@ describe('RotationConfig', () => {
             mockState = {
                 constraints: {
                     retryInterval: { minInterval: 1000, maxInterval: 60000 },
-                    maxRetries: { minRetries: 1, maxRetries: 10 }
+                    maxRetries: { minRetries: 1, maxRetries: 10 },
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 },
                 retryIntervalMs: 5000
             };
@@ -222,7 +225,8 @@ describe('RotationConfig', () => {
             mockState = {
                 constraints: {
                     retryInterval: { minInterval: 1000, maxInterval: 60000 },
-                    maxRetries: { minRetries: 1, maxRetries: 10 }
+                    maxRetries: { minRetries: 1, maxRetries: 10 },
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 },
                 maxRetries: 3
             };
@@ -297,7 +301,8 @@ describe('RotationConfig', () => {
             const mockState = {
                 constraints: {
                     retryInterval: { minInterval: 1000, maxInterval: 60000 },
-                    maxRetries: { minRetries: 1, maxRetries: 10 }
+                    maxRetries: { minRetries: 1, maxRetries: 10 },
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 }
             };
 
@@ -309,7 +314,8 @@ describe('RotationConfig', () => {
             const mockState = {
                 constraints: {
                     retryInterval: null,
-                    maxRetries: { minRetries: 1, maxRetries: 10 }
+                    maxRetries: { minRetries: 1, maxRetries: 10 },
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 }
             };
 
@@ -321,7 +327,8 @@ describe('RotationConfig', () => {
             const mockState = {
                 constraints: {
                     retryInterval: { minInterval: 1000, maxInterval: 60000 },
-                    maxRetries: undefined
+                    maxRetries: undefined,
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 }
             };
 
@@ -333,7 +340,8 @@ describe('RotationConfig', () => {
             const mockState = {
                 constraints: {
                     retryInterval: 0,
-                    maxRetries: { minRetries: 1, maxRetries: 10 }
+                    maxRetries: { minRetries: 1, maxRetries: 10 },
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 }
             };
 
@@ -345,7 +353,8 @@ describe('RotationConfig', () => {
             const mockState = {
                 constraints: {
                     retryInterval: { minInterval: 1000, maxInterval: 60000 },
-                    maxRetries: ''
+                    maxRetries: '',
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 }
             };
 
@@ -359,7 +368,8 @@ describe('RotationConfig', () => {
             const sharedState = {
                 constraints: {
                     retryInterval: { minInterval: 1000, maxInterval: 60000 },
-                    maxRetries: { minRetries: 1, maxRetries: 10 }
+                    maxRetries: { minRetries: 1, maxRetries: 10 },
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 },
                 retryIntervalMs: 5000,
                 maxRetries: 3
@@ -377,7 +387,8 @@ describe('RotationConfig', () => {
             const sharedState = {
                 constraints: {
                     retryInterval: { minInterval: 1000, maxInterval: 60000 },
-                    maxRetries: { minRetries: 1, maxRetries: 10 }
+                    maxRetries: { minRetries: 1, maxRetries: 10 },
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 },
                 retryIntervalMs: 5000,
                 maxRetries: 3
@@ -399,7 +410,8 @@ describe('RotationConfig', () => {
             const mockState = {
                 constraints: {
                     retryInterval: { minInterval: 1000, maxInterval: 60000 },
-                    maxRetries: { minRetries: 1, maxRetries: 10 }
+                    maxRetries: { minRetries: 1, maxRetries: 10 },
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 },
                 retryIntervalMs: 5000,
                 maxRetries: 3
@@ -418,7 +430,8 @@ describe('RotationConfig', () => {
             const mockState = {
                 constraints: {
                     retryInterval: { minInterval: 1000, maxInterval: 60000 },
-                    maxRetries: { minRetries: 1, maxRetries: 10 }
+                    maxRetries: { minRetries: 1, maxRetries: 10 },
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 },
                 retryIntervalMs: 5000,
                 maxRetries: 3
@@ -442,7 +455,8 @@ describe('RotationConfig', () => {
             const mockState = {
                 constraints: {
                     retryInterval: { minInterval: 5000, maxInterval: 30000 },
-                    maxRetries: { minRetries: 2, maxRetries: 5 }
+                    maxRetries: { minRetries: 2, maxRetries: 5 },
+                    rotationInterval: { minInterval: 1, maxInterval: 365 }
                 },
                 retryIntervalMs: 10000,
                 maxRetries: 3

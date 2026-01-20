@@ -14,18 +14,19 @@ describe('KeyManager', () => {
                 rotationScheduler: {},
                 keyResolver: {},
                 configManager: {},
+                domainInitializer: {},
                 normalizer: {}
             };
 
             const manager = new KeyManager(deps);
 
             expect(manager).toBeInstanceOf(KeyManager);
-            expect(manager.generator).toBe(deps.generator);
             expect(manager.builder).toBe(deps.builder);
             expect(manager.signer).toBe(deps.signer);
+            expect(manager.janitor).toBe(deps.janitor);
             expect(manager.scheduler).toBe(deps.rotationScheduler);
-            expect(manager.keyResolver).toBe(deps.keyResolver);
             expect(manager.config).toBe(deps.configManager);
+            expect(manager.domainInitializer).toBe(deps.domainInitializer);
             expect(manager.normalizer).toBe(deps.normalizer);
         });
 
@@ -150,72 +151,69 @@ describe('KeyManager', () => {
     // Note: getPublicKey is not a method on KeyManager
     // Public key retrieval is handled via getJwks() which returns the full JWKS
 
-    describe('initialSetup', () => {
+    describe('initialSetupDomain', () => {
         let manager;
         let mockNormalizer;
-        let mockGenerator;
-        let mockKeyResolver;
+        let mockDomainInitializer;
 
         beforeEach(() => {
             mockNormalizer = {
                 normalizeDomain: vi.fn().mockImplementation(d => d.toUpperCase())
             };
-            mockGenerator = {
-                generate: vi.fn().mockResolvedValue('new-kid-123')
-            };
-            mockKeyResolver = {
-                setActiveKid: vi.fn().mockResolvedValue(true)
+            mockDomainInitializer = {
+                setupDomain: vi.fn().mockResolvedValue({ success: true, kid: 'new-kid-123' })
             };
             manager = new KeyManager({
                 normalizer: mockNormalizer,
-                generator: mockGenerator,
-                keyResolver: mockKeyResolver
+                domainInitializer: mockDomainInitializer
             });
         });
 
         it('should normalize domain, generate key, and set active', async () => {
-            const result = await manager.initialSetup('new-domain');
+            const result = await manager.initialSetupDomain('new-domain');
 
             expect(mockNormalizer.normalizeDomain).toHaveBeenCalledWith('new-domain');
-            expect(mockGenerator.generate).toHaveBeenCalledWith('NEW-DOMAIN');
-            expect(mockKeyResolver.setActiveKid).toHaveBeenCalledWith('NEW-DOMAIN', 'new-kid-123');
+            expect(mockDomainInitializer.setupDomain).toHaveBeenCalledWith({
+                domain: 'NEW-DOMAIN',
+                policyOpts: {}
+            });
             expect(result).toEqual({ success: true, kid: 'new-kid-123' });
         });
 
         it('should execute operations in correct order', async () => {
             const callOrder = [];
-            mockGenerator.generate.mockImplementation(async () => {
-                callOrder.push('generate');
-                return 'kid-1';
+            mockNormalizer.normalizeDomain.mockImplementation((d) => {
+                callOrder.push('normalize');
+                return d.toUpperCase();
             });
-            mockKeyResolver.setActiveKid.mockImplementation(async () => {
-                callOrder.push('setActiveKid');
+            mockDomainInitializer.setupDomain.mockImplementation(async () => {
+                callOrder.push('setupDomain');
+                return { success: true, kid: 'kid-1' };
             });
 
-            await manager.initialSetup('domain');
+            await manager.initialSetupDomain('domain');
 
-            expect(callOrder).toEqual(['generate', 'setActiveKid']);
+            expect(callOrder).toEqual(['normalize', 'setupDomain']);
         });
 
         it('should propagate errors from generator', async () => {
-            mockGenerator.generate.mockRejectedValue(new Error('Generation failed'));
+            mockDomainInitializer.setupDomain.mockRejectedValue(new Error('Generation failed'));
 
-            await expect(manager.initialSetup('domain'))
+            await expect(manager.initialSetupDomain('domain'))
                 .rejects.toThrow('Generation failed');
-            expect(mockKeyResolver.setActiveKid).not.toHaveBeenCalled();
         });
 
         it('should propagate errors from keyResolver', async () => {
-            mockKeyResolver.setActiveKid.mockRejectedValue(new Error('Set active failed'));
+            mockDomainInitializer.setupDomain.mockRejectedValue(new Error('Set active failed'));
 
-            await expect(manager.initialSetup('domain'))
+            await expect(manager.initialSetupDomain('domain'))
                 .rejects.toThrow('Set active failed');
         });
 
         it('should return success with generated kid', async () => {
-            mockGenerator.generate.mockResolvedValue('unique-kid-789');
+            mockDomainInitializer.setupDomain.mockResolvedValue({ success: true, kid: 'unique-kid-789' });
 
-            const result = await manager.initialSetup('domain');
+            const result = await manager.initialSetupDomain('domain');
 
             expect(result.success).toBe(true);
             expect(result.kid).toBe('unique-kid-789');
@@ -350,22 +348,22 @@ describe('KeyManager', () => {
     describe('integration - facade pattern)', () => {
         it('should act as facade over multiple sub-domains', () => {
             const manager = new KeyManager({
-                generator: {},
                 builder: {},
                 signer: {},
+                janitor: {},
                 rotationScheduler: {},
-                keyResolver: {},
                 configManager: {},
+                domainInitializer: {},
                 normalizer: {}
             });
 
             // Verify all sub-domain access points exist
-            expect(manager.generator).toBeDefined();
             expect(manager.builder).toBeDefined();
             expect(manager.signer).toBeDefined();
+            expect(manager.janitor).toBeDefined();
             expect(manager.scheduler).toBeDefined();
-            expect(manager.keyResolver).toBeDefined();
             expect(manager.config).toBeDefined();
+            expect(manager.domainInitializer).toBeDefined();
             expect(manager.normalizer).toBeDefined();
         });
 
@@ -380,13 +378,13 @@ describe('KeyManager', () => {
         it('should provide lifecycle API methods', () => {
             const manager = new KeyManager({
                 normalizer: {},
-                generator: {},
-                keyResolver: {},
+                domainInitializer: {},
                 keyRotator: {},
-                rotationScheduler: {}
+                rotationScheduler: {},
+                janitor: {}
             });
 
-            expect(typeof manager.initialSetup).toBe('function');
+            expect(typeof manager.initialSetupDomain).toBe('function');
             expect(typeof manager.rotate).toBe('function');
             expect(typeof manager.rotateDomain).toBe('function');
             expect(typeof manager.scheduleRotation).toBe('function');
@@ -409,14 +407,13 @@ describe('KeyManager', () => {
                 normalizer: mockNormalizer,
                 signer: { sign: vi.fn().mockResolvedValue({}) },
                 builder: { getJwks: vi.fn().mockResolvedValue({}) },
-                generator: { generate: vi.fn().mockResolvedValue('kid') },
-                keyResolver: { setActiveKid: vi.fn().mockResolvedValue(true) },
+                domainInitializer: { setupDomain: vi.fn().mockResolvedValue({ success: true, kid: 'kid' }) },
                 rotationScheduler: { triggerDomainRotation: vi.fn().mockResolvedValue({}) }
             });
 
             await manager.sign('test', {}, {});
             await manager.getJwks('test');
-            await manager.initialSetup('test');
+            await manager.initialSetupDomain('test');
             await manager.rotateDomain('test');
 
             // Verify normalization was called for each domain-aware method

@@ -1,7 +1,7 @@
 /**
- * Integration Test: KeyManager initialSetup() Method
+ * Integration Test: KeyManager initialSetupDomain() Method
  * 
- * Tests keyManager.initialSetup(domain)
+ * Tests keyManager.initialSetupDomain(domain)
  * 
  * RULES FOLLOWED:
  * - Imports ONLY from domain/key-manager/index.js (ManagerFactory)
@@ -17,7 +17,7 @@ import { ManagerFactory } from '../../src/domain/key-manager/index.js';
 import { setupTestEnvironment, cleanupTestEnvironment, createTestKeyPaths } from './helpers/testSetup.js';
 import { createTestInfrastructure, clearFactorySingletons } from './helpers/infrastructure.js';
 
-describe('Integration: KeyManager initialSetup() Method', () => {
+describe('Integration: KeyManager initialSetupDomain() Method', () => {
     let testPaths;
     let keyManager;
     let infrastructure;
@@ -51,7 +51,7 @@ describe('Integration: KeyManager initialSetup() Method', () => {
         it('should generate first key and set as active', async () => {
             const domain = 'NEW_DOMAIN';
 
-            const result = await keyManager.initialSetup(domain);
+            const result = await keyManager.initialSetupDomain(domain);
 
             expect(result.success).toBe(true);
             expect(result.kid).toBeDefined();
@@ -61,7 +61,7 @@ describe('Integration: KeyManager initialSetup() Method', () => {
         it('should create complete directory structure', async () => {
             const domain = 'DIR_TEST_DOMAIN';
 
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
 
             // Verify all directories created
             const pubKeyDir = testPaths.getPublicKeyDir(domain);
@@ -80,7 +80,7 @@ describe('Integration: KeyManager initialSetup() Method', () => {
         it('should write key files to filesystem', async () => {
             const domain = 'FILE_TEST_DOMAIN';
 
-            const result = await keyManager.initialSetup(domain);
+            const result = await keyManager.initialSetupDomain(domain);
 
             // Verify public and private key files exist
             const pubKeyPath = testPaths.getPublicKeyPath(domain, result.kid);
@@ -96,7 +96,7 @@ describe('Integration: KeyManager initialSetup() Method', () => {
         it('should create metadata for generated key', async () => {
             const domain = 'META_TEST_DOMAIN';
 
-            const result = await keyManager.initialSetup(domain);
+            const result = await keyManager.initialSetupDomain(domain);
 
             // Verify metadata file exists
             const metaPath = testPaths.getMetaKeyPath(domain, result.kid);
@@ -112,7 +112,7 @@ describe('Integration: KeyManager initialSetup() Method', () => {
         it('should set active KID in state', async () => {
             const domain = 'ACTIVE_KID_TEST';
 
-            const result = await keyManager.initialSetup(domain);
+            const result = await keyManager.initialSetupDomain(domain);
 
             const activeKid = await infrastructure.activeKidStore.getActiveKid(domain);
             expect(activeKid).toBe(result.kid);
@@ -123,7 +123,7 @@ describe('Integration: KeyManager initialSetup() Method', () => {
         it('should make key immediately usable for signing', async () => {
             const domain = 'SIGN_TEST_DOMAIN';
 
-            const result = await keyManager.initialSetup(domain);
+            const result = await keyManager.initialSetupDomain(domain);
 
             // Immediately sign a JWT
             const payload = { userId: '123', role: 'admin' };
@@ -141,7 +141,7 @@ describe('Integration: KeyManager initialSetup() Method', () => {
         it('should make JWKS immediately available', async () => {
             const domain = 'JWKS_TEST_DOMAIN';
 
-            const result = await keyManager.initialSetup(domain);
+            const result = await keyManager.initialSetupDomain(domain);
 
             // Immediately get JWKS
             const jwks = await keyManager.getJwks(domain);
@@ -154,7 +154,7 @@ describe('Integration: KeyManager initialSetup() Method', () => {
         it('should make public key immediately retrievable', async () => {
             const domain = 'PUB_KEY_TEST';
 
-            const result = await keyManager.initialSetup(domain);
+            const result = await keyManager.initialSetupDomain(domain);
 
             // Immediately retrieve public key via JWKS
             const jwks = await keyManager.getJwks(domain);
@@ -169,8 +169,8 @@ describe('Integration: KeyManager initialSetup() Method', () => {
             const domain1 = 'DOMAIN_A';
             const domain2 = 'DOMAIN_B';
 
-            const result1 = await keyManager.initialSetup(domain1);
-            const result2 = await keyManager.initialSetup(domain2);
+            const result1 = await keyManager.initialSetupDomain(domain1);
+            const result2 = await keyManager.initialSetupDomain(domain2);
 
             // Verify different KIDs
             expect(result1.kid).not.toBe(result2.kid);
@@ -180,11 +180,11 @@ describe('Integration: KeyManager initialSetup() Method', () => {
             expect(await infrastructure.activeKidStore.getActiveKid(domain2)).toBe(result2.kid);
         });
 
-        it('should handle concurrent initialSetup calls for different domains', async () => {
+        it('should handle concurrent initialSetupDomain calls for different domains', async () => {
             const domains = ['CONCURRENT_A', 'CONCURRENT_B', 'CONCURRENT_C'];
 
             const results = await Promise.all(
-                domains.map(domain => keyManager.initialSetup(domain))
+                domains.map(domain => keyManager.initialSetupDomain(domain))
             );
 
             // Verify all succeeded with unique KIDs
@@ -199,7 +199,7 @@ describe('Integration: KeyManager initialSetup() Method', () => {
         it('should normalize domain before setup', async () => {
             const domain = 'lowercase_domain';
 
-            const result = await keyManager.initialSetup(domain);
+            const result = await keyManager.initialSetupDomain(domain);
 
             // Verify KID uses normalized (uppercase) domain
             expect(result.kid).toMatch(/^LOWERCASE_DOMAIN-/);
@@ -213,7 +213,7 @@ describe('Integration: KeyManager initialSetup() Method', () => {
             const domain1 = 'TestDomain';
             const domain2 = 'TESTDOMAIN';
 
-            await keyManager.initialSetup(domain1);
+            await keyManager.initialSetupDomain(domain1);
 
             // Second call with different casing should use same normalized domain
             // This should be handled gracefully (either skip or error)
@@ -226,15 +226,15 @@ describe('Integration: KeyManager initialSetup() Method', () => {
         it('should handle invalid domain gracefully', async () => {
             const invalidDomain = '';
 
-            await expect(keyManager.initialSetup(invalidDomain)).rejects.toThrow();
+            await expect(keyManager.initialSetupDomain(invalidDomain)).rejects.toThrow();
         });
 
         it('should handle null domain gracefully', async () => {
-            await expect(keyManager.initialSetup(null)).rejects.toThrow();
+            await expect(keyManager.initialSetupDomain(null)).rejects.toThrow();
         });
 
         it('should handle undefined domain gracefully', async () => {
-            await expect(keyManager.initialSetup(undefined)).rejects.toThrow();
+            await expect(keyManager.initialSetupDomain(undefined)).rejects.toThrow();
         });
     });
 
@@ -242,7 +242,7 @@ describe('Integration: KeyManager initialSetup() Method', () => {
         it('should handle double initialization for same domain', async () => {
             const domain = 'IDEMPOTENT_TEST';
 
-            const result1 = await keyManager.initialSetup(domain);
+            const result1 = await keyManager.initialSetupDomain(domain);
 
             // Second initialization should either succeed with same KID or error gracefully
             // (Implementation-dependent behavior - test whichever is correct)

@@ -60,10 +60,10 @@ describe('Janitor', () => {
         });
     });
 
-    describe('cleanDomain (expired key reaper)', () => {
+    describe('runCleanup (expired key reaper)', () => {
         it('should delegate to expiredKeyReaper.cleanup', async () => {
             // Test: Facade delegates to reaper
-            await janitor.cleanDomain();
+            await janitor.runCleanup();
 
             expect(mockExpiredKeyReaper.cleanup).toHaveBeenCalledTimes(1);
         });
@@ -72,7 +72,7 @@ describe('Janitor', () => {
             // Test: Returns reaper's response
             mockExpiredKeyReaper.cleanup.mockResolvedValue({ deleted: 5 });
 
-            const result = await janitor.cleanDomain();
+            const result = await janitor.runCleanup();
 
             expect(result).toEqual({ deleted: 5 });
         });
@@ -81,15 +81,15 @@ describe('Janitor', () => {
             // Test: Reaper errors bubble up
             mockExpiredKeyReaper.cleanup.mockRejectedValue(new Error('Cleanup failed'));
 
-            await expect(janitor.cleanDomain())
+            await expect(janitor.runCleanup())
                 .rejects.toThrow('Cleanup failed');
         });
 
         it('should handle multiple cleanup calls', async () => {
             // Test: Can call cleanup multiple times
-            await janitor.cleanDomain();
-            await janitor.cleanDomain();
-            await janitor.cleanDomain();
+            await janitor.runCleanup();
+            await janitor.runCleanup();
+            await janitor.runCleanup();
 
             expect(mockExpiredKeyReaper.cleanup).toHaveBeenCalledTimes(3);
         });
@@ -326,7 +326,7 @@ describe('Janitor', () => {
     describe('facade pattern', () => {
         it('should provide unified interface to three sub-janitors', async () => {
             // Test: Single entry point for all cleanup operations
-            await janitor.cleanDomain();
+            await janitor.runCleanup();
             await janitor.deletePrivate('domain.com', 'kid');
             await janitor.deletePublic('domain.com', 'kid');
             await janitor.deleteOriginMetadata('domain.com', 'kid');
@@ -357,7 +357,7 @@ describe('Janitor', () => {
 
         it('should isolate consumer from sub-janitor implementations', () => {
             // Test: Consumer only knows about Janitor interface
-            expect(typeof janitor.cleanDomain).toBe('function');
+            expect(typeof janitor.runCleanup).toBe('function');
             expect(typeof janitor.deletePrivate).toBe('function');
             expect(typeof janitor.deletePublic).toBe('function');
             expect(typeof janitor.deleteOriginMetadata).toBe('function');
@@ -391,7 +391,7 @@ describe('Janitor', () => {
 
         it('should handle scheduled cleanup', async () => {
             // Test: Periodic cleanup job
-            await janitor.cleanDomain();
+            await janitor.runCleanup();
 
             expect(mockExpiredKeyReaper.cleanup).toHaveBeenCalled();
         });
@@ -426,7 +426,7 @@ describe('Janitor', () => {
             mockFileJanitor.deletePrivate.mockRejectedValue(new Error('File error'));
             mockMetadataJanitor.deleteOrigin.mockRejectedValue(new Error('Metadata error'));
 
-            await expect(janitor.cleanDomain()).rejects.toThrow('Reaper error');
+            await expect(janitor.runCleanup()).rejects.toThrow('Reaper error');
             await expect(janitor.deletePrivate('d.com', 'k')).rejects.toThrow('File error');
             await expect(janitor.deleteOriginMetadata('d.com', 'k')).rejects.toThrow('Metadata error');
         });

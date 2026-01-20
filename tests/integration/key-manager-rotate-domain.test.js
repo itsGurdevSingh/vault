@@ -16,7 +16,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'fs/promises';
 import path from 'path';
 import { ManagerFactory } from '../../src/domain/key-manager/index.js';
-import { clearFactorySingletons, createTestInfrastructure } from './helpers/infrastructure.js';
+import { clearFactorySingletons, createTestInfrastructure, clearPolicyStore } from './helpers/infrastructure.js';
 
 describe('Integration: KeyManager rotateDomain Method', () => {
     let infrastructure;
@@ -59,6 +59,9 @@ describe('Integration: KeyManager rotateDomain Method', () => {
     });
 
     afterEach(async () => {
+        // Clear policy store
+        clearPolicyStore();
+
         // Cleanup test storage
         try {
             await fs.rm(TEST_STORAGE, { recursive: true, force: true });
@@ -71,7 +74,7 @@ describe('Integration: KeyManager rotateDomain Method', () => {
         it('should rotate domain to new key', async () => {
             const domain = 'ROTATE_TEST';
 
-            const { kid: oldKid } = await keyManager.initialSetup(domain);
+            const { kid: oldKid } = await keyManager.initialSetupDomain(domain);
             await keyManager.rotateDomain(domain);
 
             // Verify new key is active (different from old)
@@ -83,7 +86,7 @@ describe('Integration: KeyManager rotateDomain Method', () => {
         it('should update active KID after rotation', async () => {
             const domain = 'ACTIVE_KID_ROTATE';
 
-            const { kid: oldKid } = await keyManager.initialSetup(domain);
+            const { kid: oldKid } = await keyManager.initialSetupDomain(domain);
             await keyManager.rotateDomain(domain);
 
             const activeKid = await infrastructure.activeKidStore.getActiveKid(domain);
@@ -95,7 +98,7 @@ describe('Integration: KeyManager rotateDomain Method', () => {
             const domain = 'SIGN_AFTER_ROTATE';
             const payload = { test: 'data' };
 
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
             const oldKid = await infrastructure.activeKidStore.getActiveKid(domain);
 
             await keyManager.rotateDomain(domain);
@@ -112,7 +115,7 @@ describe('Integration: KeyManager rotateDomain Method', () => {
         it('should normalize domain before rotation', async () => {
             const domain = 'lowercase_rotate';
 
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
             await keyManager.rotateDomain('LOWERCASE_ROTATE');
 
             // Verify rotation worked (active kid exists for normalized domain)
@@ -131,8 +134,10 @@ describe('Integration: KeyManager rotateDomain Method', () => {
         it('should handle gracefully when no active KID exists', async () => {
             const domain = 'NO_ACTIVE_KEY';
 
-            // Rotation completes but logs error internally
-            await keyManager.rotateDomain(domain);
+            // Rotation throws error when no policy exists
+            await expect(keyManager.rotateDomain(domain))
+                .rejects
+                .toThrow(/No policy found/);
 
             // Verify no active kid was set
             const activeKid = await infrastructure.activeKidStore.getActiveKid(domain);
@@ -144,7 +149,7 @@ describe('Integration: KeyManager rotateDomain Method', () => {
         it('should handle multiple sequential rotations', async () => {
             const domain = 'MULTI_ROTATE';
 
-            const { kid: kid1 } = await keyManager.initialSetup(domain);
+            const { kid: kid1 } = await keyManager.initialSetupDomain(domain);
             await keyManager.rotateDomain(domain);
             const kid2 = await infrastructure.activeKidStore.getActiveKid(domain);
 

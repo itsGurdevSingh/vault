@@ -55,7 +55,7 @@ describe('Integration: KeyManager sign() Method', () => {
             const payload = { userId: '12345', role: 'admin' };
 
             // Setup: Generate keys first
-            const setupResult = await keyManager.initialSetup(domain);
+            const setupResult = await keyManager.initialSetupDomain(domain);
 
             // Act: Sign JWT
             const jwt = await keyManager.sign(domain, payload);
@@ -92,7 +92,7 @@ describe('Integration: KeyManager sign() Method', () => {
             const customTTL = 300; // 5 minutes
 
             // Setup
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
 
             // Act: Sign with custom TTL
             const jwt = await keyManager.sign(domain, payload, { ttlSeconds: customTTL });
@@ -115,7 +115,7 @@ describe('Integration: KeyManager sign() Method', () => {
             };
 
             // Setup
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
 
             // Act: Sign with additional claims
             const jwt = await keyManager.sign(domain, payload, { additionalClaims });
@@ -137,7 +137,7 @@ describe('Integration: KeyManager sign() Method', () => {
             const additionalClaims = { scope: 'read:write' };
 
             // Setup
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
 
             // Act
             const jwt = await keyManager.sign(domain, payload, { ttlSeconds, additionalClaims });
@@ -158,7 +158,7 @@ describe('Integration: KeyManager sign() Method', () => {
             const payload = { test: 'data' };
 
             // Setup with lowercase
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
 
             // Act: Sign with lowercase domain
             const jwt = await keyManager.sign(domain, payload);
@@ -174,7 +174,7 @@ describe('Integration: KeyManager sign() Method', () => {
             const payload = { test: 'data' };
 
             // Setup
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
 
             // Act: Sign with same mixed case
             const jwt1 = await keyManager.sign(domain, payload);
@@ -196,8 +196,8 @@ describe('Integration: KeyManager sign() Method', () => {
             const payload2 = { service: 'B', data: 'beta' };
 
             // Setup both domains
-            const setup1 = await keyManager.initialSetup(domain1);
-            const setup2 = await keyManager.initialSetup(domain2);
+            const setup1 = await keyManager.initialSetupDomain(domain1);
+            const setup2 = await keyManager.initialSetupDomain(domain2);
 
             // Act: Sign for both domains
             const jwt1 = await keyManager.sign(domain1, payload1);
@@ -224,7 +224,7 @@ describe('Integration: KeyManager sign() Method', () => {
             const payload = { test: 'concurrent' };
 
             // Setup all domains
-            await Promise.all(domains.map(d => keyManager.initialSetup(d)));
+            await Promise.all(domains.map(d => keyManager.initialSetupDomain(d)));
 
             // Act: Sign concurrently
             const jwts = await Promise.all(
@@ -253,7 +253,7 @@ describe('Integration: KeyManager sign() Method', () => {
             const payload = { data: 'verify_me' };
 
             // Setup
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
 
             // Act: Sign
             const jwt = await keyManager.sign(domain, payload);
@@ -287,8 +287,8 @@ describe('Integration: KeyManager sign() Method', () => {
             const payload = { identical: 'payload' };
 
             // Setup
-            await keyManager.initialSetup(domain1);
-            await keyManager.initialSetup(domain2);
+            await keyManager.initialSetupDomain(domain1);
+            await keyManager.initialSetupDomain(domain2);
 
             // Act: Sign same payload with different domain keys
             const jwt1 = await keyManager.sign(domain1, payload);
@@ -306,7 +306,7 @@ describe('Integration: KeyManager sign() Method', () => {
             const domain = 'NO_ACTIVE_KID';
             const payload = { test: 'data' };
 
-            // No initialSetup called
+            // No initialSetupDomain called
 
             // Act & Assert
             await expect(keyManager.sign(domain, payload))
@@ -332,7 +332,7 @@ describe('Integration: KeyManager sign() Method', () => {
             const domain = 'ERROR_DOMAIN';
 
             // Setup
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
 
             // Act & Assert: null payload
             await expect(keyManager.sign(domain, null))
@@ -355,7 +355,7 @@ describe('Integration: KeyManager sign() Method', () => {
             const payload = { test: 'data' };
 
             // Setup
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
 
             // Act & Assert: negative TTL
             await expect(keyManager.sign(domain, payload, { ttlSeconds: -100 }))
@@ -381,7 +381,7 @@ describe('Integration: KeyManager sign() Method', () => {
             const payload2 = { request: 2 };
 
             // Setup
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
 
             // Act: Sign multiple times
             const jwt1 = await keyManager.sign(domain, payload1);
@@ -410,7 +410,7 @@ describe('Integration: KeyManager sign() Method', () => {
             const payload = { user: 'john_doe' };
 
             // Setup
-            const setupResult = await keyManager.initialSetup(domain);
+            const setupResult = await keyManager.initialSetupDomain(domain);
 
             // Act: Sign JWT
             const jwt = await keyManager.sign(domain, payload);
@@ -465,7 +465,7 @@ describe('Integration: KeyManager sign() Method', () => {
             };
 
             // Setup
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
 
             // Act: Sign
             const jwt = await keyManager.sign(domain, payload);
@@ -491,7 +491,7 @@ describe('Integration: KeyManager sign() Method', () => {
             const originalCopy = JSON.parse(JSON.stringify(payload));
 
             // Setup
-            await keyManager.initialSetup(domain);
+            await keyManager.initialSetupDomain(domain);
 
             // Act: Sign
             await keyManager.sign(domain, payload);

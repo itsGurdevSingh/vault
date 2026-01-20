@@ -213,7 +213,7 @@ describe('JanitorFactory', () => {
 
             const janitor = factory.create();
 
-            expect(typeof janitor.cleanDomain).toBe('function');
+            expect(typeof janitor.runCleanup).toBe('function');
             expect(typeof janitor.deletePrivate).toBe('function');
             expect(typeof janitor.deletePublic).toBe('function');
             expect(typeof janitor.deleteOriginMetadata).toBe('function');
@@ -404,7 +404,7 @@ describe('JanitorFactory', () => {
             expect(janitors).toHaveLength(3);
             janitors.forEach(janitor => {
                 expect(janitor).toBeDefined();
-                expect(typeof janitor.cleanDomain).toBe('function');
+                expect(typeof janitor.runCleanup).toBe('function');
             });
         });
 
