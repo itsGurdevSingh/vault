@@ -26,8 +26,8 @@ async function bootstrap() {
 
     // intilize test postman api
     keyManager.initialSetupDomain("user");
+    keyManager.initialSetupDomain("user-admin");
     keyManager.initialSetupDomain("service");
-
 
     /* ---------- Application ---------- */
     // transport services
@@ -81,23 +81,3 @@ function shutdown(grpcServer, httpServer) {
 }
 
 bootstrap();
-
-
-
-/*
-  NOTES:
-  what to do next 
-   everything is working till now . 
-   we have to add corn jobs config with developer upper and lower bound 
-   while initial setup we should pass interval time for roatation for initial policy build 
-   
-   above are our main priorties 
-   then we will make admin apis for rotation (all and single)
-   and for config setup (view and update bteween dev constraints)
-
-   then we add tests
-
-   then we add logging and monitoring
-
-   then we documantize our work
-*/
