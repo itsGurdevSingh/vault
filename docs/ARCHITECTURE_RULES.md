@@ -1,27 +1,62 @@
 # Architectural Laws (DDD Strict Mode)
 
-## 1. The Layers
+## 1. Layers
 
-- **Domain Layer (`src/domain`):** Pure business logic.
-  - _Modules:_ `Signer`, `KeyManager`, `MetadataManager`.
-  - _Rule:_ Must NOT depend on concrete `infrastructure` files.
-- **Infrastructure Layer (`src/infrastructure`):** Technical implementations.
-  - _Modules:_ `filesystem`, `db`, `crypto`, `cache`.
-  - _Rule:_ Can import `domain` (to implement interfaces), but `domain` cannot import _it_.
-- **Core Layer (`src/core`):** Low-level utilities (RSA generators).
+- **Domain Layer (`src/domain`):**
+  Pure business logic and orchestration.
+  Must not perform IO, cryptography, filesystem access, or network calls.
 
-## 2. Red Line Violations (Strictly Forbidden Imports)
+- **Application Layer (`src/application`):**
+  Use-case orchestration.
+  Bridges domain logic with transports and scheduling (cron, APIs).
 
-1.  **The "Infrastructure Leak":**
-    - **IF** a file in `src/domain/*` imports from `src/infrastructure/*`
-    - **THEN** it is a VIOLATION.
-    - _Correct approach:_ The domain should define an Interface, and the Application Layer (or `index.js` wiring) should inject the infrastructure.
-2.  **The "Sibling Coupling":**
-    - **IF** `Loader` (`domain/key-manager/loader`) directly imports `Builder` (`domain/metadata-manager/metaBuilder.js`)
-    - **THEN** it is a WARNING. (Cross-domain context coupling should be minimized).
+- **Infrastructure Layer (`src/infrastructure`):**
+  Technical implementations such as filesystem, databases, crypto engines,
+  caches, and network clients.
 
-## 3. Diagram Styling
+- **Core / Utils Layer (`src/utils`):**
+  Stateless, dependency-free helpers.
+  Must not depend on domain or infrastructure.
 
-- **Domain Entities:** `fill:#e3f2fd,stroke:#1565c0` (Blue)
-- **Infrastructure:** `fill:#f1f8e9,stroke:#558b2f` (Green)
-- **Violations:** `stroke:red,stroke-width:4px`
+---
+
+## 2. Red Line Violations
+
+### 2.1 Infrastructure Leak (FORBIDDEN)
+
+- IF a file in `src/domain/*` imports from `src/infrastructure/*`
+- THEN it is a **RED LINE VIOLATION**
+
+Correct approach:
+- Domain defines interfaces (ports)
+- Application or index wiring injects infrastructure implementations
+
+---
+
+### 2.2 Sibling Domain Coupling (WARNING)
+
+- IF one domain module imports another domain module
+- THEN it is a **WARNING**
+
+Allowed only when:
+- One domain explicitly orchestrates another
+- The dependency direction is documented
+
+---
+
+## 3. Orchestration Rule
+
+- Business workflows must live in:
+  - Domain orchestrators
+  - Application services
+
+- Factories, adapters, and index files must not contain business logic.
+
+---
+
+## 4. Diagram Styling
+
+- **Domain:** `fill:#e3f2fd,stroke:#1565c0`
+- **Application:** `fill:#fff3e0,stroke:#ef6c00`
+- **Infrastructure:** `fill:#f1f8e9,stroke:#558b2f`
+- **Violations:** `stroke:red,stroke-width:4px,stroke-dasharray: 5 5`
