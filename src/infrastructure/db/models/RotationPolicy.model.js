@@ -3,11 +3,13 @@ import mongoose from "mongoose";
 const rotationPolicySchema = new mongoose.Schema({
     domain: { type: String, required: true, unique: true },
 
+    activeKid: { type: String, required: true },
+
     // rotation frequency in days
-    rotationInterval: { 
-        type: Number, 
+    rotationInterval: {
+        type: Number,
         required: true,
-        enum: [1, 7, 30, 90, 180, 365] 
+        enum: [1, 7, 30, 90, 180, 365]
     },
 
     // last rotation moment
