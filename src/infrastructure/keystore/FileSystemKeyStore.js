@@ -5,7 +5,7 @@ import {
   KeyReadError,
   KeyDeleteError,
   KeyDirectoryError
-} from "./errors.js";
+} from "../errors/keysErrors.js";
 import { KeyStorePort } from "../../application/ports/KeyStorePort.js";
 
 export class FileSystemKeyStore extends KeyStorePort {
