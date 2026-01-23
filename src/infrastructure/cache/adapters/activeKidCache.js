@@ -1,10 +1,4 @@
-import { rotationPolicyRepository } from "../db/repositories/rotationPolicyRepository.js";
-import { Cache } from "../utils/cache.js";
-import RedisBoundedStore from "./redisBoundedStore.js";
-import redis from "./redisClient.js";
-
-
-class ActiveKidCache {
+export class ActiveKidCache {
     constructor({ inMemoryCache, distributedCache, repository, ttlSeconds = 3600 }) {
         this.inMemoryCache = inMemoryCache;
         this.distributedCache = distributedCache;
@@ -12,7 +6,19 @@ class ActiveKidCache {
         this.ttlSeconds = ttlSeconds;
     }
 
-    async setActiveKid(domain, kid) {
+    async set(domain, kid) {
+        // first check in repo domain exist with that active kid
+        const policy = await this.repo.findByDomain(domain);
+        if (!policy) {
+            throw new Error(`No policy found for domain: ${domain}`);
+        }
+
+        // our cache have not athority to set active kid not exist in policy
+        // this ensure active kid consistency between repo and cache
+        if (policy.activeKid !== kid) {
+            policy.activeKid = kid;
+            throw new Error(`Active KID mismatch for domain: ${domain}`);
+        }
         // set in outside cache with per-prefix limit
         await this.distributedCache.set(domain, kid, this.ttlSeconds);
         // finally set in in-memory cache
@@ -20,7 +26,7 @@ class ActiveKidCache {
         return kid;
     }
 
-    async getActiveKid(domain) {
+    async get(domain) {
         // check in-memory cache first
         let kid = this.inMemoryCache.get(domain);
         if (kid) return kid;
@@ -42,7 +48,7 @@ class ActiveKidCache {
         return null;
     }
 
-    async clearActiveKid(domain) {
+    async delete(domain) {
         this.inMemoryCache.delete(domain);
         await this.distributedCache.del(domain);
     }
@@ -53,9 +59,3 @@ class ActiveKidCache {
     }
 }
 
-// intialize (this will perform in index or factory later)
-const REDIS_LIMIT = 1000;
-const inMemoryCache = new Cache({ limit: 1000 });
-const distributedCache = new RedisBoundedStore({ prefix: 'active_kid:', limit: REDIS_LIMIT, redisClient: redis });
-
-export const activeKidStore = new ActiveKidCache({ inMemoryCache, distributedCache, repository: rotationPolicyRepository, ttlSeconds: 2 * 3600 });
