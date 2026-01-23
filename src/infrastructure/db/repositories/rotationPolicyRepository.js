@@ -50,11 +50,11 @@ class RotationPolicyRepository {
         return this.model.find({ nextRotationAt: { $lte: currentDate }, enabled: true });
     }
 
-    async updateRotationDates({ domain, rotatedAt, nextRotationAt }, session) {
+    async updateRotationDates({ domain, activeKid, rotatedAt, nextRotationAt }, session) {
         const d = domain.toUpperCase().trim();
         return this.model.findOneAndUpdate(
             { domain: d },
-            { rotatedAt, nextRotationAt },
+            { activeKid, rotatedAt, nextRotationAt },
             { new: true },
             { session }
         );
@@ -63,12 +63,13 @@ class RotationPolicyRepository {
     /**
      * Updates dates within a transaction.
      */
-    async acknowledgeSuccessfulRotation({ domain, intervalDays }, session) {
+    async acknowledgeSuccessfulRotation({ domain, intervalDays }, newKid, session) {
         const rotatedAt = new Date();
         const nextRotationAt = new Date(rotatedAt.getTime() + intervalDays * 86400000);
 
         return this.updateRotationDates({
             domain,
+            activeKid: newKid,
             rotatedAt,
             nextRotationAt
         }, session);
