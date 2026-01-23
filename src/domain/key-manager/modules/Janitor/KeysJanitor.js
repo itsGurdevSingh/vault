@@ -1,21 +1,22 @@
-export class KeyFileJanitor {
+export class KeyJanitor {
     /**
-     * @param {KeyCache} loaderCache - The Facade for the Loader's Cache
+     * @param {LoaderCache} loaderCache - The Facade for the Loader's Cache
      * @param {Cache} builderCache - The Cache used by the Builder
-     * @param {KeyDeleter} filesystemHandler - The Infrastructure handler
+     * @param {SignerCache} signerCache - The Facade for the Signer's Cache
+     * @param {keyStore} filesystemHandler - The Infrastructure handler
      */
-    constructor(loaderCache, builderCache, signerCache, KeyDeleter) {
+    constructor(loaderCache, builderCache, signerCache, keyStore) {
         this.loaderCache = loaderCache;
         this.builderCache = builderCache; // Assuming this interface has a .delete() method
         this.signerCache = signerCache;
-        this.KeyDeleter = KeyDeleter;
+        this.keyStore = keyStore;
     }
 
     async deletePrivate(domain, kid) {
         try {
             // STEP 1: Delete from Source of Truth (Filesystem) first
             // If this fails, we throw, and the Cache remains valid (correctly reflecting the file still exists).
-            await this.KeyDeleter.deletePrivateKey(domain, kid);
+            await this.keyStore.deletePrivateKey(domain, kid);
 
             // STEP 2: Invalidate Read Cache (Loader and Signer)
             // Now that the file is gone, we strictly ensure memory doesn't serve it.
@@ -30,7 +31,7 @@ export class KeyFileJanitor {
     async deletePublic(domain, kid) {
         try {
             // STEP 1: Delete from Source of Truth
-            await this.KeyDeleter.deletePublicKey(domain, kid);
+            await this.keyStore.deletePublicKey(domain, kid);
 
             // STEP 2: Invalidate Loader Cache
             await this.loaderCache.public.delete(kid);

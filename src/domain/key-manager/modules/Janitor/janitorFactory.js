@@ -1,34 +1,32 @@
 // sibling imports 
 import { Janitor } from './janitor.js';
-import { KeyFileJanitor } from './KeyFileJanitor.js';
+import { KeyJanitor } from './KeysJanitor.js';
 import { MetadataJanitor } from './MetadataJanitor.js';
 import { ExpiredKeyReaper } from './ExpiredKeyReaper.js';
-import { KeyDeleter } from './KeyDeleter.js';
 
 
 class JanitorFactory {
     // in constructor we inject all outside dependencies
-    constructor({ cache: { loaderCache, builderCache, signerCache }, metadataManager, pathService }) {
+    constructor({ cache: { loaderCache, builderCache, signerCache }, metadataManager, keyStore }) {
         this.loaderCache = loaderCache;
         this.builderCache = builderCache;
         this.signerCache = signerCache;
         this.metadataManager = metadataManager;
-        this.pathService = pathService;
+        this.keyStore = keyStore;
     }
     create() {
         // prepare injections 
-        const keyDeleter = new KeyDeleter(this.pathService);
-        const keyFileJanitor = new KeyFileJanitor(this.loaderCache, this.builderCache, this.signerCache, keyDeleter);
+        const keyJanitor = new KeyJanitor(this.loaderCache, this.builderCache, this.signerCache, this.keyStore);
         const metadataJanitor = new MetadataJanitor(this.metadataManager);
-        const expiredKeyReaper = new ExpiredKeyReaper(keyFileJanitor, metadataJanitor);
+        const expiredKeyReaper = new ExpiredKeyReaper(keyJanitor, metadataJanitor);
 
         // create main janitor instance
-        return new Janitor(keyFileJanitor, metadataJanitor, expiredKeyReaper);
+        return new Janitor(keyJanitor, metadataJanitor, expiredKeyReaper);
     }
 
-    static getInstance({ cache, metadataManager, pathService }) {
+    static getInstance({ cache, metadataManager, keyStore }) {
         if (!JanitorFactory.instance) {
-            JanitorFactory.instance = new JanitorFactory({ cache, metadataManager, pathService });
+            JanitorFactory.instance = new JanitorFactory({ cache, metadataManager, keyStore });
         }
         return JanitorFactory.instance;
     }

@@ -65,7 +65,7 @@ class ManagerFactory {
         const generator = generatorFactory.create();
 
         // 7. SUB-DOMAIN: JANITOR (Cleanup)
-        const janitorFactory = JanitorFactory.getInstance({ cache: { loaderCache, builderCache, signerCache }, metadataManager, pathService: this.pathService });
+        const janitorFactory = JanitorFactory.getInstance({ cache: { loaderCache, builderCache, signerCache }, metadataManager, keyStore: this.keyStore });
         const janitor = janitorFactory.create();
 
         // 8. SUB-DOMAIN: BUILDER (Construction)
