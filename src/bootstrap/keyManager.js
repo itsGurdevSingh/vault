@@ -11,10 +11,16 @@ import { ActiveKidCache } from '../infrastructure/cache/index.js';
 //===============================================================================================================
 //                                      key store Creation
 //===============================================================================================================
-import { FileSystemKeyStore } from "../infrastructure/keystore/FileSystemKeyStore.js";
+import { FileSystemKeyStore } from "../infrastructure/keyStore/FileSystemKeyStore.js";
 import { pathService } from "../infrastructure/filesystem/index.js";
 
 const keyStore = new FileSystemKeyStore({ pathService });
+
+//===============================================================================================================
+//                                      Metadata Store Creation
+//===============================================================================================================
+import { MetadataFileStore } from '../infrastructure/metadataStore/MetadataFileStore.js';
+const metadataStore = new MetadataFileStore({ metaPaths: pathService });
 
 
 
@@ -26,6 +32,7 @@ const keyStore = new FileSystemKeyStore({ pathService });
 export async function createKeyManager() {
     const factory = ManagerFactory.getInstance({
         keyStorePort: keyStore,
+        metadataStorePort: metadataStore,
         cryptoEngine,
         lockRepo: rotationLockRepository,
         policyRepo: rotationPolicyRepository,

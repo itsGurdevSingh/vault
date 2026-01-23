@@ -19,8 +19,9 @@ import { KeyManager } from "./KeyManager.js";
 
 class ManagerFactory {
     // Infra and outsider utils 
-    constructor({ keyStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
+    constructor({ keyStorePort, metadataStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
         this.keyStore = keyStorePort;
+        this.metadataStore = metadataStorePort;
         this.cryptoEngine = cryptoEngine;
         this.lockRepository = lockRepo;
         this.policyRepository = policyRepo;
@@ -28,9 +29,9 @@ class ManagerFactory {
         this.ActiveKidCache = ActiveKidCache;
     }
 
-    static getInstance({ keyStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
+    static getInstance({ keyStorePort, metadataStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
         if (!this._instance) {
-            this._instance = new ManagerFactory({ keyStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache });
+            this._instance = new ManagerFactory({ keyStorePort, metadataStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache });
         }
         return this._instance;
     }
@@ -50,7 +51,7 @@ class ManagerFactory {
 
         // 3. EXTERNAL DOMAINS (Dependencies from neighbors)
         // We must create MetadataManager first because Janitor & Generator need it.
-        const metaFactory = MetadataFactory.getInstance({ pathService: this.pathService });
+        const metaFactory = MetadataFactory.getInstance({ metadataStore: this.metadataStore });
         const metadataManager = metaFactory.create();
 
         // 4. SUB-DOMAIN: LOADER (Read Access)

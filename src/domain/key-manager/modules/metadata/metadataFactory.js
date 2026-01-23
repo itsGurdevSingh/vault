@@ -1,30 +1,20 @@
-import { MetadataService } from "./MetadataService.js";
-import { MetadataFileStore } from "./metadataFileStore.js";
-import { writeFile, readFile, unlink, readdir, mkdir } from "fs/promises";
-import path from "path";
+import { Metadata } from "./Metadata.js";
+import { MetadataBuilder } from "./metadataBuilder.js";
+import { isExpired } from "./utils.js";
 
 class MetadataFactory {
 
-    constructor({ pathService, fsOps = null }) {
-        this.pathService = pathService;
-        this.fsOps = fsOps || {
-            writeFile,
-            readFile,
-            unlink,
-            readdir,
-            mkdir,
-            path
-        };
+    constructor({ metadataStore }) {
+        this.metadataStore = metadataStore;
     }
 
     create() {
-        const store = new MetadataFileStore(this.pathService, this.fsOps);
-        return new MetadataService(store);
+        return new Metadata(this.metadataStore, MetadataBuilder, isExpired);
     }
 
-    static getInstance({ pathService, fsOps = null }) {
+    static getInstance({ metadataStore }) {
         if (!this._instance) {
-            this._instance = new MetadataFactory({ pathService, fsOps });
+            this._instance = new MetadataFactory({ metadataStore });
         }
         return this._instance;
     }
