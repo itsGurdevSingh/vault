@@ -5,21 +5,19 @@ import { mkdir, writeFile } from "fs/promises";
 
 export class GeneratorFactory {
 
-    constructor({ cryptoEngine, metadataManager, paths }) {
+    constructor({ cryptoEngine, metadataManager, keyStore }) {
         this.cryptoEngine = cryptoEngine;
         this.metadataManager = metadataManager;
-        this.paths = paths;
+        this.keyStore = keyStore;
     }
 
     create() {
-        const keyWriter = new KeyWriter(this.paths, writeFile);
-        const dirManager = new DirManager(this.paths, mkdir);
-        return new RSAKeyGenerator(this.cryptoEngine, this.metadataManager, keyWriter, dirManager);
+        return new RSAKeyGenerator(this.cryptoEngine, this.metadataManager, this.keyStore);
     }
 
-    static getInstance({ cryptoEngine, metadataManager, pathService }) {
+    static getInstance({ cryptoEngine, metadataManager, keyStore }) {
         if (!this.instance) {
-            this.instance = new GeneratorFactory({ cryptoEngine, metadataManager, paths: pathService });
+            this.instance = new GeneratorFactory({ cryptoEngine, metadataManager, keyStore });
         }
         return this.instance;
     }

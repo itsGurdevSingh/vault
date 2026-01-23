@@ -1,20 +1,17 @@
 export class RSAKeyGenerator {
-    constructor(cryptoEngine, metadataManager, keyWriter, dirManager) {
+    constructor(cryptoEngine, metadataManager, keyStore) {
         this.cryptoEngine = cryptoEngine;
         this.metadataManager = metadataManager;
-        this.keyWriter = keyWriter;
-        this.dirManager = dirManager;
+        this.keyStore = keyStore;
     }
 
     async generate(domain) {
-
-        await this.dirManager.ensure(domain);
 
         const kid = this.cryptoEngine.generateKID(domain);
 
         const { publicKey, privateKey } = await this.cryptoEngine.generateKeyPair();
 
-        await this.keyWriter.save(domain, kid, publicKey, privateKey);
+        await this.keyStore.saveKeyPair(domain, kid, { publicKey, privateKey });
 
         await this.metadataManager.create(domain, kid, new Date());
 

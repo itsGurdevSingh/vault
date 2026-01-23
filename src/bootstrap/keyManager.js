@@ -7,9 +7,25 @@ import { rotationPolicyRepository } from '../infrastructure/db/index.js';
 import { Cache } from '../utils/cache.js';
 import { ActiveKidCache } from '../infrastructure/cache/index.js';
 
+
+//===============================================================================================================
+//                                      key store Creation
+//===============================================================================================================
+import { FileSystemKeyStore } from "../infrastructure/keystore/FileSystemKeyStore.js";
+import { pathService } from "../infrastructure/filesystem/index.js";
+
+const keyStore = new FileSystemKeyStore({ pathService });
+
+
+
+//===============================================================================================================
+//                                      KeyManager Creation
+//===============================================================================================================
+
+
 export async function createKeyManager() {
     const factory = ManagerFactory.getInstance({
-        pathService: pathService.pathService,
+        keyStorePort: keyStore,
         cryptoEngine,
         lockRepo: rotationLockRepository,
         policyRepo: rotationPolicyRepository,

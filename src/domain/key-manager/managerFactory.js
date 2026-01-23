@@ -19,8 +19,8 @@ import { KeyManager } from "./KeyManager.js";
 
 class ManagerFactory {
     // Infra and outsider utils 
-    constructor({ pathService, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
-        this.pathService = pathService;
+    constructor({ keyStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
+        this.keyStore = keyStorePort;
         this.cryptoEngine = cryptoEngine;
         this.lockRepository = lockRepo;
         this.policyRepository = policyRepo;
@@ -28,9 +28,9 @@ class ManagerFactory {
         this.ActiveKidCache = ActiveKidCache;
     }
 
-    static getInstance({ pathService, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
+    static getInstance({ keyStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
         if (!this._instance) {
-            this._instance = new ManagerFactory({ pathService, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache });
+            this._instance = new ManagerFactory({ keyStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache });
         }
         return this._instance;
     }
@@ -54,14 +54,14 @@ class ManagerFactory {
         const metadataManager = metaFactory.create();
 
         // 4. SUB-DOMAIN: LOADER (Read Access)
-        const loaderFactory = LoaderFactory.getInstance({ loaderCache, pathService: this.pathService, cryptoEngine });
+        const loaderFactory = LoaderFactory.getInstance({ loaderCache, keyStore: this.keyStore, cryptoEngine });
         const loader = await loaderFactory.create();
 
         // 5. INTERNAL SERVICE: RESOLVER (Helper)
         const keyResolver = new KeyResolver({ loader, ActiveKidCache: this.ActiveKidCache });
 
         // 6. SUB-DOMAIN: GENERATOR (Write Access)
-        const generatorFactory = GeneratorFactory.getInstance({ cryptoEngine, metadataManager, pathService: this.pathService });
+        const generatorFactory = GeneratorFactory.getInstance({ cryptoEngine, metadataManager, keyStore: this.keyStore });
         const generator = generatorFactory.create();
 
         // 7. SUB-DOMAIN: JANITOR (Cleanup)
