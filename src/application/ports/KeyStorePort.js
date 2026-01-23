@@ -27,4 +27,8 @@ export class KeyStorePort {
   async listPublicKids(domain) {
     throw new Error("Not implemented");
   }
+
+  async listPrivateKids(domain) {
+    throw new Error("Not implemented");
+  }
 }

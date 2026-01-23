@@ -1,9 +1,7 @@
-import { readFile } from 'fs/promises';
-
 export class KeyReader {
-    constructor(cache, paths, cryptoEngine) {
+    constructor(cache, keyStore, cryptoEngine) {
         this.cache = cache;
-        this.paths = paths;
+        this.keyStore = keyStore;
         this.cryptoEngine = cryptoEngine;
     }
 
@@ -12,7 +10,7 @@ export class KeyReader {
         let pem = this.cache.private.get(kid);
         if (!pem) {
             const domain = this.cryptoEngine.getInfo(kid).domain;
-            pem = await readFile(this.paths.privateKey(domain, kid), 'utf8');
+            pem = await this.keyStore.loadPrivateKey(domain, kid);
             this.cache.private.set(kid, pem);
         }
         return pem;
@@ -22,7 +20,7 @@ export class KeyReader {
         let pem = this.cache.public.get(kid);
         if (!pem) {
             const domain = this.cryptoEngine.getInfo(kid).domain;
-            pem = await readFile(this.paths.publicKey(domain, kid), 'utf8');
+            pem = await this.keyStore.loadPublicKey(domain, kid);
             this.cache.public.set(kid, pem);
         }
         return pem;

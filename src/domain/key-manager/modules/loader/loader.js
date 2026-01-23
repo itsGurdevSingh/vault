@@ -1,16 +1,16 @@
-export class KeyRegistry {
+export class Loader {
 
-    constructor({ reader, directory }) {
+    constructor({ reader, keyStore }) {
         this.reader = reader;
-        this.directory = directory;
+        this.keyStore = keyStore;
     }
 
     async getAllPublicKids(domain) {
-        return await this.directory.listPublicKids(domain);
+        return await this.keyStore.listPublicKids(domain);
     }
 
     async getAllPrivateKids(domain) {
-        return await this.directory.listPrivateKids(domain);
+        return await this.keyStore.listPrivateKids(domain);
     }
 
     async getPublicKeyMap(domain) {

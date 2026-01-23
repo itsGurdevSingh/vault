@@ -1,4 +1,4 @@
-import { mkdir, writeFile, readFile, unlink } from "fs/promises";
+import { mkdir, writeFile, readFile, unlink, readdir } from "fs/promises";
 
 import {
   KeyWriteError,
@@ -82,4 +82,23 @@ export class FileSystemKeyStore extends KeyStorePort {
       }
     }
   }
+
+  /** List all private key files (*.pem → kid) */
+  async listPrivateKids(domain) {
+    await this.#ensureDirs(domain);
+    const files = await readdir(this.paths.privateDir(domain));
+    return files
+      .filter(f => f.endsWith(".pem"))
+      .map(f => f.replace(".pem", ""));
+  }
+
+  /** List all public key files (*.pem → kid) */
+  async listPublicKids(domain) {
+    await this.#ensureDirs(domain);
+    const files = await readdir(this.paths.publicDir(domain));
+    return files
+      .filter(f => f.endsWith(".pem"))
+      .map(f => f.replace(".pem", ""));
+  }
+
 }

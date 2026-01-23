@@ -1,28 +1,26 @@
 import { KeyReader } from "./KeyReader.js";
-import { KeyDirectory } from "./KeyDirectory.js";
-import { KeyRegistry } from "./KeyRegistry.js";
+import { Loader } from "./loader.js";
 
 
 class LoaderFactory {
 
-    constructor({ loaderCache, pathService, cryptoEngine }) {
+    constructor({ loaderCache, keyStore, cryptoEngine }) {
         this.KeyCache = loaderCache;
-        this.pathService = pathService;
+        this.keyStore = keyStore;
         this.cryptoEngine = cryptoEngine;
     }
 
     async create() {
         // injections
-        const reader = new KeyReader(this.KeyCache, this.pathService, this.cryptoEngine);
-        const directory = new KeyDirectory(this.pathService);
+        const reader = new KeyReader(this.KeyCache, this.keyStore, this.cryptoEngine);
 
         // return new KeyRegistry instance
-        return new KeyRegistry({ reader, directory });
+        return new Loader({ reader, keyStore: this.keyStore });
     }
 
-    static getInstance({ loaderCache, pathService, cryptoEngine }) {
+    static getInstance({ loaderCache, keyStore, cryptoEngine }) {
         if (!this._instance) {
-            this._instance = new LoaderFactory({ loaderCache, pathService, cryptoEngine });
+            this._instance = new LoaderFactory({ loaderCache, keyStore, cryptoEngine });
         }
         return this._instance;
     };
