@@ -28,7 +28,7 @@ export class Signer {
     }
 
     async _getActiveKid(domain) {
-        const activeKid = await this.keyResolver.getActiveKID(domain);
+        const activeKid = await this.keyResolver.getActiveKid(domain);
         if (!activeKid) {
             throw new Error(`No active signing KID for domain "${domain}"`);
         }

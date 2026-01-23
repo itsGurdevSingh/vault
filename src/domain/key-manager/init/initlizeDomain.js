@@ -1,9 +1,8 @@
 export class initializeDomain {
 
-    constructor({ state, generator, keyResolver,  policyRepo }) {
+    constructor({ state, generator, policyRepo }) {
         this.state = state;
         this.generator = generator;
-        this.keyResolver = keyResolver;
         this.policyRepo = policyRepo;
     }
 
@@ -17,14 +16,13 @@ export class initializeDomain {
         // 1. Generate
         const newKid = await this.generator.generate(domain);
 
-        // 2. Set Active (Directly)
-        await this.keyResolver.setActiveKid(domain, newKid);
-
+        // 2. Determine rotation interval
         const rotationIntervalDays = policyOpts.rotationInterval || this.state.rotationIntervalMs ;
 
         // 3. Create Rotation Policy 
         const policyData = {
             domain: domain,
+            activeKid: newKid,
             rotationInterval: rotationIntervalDays, // in days
             rotatedAt: Date.now(),
             nextRotationAt: new Date(Date.now() + rotationIntervalDays * 24 * 60 * 60 * 1000),
@@ -39,9 +37,9 @@ export class initializeDomain {
 
     }
 
-    static getInstance({ state, generator,keyResolver, policyRepo }) {
+    static getInstance({ state, generator, policyRepo }) {
         if (!this.instance) {
-            this.instance = new initializeDomain({ state, generator,keyResolver, policyRepo });
+            this.instance = new initializeDomain({ state, generator, policyRepo });
         }
         return this.instance;
     }

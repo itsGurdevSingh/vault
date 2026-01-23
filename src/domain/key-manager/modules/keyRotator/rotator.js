@@ -38,24 +38,28 @@ class Rotator {
 
         try {
             // prepare rotation
-            await this.#prepareRotation(domain);
+            const newKid = await this.#prepareRotation(domain);
+
 
             // start db transaction
             session.startTransaction();
 
             // run db transaction if provided
-            await updateRotationDatesCallback(session);
-            // commit rotation
-            const newActiveKid = await this.#commitRotation(domain);
+            await updateRotationDatesCallback(newKid, session);
 
+            await this.keyResolver.clearActiveKid(domain);
             // commit db transaction
             await session.commitTransaction();
+
+            // commit rotation ( it will helps in cleanup of old private keys and metadata not throw error )
+            const newActiveKid = await this.#commitRotation(domain);
+
 
             return newActiveKid;
 
         } catch (err) {
 
-            // rollback rotation on error
+            // rollback rotation on error (cleanup of new generated keys and metadata)
             const activeKid = await this.#rollbackRotation(domain);
 
             // abort db transaction
@@ -76,12 +80,6 @@ class Rotator {
 
     /** initial setup for rotation  */
     async #prepareRotation(domain) {
-        // generate a new key pair
-        const newKid = await this.keyGenerator.generate(domain);
-
-        // set upcoming kid
-        this.#upcomingKid = newKid;
-
         // store archived meta for current active key
         const activeKid = await this.keyResolver.getActiveKid(domain);
 
@@ -91,6 +89,12 @@ class Rotator {
             // we use generation only (not rotation) for first time setup
             throw new Error("No active kid found for prepare.");
         }
+
+        // generate a new key pair
+        const newKid = await this.keyGenerator.generate(domain);
+
+        // set upcoming kid
+        this.#upcomingKid = newKid;
 
         await this.keyJanitor.addKeyExpiry(domain, activeKid);
 
@@ -106,20 +110,13 @@ class Rotator {
             // we not use rotation for first time setup we use generation only 
             throw new Error("No previous kid found for commit.");
         }
-
-        // set upcoming kid to active
-        const activeKid = await this.keyResolver.setActiveKid(domain, this.#upcomingKid);
-
-        if (!activeKid) {
-            // this is crucial , should not happen
-            throw new Error("No upcoming kid set for commit.");
-        }
-
         // delete private key
         await this.keyJanitor.deletePrivate(domain, this.#previousKid);
 
         // delete origin metadata for previous active kid
         await this.keyJanitor.deleteOriginMetadata(domain, this.#previousKid);
+
+        const activeKid = this.#upcomingKid;
 
         // clear upcoming kid
         this.#upcomingKid = null;

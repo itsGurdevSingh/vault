@@ -19,18 +19,18 @@ import { KeyManager } from "./KeyManager.js";
 
 class ManagerFactory {
     // Infra and outsider utils 
-    constructor({ pathService, cryptoEngine, lockRepo, policyRepo, Cache, activeKidStore }) {
+    constructor({ pathService, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
         this.pathService = pathService;
         this.cryptoEngine = cryptoEngine;
         this.lockRepository = lockRepo;
         this.policyRepository = policyRepo;
         this.cache = Cache;
-        this.kidStore = activeKidStore;
+        this.ActiveKidCache = ActiveKidCache;
     }
 
-    static getInstance({ pathService, cryptoEngine, lockRepo, policyRepo, Cache, activeKidStore }) {
+    static getInstance({ pathService, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
         if (!this._instance) {
-            this._instance = new ManagerFactory({ pathService, cryptoEngine, lockRepo, policyRepo, Cache, activeKidStore });
+            this._instance = new ManagerFactory({ pathService, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache });
         }
         return this._instance;
     }
@@ -40,11 +40,11 @@ class ManagerFactory {
         const cryptoEngine = this.cryptoEngine; // Use the instance directly
 
         // 2. SHARED STATE (The Memory)
-        const builderCache = new this.cache();
-        const signerCache = new this.cache();
+        const builderCache = new this.cache({ limit: 1000 });
+        const signerCache = new this.cache({ limit: 1000 });
         const loaderCache = {
-            private: new this.cache(),
-            public: new this.cache()
+            private: new this.cache({ limit: 1000 }),
+            public: new this.cache({ limit: 1000 })
         };
 
 
@@ -58,7 +58,7 @@ class ManagerFactory {
         const loader = await loaderFactory.create();
 
         // 5. INTERNAL SERVICE: RESOLVER (Helper)
-        const keyResolver = new KeyResolver({ loader, kidStore: this.kidStore });
+        const keyResolver = new KeyResolver({ loader, ActiveKidCache: this.ActiveKidCache });
 
         // 6. SUB-DOMAIN: GENERATOR (Write Access)
         const generatorFactory = GeneratorFactory.getInstance({ cryptoEngine, metadataManager, pathService: this.pathService });
@@ -87,7 +87,7 @@ class ManagerFactory {
         const configManager = RotationConfig.getInstance({ state: RotationState });
 
         //12. intial setup of doamin .
-        const domainInitializer = initializeDomain.getInstance({ state: RotationState, generator, keyResolver, policyRepo: this.policyRepository });
+        const domainInitializer = initializeDomain.getInstance({ state: RotationState, generator, policyRepo: this.policyRepository });
 
         // 13. THE AGGREGATE ROOT (The Boss)
         // We inject all the working parts into the Manager

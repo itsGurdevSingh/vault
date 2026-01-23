@@ -6,18 +6,13 @@
  */
 
 export class KeyResolver {
-    constructor({ loader, kidStore }) {
+    constructor({ loader, ActiveKidCache }) {
         this.loader = loader;
-        this.kidStore = kidStore;
+        this.ActiveKidCache = ActiveKidCache;
     }
 
     async getActiveKid(domain) {
-        return await this.kidStore.getActiveKid(domain);
-    }
-
-    // Alias for compatibility (deprecated)
-    async getActiveKID(domain) {
-        return this.getActiveKid(domain);
+        return await this.ActiveKidCache.get(domain);
     }
 
     async getSigningKey(domain) {
@@ -32,7 +27,11 @@ export class KeyResolver {
     }
 
     async setActiveKid(domain, kid) {
-        return this.kidStore.setActiveKid(domain, kid);
+        return this.ActiveKidCache.set(domain, kid);
+    }
+
+    async clearActiveKid(domain) {
+        return this.ActiveKidCache.delete(domain);
     }
 
 }

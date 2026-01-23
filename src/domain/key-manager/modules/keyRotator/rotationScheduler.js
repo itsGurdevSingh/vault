@@ -88,8 +88,8 @@ export class RotationScheduler {
         const { domain, rotationInterval } = policy;
 
         // DB Update Callback
-        const dbUpdateCallback = async (session) => {
-            await this.policyRepo.acknowledgeSuccessfulRotation({ domain, rotationInterval }, session);
+        const dbUpdateCallback = async (newKid, session) => {
+            await this.policyRepo.acknowledgeSuccessfulRotation({ domain, rotationInterval }, newKid, session);
         };
 
         const session = await this.policyRepo.getSession();
