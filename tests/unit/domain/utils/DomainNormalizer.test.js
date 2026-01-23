@@ -85,66 +85,71 @@ describe('DomainNormalizer', () => {
                 expect(result).toBe('SUB.DOMAIN.EXAMPLE.COM');
             });
         });
-
-        describe('error handling', () => {
-            it('should throw error for null domain', () => {
-                expect(() => normalizer.normalizeDomain(null))
-                    .toThrow('Domain must be a non-empty string');
-            });
-
-            it('should throw error for undefined domain', () => {
-                expect(() => normalizer.normalizeDomain(undefined))
-                    .toThrow('Domain must be a non-empty string');
-            });
-
-            it('should throw error for empty string', () => {
-                expect(() => normalizer.normalizeDomain(''))
-                    .toThrow('Domain must be a non-empty string');
-            });
-
-            it('should throw error for number', () => {
-                expect(() => normalizer.normalizeDomain(123))
-                    .toThrow('Domain must be a non-empty string');
-            });
-
-            it('should throw error for boolean', () => {
-                expect(() => normalizer.normalizeDomain(true))
-                    .toThrow('Domain must be a non-empty string');
-            });
-
-            it('should throw error for object', () => {
-                expect(() => normalizer.normalizeDomain({ domain: 'test' }))
-                    .toThrow('Domain must be a non-empty string');
-            });
-
-            it('should throw error for array', () => {
-                expect(() => normalizer.normalizeDomain(['example.com']))
-                    .toThrow('Domain must be a non-empty string');
-            });
-
-            it('should throw error for function', () => {
-                expect(() => normalizer.normalizeDomain(() => 'example.com'))
-                    .toThrow('Domain must be a non-empty string');
-            });
-        });
-
-        describe('edge cases', () => {
-            it('should return empty string for whitespace-only input', () => {
-                const result = normalizer.normalizeDomain('   ');
-                expect(result).toBe('');
-            });
-
-            it('should handle tabs and newlines', () => {
-                const result = normalizer.normalizeDomain('\texamplecom\n');
-                expect(result).toBe('EXAMPLECOM');
-            });
-
-            it('should not modify internal spaces (if any)', () => {
-                const result = normalizer.normalizeDomain('example domain');
-                expect(result).toBe('EXAMPLE DOMAIN');
-            });
+        it('should handle domains with dots (for display purposes)', () => {
+            const result = normalizer.normalizeDomain('sub.domain.test.local');
+            expect(result).toBe('SUB.DOMAIN.TEST.LOCAL');
         });
     });
+
+    describe('error handling', () => {
+        it('should throw error for null domain', () => {
+            expect(() => normalizer.normalizeDomain(null))
+                .toThrow('Domain must be a non-empty string');
+        });
+
+        it('should throw error for undefined domain', () => {
+            expect(() => normalizer.normalizeDomain(undefined))
+                .toThrow('Domain must be a non-empty string');
+        });
+
+        it('should throw error for empty string', () => {
+            expect(() => normalizer.normalizeDomain(''))
+                .toThrow('Domain must be a non-empty string');
+        });
+
+        it('should throw error for number', () => {
+            expect(() => normalizer.normalizeDomain(123))
+                .toThrow('Domain must be a non-empty string');
+        });
+
+        it('should throw error for boolean', () => {
+            expect(() => normalizer.normalizeDomain(true))
+                .toThrow('Domain must be a non-empty string');
+        });
+
+        it('should throw error for object', () => {
+            expect(() => normalizer.normalizeDomain({ domain: 'test' }))
+                .toThrow('Domain must be a non-empty string');
+        });
+
+        it('should throw error for array', () => {
+            expect(() => normalizer.normalizeDomain(['test.local']))
+                .toThrow('Domain must be a non-empty string');
+        });
+
+        it('should throw error for function', () => {
+            expect(() => normalizer.normalizeDomain(() => 'test.local'))
+                .toThrow('Domain must be a non-empty string');
+        });
+    });
+
+    describe('edge cases', () => {
+        it('should return empty string for whitespace-only input', () => {
+            const result = normalizer.normalizeDomain('   ');
+            expect(result).toBe('');
+        });
+
+        it('should handle tabs and newlines', () => {
+            const result = normalizer.normalizeDomain('\texamplecom\n');
+            expect(result).toBe('EXAMPLECOM');
+        });
+
+        it('should not modify internal spaces (if any)', () => {
+            const result = normalizer.normalizeDomain('example domain');
+            expect(result).toBe('EXAMPLE DOMAIN');
+        });
+    });
+    // ...existing code...
 
     describe('isValidDomain', () => {
         describe('valid domains', () => {
@@ -219,11 +224,11 @@ describe('DomainNormalizer', () => {
             });
 
             it('should return false for array', () => {
-                expect(normalizer.isValidDomain(['example.com'])).toBe(false);
+                expect(normalizer.isValidDomain(['test.local'])).toBe(false);
             });
 
             it('should return false for domain with dot', () => {
-                expect(normalizer.isValidDomain('example.com')).toBe(false);
+                expect(normalizer.isValidDomain('test.local')).toBe(false);
             });
 
             it('should return false for domain with special characters', () => {

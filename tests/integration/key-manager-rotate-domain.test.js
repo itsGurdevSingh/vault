@@ -49,13 +49,13 @@ describe('Integration: KeyManager rotateDomain Method', () => {
             lockRepo: infrastructure.lockRepo,
             policyRepo: infrastructure.policyRepo,
             Cache: infrastructure.Cache,
-            activeKidStore: infrastructure.activeKidStore
+                ActiveKidCache: infrastructure.ActiveKidCache
         });
 
         keyManager = await factory.create();
 
         // Clear state
-        infrastructure.activeKidStore.clearAll();
+            infrastructure.ActiveKidCache.clearAll();
     });
 
     afterEach(async () => {
@@ -78,7 +78,7 @@ describe('Integration: KeyManager rotateDomain Method', () => {
             await keyManager.rotateDomain(domain);
 
             // Verify new key is active (different from old)
-            const activeKid = await infrastructure.activeKidStore.getActiveKid(domain);
+                const activeKid = await infrastructure.ActiveKidCache.get(domain);
             expect(activeKid).toBeDefined();
             expect(activeKid).not.toBe(oldKid);
         }, 15000);
@@ -89,7 +89,7 @@ describe('Integration: KeyManager rotateDomain Method', () => {
             const { kid: oldKid } = await keyManager.initialSetupDomain(domain);
             await keyManager.rotateDomain(domain);
 
-            const activeKid = await infrastructure.activeKidStore.getActiveKid(domain);
+                const activeKid = await infrastructure.ActiveKidCache.get(domain);
             expect(activeKid).toBeDefined();
             expect(activeKid).not.toBe(oldKid);
         }, 15000);
@@ -99,7 +99,7 @@ describe('Integration: KeyManager rotateDomain Method', () => {
             const payload = { test: 'data' };
 
             await keyManager.initialSetupDomain(domain);
-            const oldKid = await infrastructure.activeKidStore.getActiveKid(domain);
+                const oldKid = await infrastructure.ActiveKidCache.get(domain);
 
             await keyManager.rotateDomain(domain);
 
@@ -119,7 +119,7 @@ describe('Integration: KeyManager rotateDomain Method', () => {
             await keyManager.rotateDomain('LOWERCASE_ROTATE');
 
             // Verify rotation worked (active kid exists for normalized domain)
-            const activeKid = await infrastructure.activeKidStore.getActiveKid('LOWERCASE_ROTATE');
+                const activeKid = await infrastructure.ActiveKidCache.get('LOWERCASE_ROTATE');
             expect(activeKid).toBeDefined();
         }, 15000);
     });
@@ -140,8 +140,8 @@ describe('Integration: KeyManager rotateDomain Method', () => {
                 .toThrow(/No policy found/);
 
             // Verify no active kid was set
-            const activeKid = await infrastructure.activeKidStore.getActiveKid(domain);
-            expect(activeKid).toBeUndefined();
+                const activeKid = await infrastructure.ActiveKidCache.get(domain);
+            expect(activeKid).toBeNull();
         });
     });
 
@@ -151,10 +151,10 @@ describe('Integration: KeyManager rotateDomain Method', () => {
 
             const { kid: kid1 } = await keyManager.initialSetupDomain(domain);
             await keyManager.rotateDomain(domain);
-            const kid2 = await infrastructure.activeKidStore.getActiveKid(domain);
+                const kid2 = await infrastructure.ActiveKidCache.get(domain);
 
             await keyManager.rotateDomain(domain);
-            const kid3 = await infrastructure.activeKidStore.getActiveKid(domain);
+                const kid3 = await infrastructure.ActiveKidCache.get(domain);
 
             expect(kid1).not.toBe(kid2);
             expect(kid2).not.toBe(kid3);

@@ -35,7 +35,7 @@ describe('Integration: KeyManager getJwks() Method', () => {
             lockRepo: infrastructure.lockRepo,
             policyRepo: infrastructure.policyRepo,
             Cache: infrastructure.Cache,
-            activeKidStore: infrastructure.activeKidStore
+            ActiveKidCache: infrastructure.ActiveKidCache
         });
 
         keyManager = await factory.create();
@@ -43,7 +43,7 @@ describe('Integration: KeyManager getJwks() Method', () => {
 
     afterEach(async () => {
         await cleanupTestEnvironment();
-        infrastructure.activeKidStore.clearAll();
+        infrastructure.ActiveKidCache.clearAll();
     });
 
     describe('Basic JWKS Generation', () => {

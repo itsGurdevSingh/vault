@@ -49,13 +49,13 @@ describe('Integration: KeyManager rotate Method', () => {
             lockRepo: infrastructure.lockRepo,
             policyRepo: infrastructure.policyRepo,
             Cache: infrastructure.Cache,
-            activeKidStore: infrastructure.activeKidStore
+            ActiveKidCache: infrastructure.ActiveKidCache
         });
 
         keyManager = await factory.create();
 
         // Clear state
-        infrastructure.activeKidStore.clearAll();
+        infrastructure.ActiveKidCache.clearAll();
     });
 
     afterEach(async () => {
@@ -82,7 +82,7 @@ describe('Integration: KeyManager rotate Method', () => {
             await keyManager.rotateDomain(domain);
 
             // Verify new key is now active (different from initial)
-            const activeKid = await infrastructure.activeKidStore.getActiveKid(domain);
+            const activeKid = await infrastructure.ActiveKidCache.get(domain);
             expect(activeKid).toBeDefined();
             expect(activeKid).not.toBe(initialKid);
 
@@ -100,8 +100,8 @@ describe('Integration: KeyManager rotate Method', () => {
                 .toThrow(/No policy found/);
 
             // Verify no active kid was set (rotation failed)
-            const activeKid = await infrastructure.activeKidStore.getActiveKid(domain);
-            expect(activeKid).toBeUndefined();
+            const activeKid = await infrastructure.ActiveKidCache.get(domain);
+            expect(activeKid).toBeNull();
         });
     });
 

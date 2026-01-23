@@ -395,7 +395,7 @@ describe('RotationPolicyRepo', () => {
             const params = { domain: 'example', intervalDays: 30 };
             mockFindOneAndUpdate.mockResolvedValue({});
 
-            await rotationPolicyRepository.acknowledgeSuccessfulRotation(params);
+            await rotationPolicyRepository.acknowledgeSuccessfulRotation(params, undefined);
 
             const call = mockFindOneAndUpdate.mock.calls[0];
             const updates = call[1];
@@ -412,7 +412,7 @@ describe('RotationPolicyRepo', () => {
             const params = { domain: 'example', intervalDays: 7 };
             mockFindOneAndUpdate.mockResolvedValue({});
 
-            await rotationPolicyRepository.acknowledgeSuccessfulRotation(params);
+            await rotationPolicyRepository.acknowledgeSuccessfulRotation(params, undefined);
 
             const afterCall = Date.now();
             const call = mockFindOneAndUpdate.mock.calls[0];
@@ -437,7 +437,7 @@ describe('RotationPolicyRepo', () => {
                 await rotationPolicyRepository.acknowledgeSuccessfulRotation({
                     domain: 'test',
                     intervalDays
-                });
+                }, undefined);
 
                 const call = mockFindOneAndUpdate.mock.calls[0];
                 const updates = call[1];
@@ -452,7 +452,7 @@ describe('RotationPolicyRepo', () => {
             const params = { domain: 'example', intervalDays: 30 };
             mockFindOneAndUpdate.mockResolvedValue({});
 
-            await rotationPolicyRepository.acknowledgeSuccessfulRotation(params, mockSession);
+            await rotationPolicyRepository.acknowledgeSuccessfulRotation(params, undefined, mockSession);
 
             const call = mockFindOneAndUpdate.mock.calls[0];
             expect(call[3]).toEqual({ session: mockSession });
@@ -462,10 +462,11 @@ describe('RotationPolicyRepo', () => {
             const params = { domain: '  MixedCase  ', intervalDays: 30 };
             mockFindOneAndUpdate.mockResolvedValue({});
 
-            await rotationPolicyRepository.acknowledgeSuccessfulRotation(params);
+            await rotationPolicyRepository.acknowledgeSuccessfulRotation(params, undefined);
 
             const call = mockFindOneAndUpdate.mock.calls[0];
             expect(call[0]).toEqual({ domain: 'MIXEDCASE' });
+            expect(call[3]).toEqual({ session: undefined });
         });
     });
 

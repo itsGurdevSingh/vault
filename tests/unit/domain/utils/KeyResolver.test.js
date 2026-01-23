@@ -3,86 +3,85 @@ import { KeyResolver } from '../../../../src/domain/key-manager/utils/keyResolve
 
 describe('KeyResolver', () => {
     describe('constructor', () => {
-        it('should create instance with loader and kidStore', () => {
+        it('should create instance with loader and ActiveKidCache', () => {
             const mockLoader = { getPrivateKey: vi.fn(), loadPrivateKey: vi.fn() };
-            const mockKidStore = { getActiveKid: vi.fn(), setActiveKid: vi.fn() };
+            const mockActiveKidCache = { get: vi.fn(), set: vi.fn() };
 
-            const resolver = new KeyResolver({ loader: mockLoader, kidStore: mockKidStore });
+            const resolver = new KeyResolver({ loader: mockLoader, ActiveKidCache: mockActiveKidCache });
 
             expect(resolver).toBeInstanceOf(KeyResolver);
             expect(resolver.loader).toBe(mockLoader);
-            expect(resolver.kidStore).toBe(mockKidStore);
+            expect(resolver.ActiveKidCache).toBe(mockActiveKidCache);
         });
 
         it('should accept missing loader (no validation in constructor)', () => {
-            const mockKidStore = { getActiveKid: vi.fn() };
+            const mockActiveKidCache = { get: vi.fn() };
 
-            const resolver = new KeyResolver({ kidStore: mockKidStore });
+            const resolver = new KeyResolver({ ActiveKidCache: mockActiveKidCache });
 
             expect(resolver.loader).toBeUndefined();
-            expect(resolver.kidStore).toBe(mockKidStore);
+            expect(resolver.ActiveKidCache).toBe(mockActiveKidCache);
         });
 
-        it('should accept missing kidStore (no validation in constructor)', () => {
+        it('should accept missing ActiveKidCache (no validation in constructor)', () => {
             const mockLoader = { getPrivateKey: vi.fn() };
 
             const resolver = new KeyResolver({ loader: mockLoader });
 
             expect(resolver.loader).toBe(mockLoader);
-            expect(resolver.kidStore).toBeUndefined();
+            expect(resolver.ActiveKidCache).toBeUndefined();
         });
     });
 
-    describe('getActiveKID', () => {
+    describe('getActiveKid', () => {
         let resolver;
         let mockLoader;
-        let mockKidStore;
+        let mockActiveKidCache;
 
         beforeEach(() => {
             mockLoader = { getPrivateKey: vi.fn(), loadPrivateKey: vi.fn() };
-            mockKidStore = { getActiveKid: vi.fn(), setActiveKid: vi.fn() };
-            resolver = new KeyResolver({ loader: mockLoader, kidStore: mockKidStore });
+            mockActiveKidCache = { get: vi.fn(), set: vi.fn() };
+            resolver = new KeyResolver({ loader: mockLoader, ActiveKidCache: mockActiveKidCache });
         });
 
-        it('should call kidStore.getActiveKid and return result', async () => {
+        it('should call ActiveKidCache.get and return result', async () => {
             const expectedKid = 'kid-123';
-            mockKidStore.getActiveKid.mockResolvedValue(expectedKid);
+            mockActiveKidCache.get.mockResolvedValue(expectedKid);
 
-            const result = await resolver.getActiveKID('EXAMPLE');
+            const result = await resolver.getActiveKid('EXAMPLE');
 
-            expect(mockKidStore.getActiveKid).toHaveBeenCalledTimes(1);
+            expect(mockActiveKidCache.get).toHaveBeenCalledTimes(1);
             expect(result).toBe(expectedKid);
         });
 
-        it('should pass domain parameter to kidStore (bug fix)', async () => {
-            mockKidStore.getActiveKid.mockResolvedValue('kid-456');
+        it('should pass domain parameter to ActiveKidCache', async () => {
+            mockActiveKidCache.get.mockResolvedValue('kid-456');
 
             await resolver.getActiveKid('ANY_DOMAIN');
 
-            // Verifies bug fix: now correctly passes domain to kidStore.getActiveKid()
-            expect(mockKidStore.getActiveKid).toHaveBeenCalledWith('ANY_DOMAIN');
+            expect(mockActiveKidCache.get).toHaveBeenCalledWith('ANY_DOMAIN');
         });
 
-        it('should propagate errors from kidStore', async () => {
-            const error = new Error('KID store unavailable');
-            mockKidStore.getActiveKid.mockRejectedValue(error);
+        it('should propagate errors from ActiveKidCache', async () => {
+            const error = new Error('KID cache unavailable');
+            mockActiveKidCache.get.mockRejectedValue(error);
 
-            await expect(resolver.getActiveKID('EXAMPLE'))
-                .rejects.toThrow('KID store unavailable');
+            await expect(resolver.getActiveKid('EXAMPLE'))
+                .rejects.toThrow('KID cache unavailable');
         });
 
         it('should handle null KID gracefully', async () => {
-            mockKidStore.getActiveKid.mockResolvedValue(null);
+            mockActiveKidCache.get.mockResolvedValue(null);
 
-            const result = await resolver.getActiveKID('EXAMPLE');
+            const result = await resolver.getActiveKid('EXAMPLE');
 
             expect(result).toBeNull();
         });
 
         it('should handle undefined KID gracefully', async () => {
-            mockKidStore.getActiveKid.mockResolvedValue(undefined);
+            mockActiveKidCache.get.mockResolvedValue(undefined);
 
-            const result = await resolver.getActiveKID('EXAMPLE');
+            const result = await resolver.getActiveKid('EXAMPLE');
 
             expect(result).toBeUndefined();
         });
@@ -91,31 +90,30 @@ describe('KeyResolver', () => {
     describe('getSigningKey', () => {
         let resolver;
         let mockLoader;
-        let mockKidStore;
+        let mockActiveKidCache;
 
         beforeEach(() => {
             mockLoader = { getPrivateKey: vi.fn(), loadPrivateKey: vi.fn() };
-            mockKidStore = { getActiveKid: vi.fn(), setActiveKid: vi.fn() };
-            resolver = new KeyResolver({ loader: mockLoader, kidStore: mockKidStore });
+            mockActiveKidCache = { get: vi.fn(), set: vi.fn() };
+            resolver = new KeyResolver({ loader: mockLoader, ActiveKidCache: mockActiveKidCache });
         });
 
         it('should get active KID and load private key via getPrivateKey', async () => {
             const kid = 'kid-789';
             const privateKey = { key: 'private-key-data' };
-            mockKidStore.getActiveKid.mockResolvedValue(kid);
+            mockActiveKidCache.get.mockResolvedValue(kid);
             mockLoader.getPrivateKey.mockResolvedValue(privateKey);
 
             const result = await resolver.getSigningKey('DOMAIN_A');
 
-            expect(mockKidStore.getActiveKid).toHaveBeenCalledTimes(1);
+            expect(mockActiveKidCache.get).toHaveBeenCalledTimes(1);
             expect(mockLoader.getPrivateKey).toHaveBeenCalledWith(kid);
-            // getSigningKey wraps the result in { privateKey: ... }
             expect(result).toEqual({ privateKey });
         });
 
-        it('should propagate errors from getActiveKID', async () => {
+        it('should propagate errors from getActiveKid', async () => {
             const error = new Error('Failed to get active KID');
-            mockKidStore.getActiveKid.mockRejectedValue(error);
+            mockActiveKidCache.get.mockRejectedValue(error);
 
             await expect(resolver.getSigningKey('DOMAIN_B'))
                 .rejects.toThrow('Failed to get active KID');
@@ -123,7 +121,7 @@ describe('KeyResolver', () => {
         });
 
         it('should propagate errors from loader.getPrivateKey', async () => {
-            mockKidStore.getActiveKid.mockResolvedValue('kid-999');
+            mockActiveKidCache.get.mockResolvedValue('kid-999');
             const error = new Error('Key file not found');
             mockLoader.getPrivateKey.mockRejectedValue(error);
 
@@ -131,27 +129,26 @@ describe('KeyResolver', () => {
                 .rejects.toThrow('Key file not found');
         });
 
-        it('should handle null KID from kidStore', async () => {
-            mockKidStore.getActiveKid.mockResolvedValue(null);
+        it('should handle null KID from ActiveKidCache', async () => {
+            mockActiveKidCache.get.mockResolvedValue(null);
             mockLoader.getPrivateKey.mockResolvedValue(null);
 
             const result = await resolver.getSigningKey('DOMAIN_D');
 
             expect(mockLoader.getPrivateKey).toHaveBeenCalledWith(null);
-            // getSigningKey wraps the result in { privateKey: ... }
             expect(result).toEqual({ privateKey: null });
         });
 
         it('should work with different domain names', async () => {
             const testCases = ['DOMAIN1', 'DOMAIN_2', 'DOMAIN-3', 'D'];
-            mockKidStore.getActiveKid.mockResolvedValue('kid-123');
+            mockActiveKidCache.get.mockResolvedValue('kid-123');
             mockLoader.getPrivateKey.mockResolvedValue({ key: 'test' });
 
             for (const domain of testCases) {
                 await resolver.getSigningKey(domain);
             }
 
-            expect(mockKidStore.getActiveKid).toHaveBeenCalledTimes(testCases.length);
+            expect(mockActiveKidCache.get).toHaveBeenCalledTimes(testCases.length);
             expect(mockLoader.getPrivateKey).toHaveBeenCalledTimes(testCases.length);
         });
     });
@@ -159,29 +156,29 @@ describe('KeyResolver', () => {
     describe('getVerificationKey', () => {
         let resolver;
         let mockLoader;
-        let mockKidStore;
+        let mockActiveKidCache;
 
         beforeEach(() => {
             mockLoader = { getPrivateKey: vi.fn(), loadPrivateKey: vi.fn() };
-            mockKidStore = { getActiveKid: vi.fn(), setActiveKid: vi.fn() };
-            resolver = new KeyResolver({ loader: mockLoader, kidStore: mockKidStore });
+            mockActiveKidCache = { get: vi.fn(), set: vi.fn() };
+            resolver = new KeyResolver({ loader: mockLoader, ActiveKidCache: mockActiveKidCache });
         });
 
         it('should get active KID and load private key via loadPrivateKey', async () => {
             const kid = 'kid-verification-1';
             const privateKey = { key: 'verification-key-data' };
-            mockKidStore.getActiveKid.mockResolvedValue(kid);
+            mockActiveKidCache.get.mockResolvedValue(kid);
             mockLoader.loadPrivateKey.mockResolvedValue(privateKey);
 
             const result = await resolver.getVerificationKey('VERIFY_DOMAIN');
 
-            expect(mockKidStore.getActiveKid).toHaveBeenCalledTimes(1);
+            expect(mockActiveKidCache.get).toHaveBeenCalledTimes(1);
             expect(mockLoader.loadPrivateKey).toHaveBeenCalledWith(kid);
             expect(result).toBe(privateKey);
         });
 
         it('should use different loader method than getSigningKey', async () => {
-            mockKidStore.getActiveKid.mockResolvedValue('kid-123');
+            mockActiveKidCache.get.mockResolvedValue('kid-123');
             mockLoader.loadPrivateKey.mockResolvedValue({ key: 'data' });
 
             await resolver.getVerificationKey('DOMAIN');
@@ -190,9 +187,9 @@ describe('KeyResolver', () => {
             expect(mockLoader.getPrivateKey).not.toHaveBeenCalled();
         });
 
-        it('should propagate errors from getActiveKID', async () => {
+        it('should propagate errors from getActiveKid', async () => {
             const error = new Error('KID retrieval failed');
-            mockKidStore.getActiveKid.mockRejectedValue(error);
+            mockActiveKidCache.get.mockRejectedValue(error);
 
             await expect(resolver.getVerificationKey('DOMAIN_E'))
                 .rejects.toThrow('KID retrieval failed');
@@ -200,7 +197,7 @@ describe('KeyResolver', () => {
         });
 
         it('should propagate errors from loader.loadPrivateKey', async () => {
-            mockKidStore.getActiveKid.mockResolvedValue('kid-error');
+            mockActiveKidCache.get.mockResolvedValue('kid-error');
             const error = new Error('Private key loading failed');
             mockLoader.loadPrivateKey.mockRejectedValue(error);
 
@@ -209,7 +206,7 @@ describe('KeyResolver', () => {
         });
 
         it('should handle null KID', async () => {
-            mockKidStore.getActiveKid.mockResolvedValue(null);
+            mockActiveKidCache.get.mockResolvedValue(null);
             mockLoader.loadPrivateKey.mockResolvedValue(null);
 
             const result = await resolver.getVerificationKey('DOMAIN_G');
@@ -219,7 +216,6 @@ describe('KeyResolver', () => {
         });
 
         it('should confirm correct method name (getVerificationKey)', () => {
-            // Documentation test: confirms typo has been fixed
             expect(resolver.getVerificationKey).toBeDefined();
             expect(resolver.getVarificationKey).toBeUndefined();
         });
@@ -228,35 +224,35 @@ describe('KeyResolver', () => {
     describe('setActiveKid', () => {
         let resolver;
         let mockLoader;
-        let mockKidStore;
+        let mockActiveKidCache;
 
         beforeEach(() => {
             mockLoader = { getPrivateKey: vi.fn(), loadPrivateKey: vi.fn() };
-            mockKidStore = { getActiveKid: vi.fn(), setActiveKid: vi.fn() };
-            resolver = new KeyResolver({ loader: mockLoader, kidStore: mockKidStore });
+            mockActiveKidCache = { get: vi.fn(), set: vi.fn() };
+            resolver = new KeyResolver({ loader: mockLoader, ActiveKidCache: mockActiveKidCache });
         });
 
-        it('should call kidStore.setActiveKid with domain and kid', async () => {
-            mockKidStore.setActiveKid.mockResolvedValue(true);
+        it('should call ActiveKidCache.set with domain and kid', async () => {
+            mockActiveKidCache.set.mockResolvedValue(true);
 
             const result = await resolver.setActiveKid('DOMAIN_H', 'new-kid-123');
 
-            expect(mockKidStore.setActiveKid).toHaveBeenCalledWith('DOMAIN_H', 'new-kid-123');
+            expect(mockActiveKidCache.set).toHaveBeenCalledWith('DOMAIN_H', 'new-kid-123');
             expect(result).toBe(true);
         });
 
-        it('should return result from kidStore.setActiveKid', async () => {
+        it('should return result from ActiveKidCache.set', async () => {
             const expectedResult = { success: true, previousKid: 'old-kid' };
-            mockKidStore.setActiveKid.mockResolvedValue(expectedResult);
+            mockActiveKidCache.set.mockResolvedValue(expectedResult);
 
             const result = await resolver.setActiveKid('DOMAIN_I', 'kid-456');
 
             expect(result).toEqual(expectedResult);
         });
 
-        it('should propagate errors from kidStore', async () => {
+        it('should propagate errors from ActiveKidCache', async () => {
             const error = new Error('Failed to set active KID');
-            mockKidStore.setActiveKid.mockRejectedValue(error);
+            mockActiveKidCache.set.mockRejectedValue(error);
 
             await expect(resolver.setActiveKid('DOMAIN_J', 'kid-789'))
                 .rejects.toThrow('Failed to set active KID');
@@ -270,98 +266,95 @@ describe('KeyResolver', () => {
                 '12345',
                 'UPPER'
             ];
-            mockKidStore.setActiveKid.mockResolvedValue(true);
+            mockActiveKidCache.set.mockResolvedValue(true);
 
             for (const kid of kidFormats) {
                 await resolver.setActiveKid('DOMAIN', kid);
             }
 
-            expect(mockKidStore.setActiveKid).toHaveBeenCalledTimes(kidFormats.length);
+            expect(mockActiveKidCache.set).toHaveBeenCalledTimes(kidFormats.length);
         });
 
         it('should handle various domain formats', async () => {
             const domainFormats = ['DOMAIN1', 'DOMAIN_2', 'DOMAIN-3', 'D'];
-            mockKidStore.setActiveKid.mockResolvedValue(true);
+            mockActiveKidCache.set.mockResolvedValue(true);
 
             for (const domain of domainFormats) {
                 await resolver.setActiveKid(domain, 'kid-test');
             }
 
-            expect(mockKidStore.setActiveKid).toHaveBeenCalledTimes(domainFormats.length);
+            expect(mockActiveKidCache.set).toHaveBeenCalledTimes(domainFormats.length);
         });
 
         it('should handle null kid', async () => {
-            mockKidStore.setActiveKid.mockResolvedValue(false);
+            mockActiveKidCache.set.mockResolvedValue(false);
 
             const result = await resolver.setActiveKid('DOMAIN_K', null);
 
-            expect(mockKidStore.setActiveKid).toHaveBeenCalledWith('DOMAIN_K', null);
+            expect(mockActiveKidCache.set).toHaveBeenCalledWith('DOMAIN_K', null);
             expect(result).toBe(false);
         });
 
         it('should handle undefined kid', async () => {
-            mockKidStore.setActiveKid.mockResolvedValue(false);
+            mockActiveKidCache.set.mockResolvedValue(false);
 
             const result = await resolver.setActiveKid('DOMAIN_L', undefined);
 
-            expect(mockKidStore.setActiveKid).toHaveBeenCalledWith('DOMAIN_L', undefined);
+            expect(mockActiveKidCache.set).toHaveBeenCalledWith('DOMAIN_L', undefined);
             expect(result).toBe(false);
         });
     });
 
     describe('integration scenarios', () => {
-        it('should coordinate getActiveKID -> getSigningKey flow', async () => {
+        it('should coordinate getActiveKid -> getSigningKey flow', async () => {
             const mockLoader = { getPrivateKey: vi.fn(), loadPrivateKey: vi.fn() };
-            const mockKidStore = { getActiveKid: vi.fn(), setActiveKid: vi.fn() };
-            const resolver = new KeyResolver({ loader: mockLoader, kidStore: mockKidStore });
+            const mockActiveKidCache = { get: vi.fn(), set: vi.fn() };
+            const resolver = new KeyResolver({ loader: mockLoader, ActiveKidCache: mockActiveKidCache });
 
             const kid = 'integration-kid-1';
             const key = { privateKey: 'data' };
-            mockKidStore.getActiveKid.mockResolvedValue(kid);
+            mockActiveKidCache.get.mockResolvedValue(kid);
             mockLoader.getPrivateKey.mockResolvedValue(key);
 
-            const activeKid = await resolver.getActiveKID('TEST');
+            const activeKid = await resolver.getActiveKid('TEST');
             const signingKey = await resolver.getSigningKey('TEST');
 
             expect(activeKid).toBe(kid);
-            // getSigningKey wraps the result
             expect(signingKey).toEqual({ privateKey: key });
-            expect(mockKidStore.getActiveKid).toHaveBeenCalledTimes(2);
+            expect(mockActiveKidCache.get).toHaveBeenCalledTimes(2);
         });
 
         it('should coordinate setActiveKid -> getSigningKey flow', async () => {
             const mockLoader = { getPrivateKey: vi.fn(), loadPrivateKey: vi.fn() };
-            const mockKidStore = { getActiveKid: vi.fn(), setActiveKid: vi.fn() };
-            const resolver = new KeyResolver({ loader: mockLoader, kidStore: mockKidStore });
+            const mockActiveKidCache = { get: vi.fn(), set: vi.fn() };
+            const resolver = new KeyResolver({ loader: mockLoader, ActiveKidCache: mockActiveKidCache });
 
             const newKid = 'new-kid-integration';
             const key = { privateKey: 'new-data' };
-            mockKidStore.setActiveKid.mockResolvedValue(true);
-            mockKidStore.getActiveKid.mockResolvedValue(newKid);
+            mockActiveKidCache.set.mockResolvedValue(true);
+            mockActiveKidCache.get.mockResolvedValue(newKid);
             mockLoader.getPrivateKey.mockResolvedValue(key);
 
             await resolver.setActiveKid('DOMAIN', newKid);
             const signingKey = await resolver.getSigningKey('DOMAIN');
 
-            // getSigningKey wraps the result
             expect(signingKey).toEqual({ privateKey: key });
             expect(mockLoader.getPrivateKey).toHaveBeenCalledWith(newKid);
         });
 
         it('should differentiate between getSigningKey and getVerificationKey', async () => {
             const mockLoader = { getPrivateKey: vi.fn(), loadPrivateKey: vi.fn() };
-            const mockKidStore = { getActiveKid: vi.fn(), setActiveKid: vi.fn() };
-            const resolver = new KeyResolver({ loader: mockLoader, kidStore: mockKidStore });
+            const mockActiveKidCache = { get: vi.fn(), set: vi.fn() };
+            const resolver = new KeyResolver({ loader: mockLoader, ActiveKidCache: mockActiveKidCache });
 
             const kid = 'multi-method-kid';
-            mockKidStore.getActiveKid.mockResolvedValue(kid);
+            mockActiveKidCache.get.mockResolvedValue(kid);
             mockLoader.getPrivateKey.mockResolvedValue({ method: 'getPrivateKey' });
             mockLoader.loadPrivateKey.mockResolvedValue({ method: 'loadPrivateKey' });
 
             const signingKey = await resolver.getSigningKey('DOMAIN');
             const verificationKey = await resolver.getVerificationKey('DOMAIN');
 
-            // getSigningKey wraps result, getVerificationKey doesn't
             expect(signingKey.privateKey.method).toBe('getPrivateKey');
             expect(verificationKey.method).toBe('loadPrivateKey');
             expect(mockLoader.getPrivateKey).toHaveBeenCalledWith(kid);
@@ -370,10 +363,10 @@ describe('KeyResolver', () => {
 
         it('should handle concurrent calls to same domain', async () => {
             const mockLoader = { getPrivateKey: vi.fn(), loadPrivateKey: vi.fn() };
-            const mockKidStore = { getActiveKid: vi.fn(), setActiveKid: vi.fn() };
-            const resolver = new KeyResolver({ loader: mockLoader, kidStore: mockKidStore });
+            const mockActiveKidCache = { get: vi.fn(), set: vi.fn() };
+            const resolver = new KeyResolver({ loader: mockLoader, ActiveKidCache: mockActiveKidCache });
 
-            mockKidStore.getActiveKid.mockResolvedValue('concurrent-kid');
+            mockActiveKidCache.get.mockResolvedValue('concurrent-kid');
             mockLoader.getPrivateKey.mockResolvedValue({ key: 'data' });
 
             const promises = Array(5).fill(null).map(() =>
@@ -383,7 +376,7 @@ describe('KeyResolver', () => {
             const results = await Promise.all(promises);
 
             expect(results).toHaveLength(5);
-            expect(mockKidStore.getActiveKid).toHaveBeenCalledTimes(5);
+            expect(mockActiveKidCache.get).toHaveBeenCalledTimes(5);
             expect(mockLoader.getPrivateKey).toHaveBeenCalledTimes(5);
         });
     });

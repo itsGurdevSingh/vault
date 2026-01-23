@@ -52,7 +52,7 @@ describe('Integration: Configuration Management Flow (Facade)', () => {
             lockRepo: infrastructure.lockRepo,
             policyRepo: infrastructure.policyRepo,
             Cache: infrastructure.Cache,
-            activeKidStore: infrastructure.activeKidStore
+            ActiveKidCache: infrastructure.ActiveKidCache
         });
 
         keyManager = await factory.create();
@@ -62,7 +62,7 @@ describe('Integration: Configuration Management Flow (Facade)', () => {
         originalMaxRetries = RotationState.maxRetries;
 
         // Clear state
-        infrastructure.activeKidStore.clearAll();
+        infrastructure.ActiveKidCache.clearAll();
     });
 
     afterEach(async () => {

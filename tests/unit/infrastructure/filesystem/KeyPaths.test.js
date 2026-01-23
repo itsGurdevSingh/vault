@@ -5,7 +5,7 @@ import { join } from 'path';
 const { pathService: KeyPaths } = await import('../../../../src/infrastructure/filesystem/pathService.js');
 
 describe('KeyPaths', () => {
-    const testDomain = 'example.com';
+    const testDomain = 'test.local';
     const testKid = 'test-kid-123';
     const cwd = process.cwd();
 
@@ -17,9 +17,9 @@ describe('KeyPaths', () => {
         });
 
         it('should include domain in base path', () => {
-            const result = KeyPaths.base('domain.com');
+            const result = KeyPaths.base('testdomain');
 
-            expect(result).toContain('domain.com');
+            expect(result).toContain('testdomain');
         });
 
         it('should use storage/keys as base directory', () => {
@@ -29,15 +29,15 @@ describe('KeyPaths', () => {
         });
 
         it('should handle domains with hyphens', () => {
-            const result = KeyPaths.base('my-domain.com');
+            const result = KeyPaths.base('my-domain');
 
-            expect(result).toContain('my-domain.com');
+            expect(result).toContain('my-domain');
         });
 
         it('should handle domains with underscores', () => {
-            const result = KeyPaths.base('my_domain.com');
+            const result = KeyPaths.base('my_domain');
 
-            expect(result).toContain('my_domain.com');
+            expect(result).toContain('my_domain');
         });
     });
 
@@ -73,9 +73,9 @@ describe('KeyPaths', () => {
         });
 
         it('should handle different domain in private key path', () => {
-            const result = KeyPaths.privateKey('another.com', testKid);
+            const result = KeyPaths.privateKey('anotherdomain', testKid);
 
-            expect(result).toContain('another.com');
+            expect(result).toContain('anotherdomain');
         });
     });
 

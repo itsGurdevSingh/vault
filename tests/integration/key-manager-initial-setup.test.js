@@ -36,7 +36,7 @@ describe('Integration: KeyManager initialSetupDomain() Method', () => {
             lockRepo: infrastructure.lockRepo,
             policyRepo: infrastructure.policyRepo,
             Cache: infrastructure.Cache,
-            activeKidStore: infrastructure.activeKidStore
+            ActiveKidCache: infrastructure.ActiveKidCache
         });
 
         keyManager = await factory.create();
@@ -44,7 +44,7 @@ describe('Integration: KeyManager initialSetupDomain() Method', () => {
 
     afterEach(async () => {
         await cleanupTestEnvironment();
-        infrastructure.activeKidStore.clearAll();
+        infrastructure.ActiveKidCache.clearAll();
     });
 
     describe('First-Time Domain Setup', () => {
@@ -114,7 +114,7 @@ describe('Integration: KeyManager initialSetupDomain() Method', () => {
 
             const result = await keyManager.initialSetupDomain(domain);
 
-            const activeKid = await infrastructure.activeKidStore.getActiveKid(domain);
+            const activeKid = await infrastructure.ActiveKidCache.get(domain);
             expect(activeKid).toBe(result.kid);
         });
     });
@@ -176,8 +176,8 @@ describe('Integration: KeyManager initialSetupDomain() Method', () => {
             expect(result1.kid).not.toBe(result2.kid);
 
             // Verify independent active KIDs
-            expect(await infrastructure.activeKidStore.getActiveKid(domain1)).toBe(result1.kid);
-            expect(await infrastructure.activeKidStore.getActiveKid(domain2)).toBe(result2.kid);
+            expect(await infrastructure.ActiveKidCache.get(domain1)).toBe(result1.kid);
+            expect(await infrastructure.ActiveKidCache.get(domain2)).toBe(result2.kid);
         });
 
         it('should handle concurrent initialSetupDomain calls for different domains', async () => {
@@ -205,7 +205,7 @@ describe('Integration: KeyManager initialSetupDomain() Method', () => {
             expect(result.kid).toMatch(/^LOWERCASE_DOMAIN-/);
 
             // Verify active KID is set for normalized domain
-            const activeKid = await infrastructure.activeKidStore.getActiveKid('LOWERCASE_DOMAIN');
+            const activeKid = await infrastructure.ActiveKidCache.get('LOWERCASE_DOMAIN');
             expect(activeKid).toBe(result.kid);
         });
 
@@ -217,7 +217,7 @@ describe('Integration: KeyManager initialSetupDomain() Method', () => {
 
             // Second call with different casing should use same normalized domain
             // This should be handled gracefully (either skip or error)
-            const activeKid1 = await infrastructure.activeKidStore.getActiveKid('TESTDOMAIN');
+            const activeKid1 = await infrastructure.ActiveKidCache.get('TESTDOMAIN');
             expect(activeKid1).toBeDefined();
         });
     });
@@ -246,7 +246,7 @@ describe('Integration: KeyManager initialSetupDomain() Method', () => {
 
             // Second initialization should either succeed with same KID or error gracefully
             // (Implementation-dependent behavior - test whichever is correct)
-            const activeKid = await infrastructure.activeKidStore.getActiveKid(domain);
+            const activeKid = await infrastructure.ActiveKidCache.get(domain);
             expect(activeKid).toBe(result1.kid);
         });
     });

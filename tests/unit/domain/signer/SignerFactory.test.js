@@ -15,7 +15,7 @@ describe('SignerFactory', () => {
         mockCache = new Map();
 
         mockKeyResolver = {
-            getActiveKID: vi.fn(),
+            getActiveKid: vi.fn(),
             getSigningKey: vi.fn()
         };
 
@@ -313,7 +313,7 @@ describe('SignerFactory', () => {
 
         it('should support signer lifecycle across factory', async () => {
             // Test: Signers from factory work independently
-            mockKeyResolver.getActiveKID.mockResolvedValue('test-kid');
+            mockKeyResolver.getActiveKid.mockResolvedValue('test-kid');
             mockCache.set('test-kid', { type: 'private' });
             mockCryptoEngine.buildTokenParts.mockReturnValue({
                 encodedHeader: 'h',

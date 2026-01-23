@@ -141,7 +141,7 @@ describe('Rotator', () => {
 
       expect(result).toBe('new-kid');
       expect(mockSession.startTransaction).toHaveBeenCalled();
-      expect(updateCB).toHaveBeenCalledWith(mockSession);
+      expect(updateCB).toHaveBeenCalledWith('new-kid', mockSession);
       expect(mockSession.commitTransaction).toHaveBeenCalled();
       expect(mockSession.endSession).toHaveBeenCalled();
     });

@@ -25,7 +25,8 @@ import { KIDFactory } from '../../../src/infrastructure/cryptoEngine/KIDFactory.
 import { TokenBuilder } from '../../../src/infrastructure/cryptoEngine/tokenBuilder.js';
 import * as cryptoUtils from '../../../src/infrastructure/cryptoEngine/utils.js';
 import { Cache } from '../../../src/utils/cache.js';
-import { activeKidStore } from '../../../src/state/ActiveKIDState.js';
+// Use test infrastructure's ActiveKidCache to guarantee in-memory only
+import { createTestInfrastructure } from './infrastructure.js';
 
 /**
  * Creates a test KeyManager instance with real dependencies
@@ -44,6 +45,8 @@ export async function createTestKeyManager(testPaths, options = {}) {
         tokenBuilder: tokenBuilder,
         kidFactory: kidFactory,
     });
+    // Always use the test infrastructure's ActiveKidCache (in-memory)
+    const { ActiveKidCache } = createTestInfrastructure(testPaths);
 
     // 2. SHARED STATE (In-memory caches)
     const builderCache = new Cache();
@@ -76,7 +79,7 @@ export async function createTestKeyManager(testPaths, options = {}) {
     // 7. KEY RESOLVER (Active KID management)
     const keyResolver = new KeyResolver({
         loader,
-        kidStore: activeKidStore
+        ActiveKidCache
     });
 
     // 8. SIGNER MODULE (JWT signing) - FIXED: correct parameter order
@@ -113,7 +116,7 @@ export async function createTestKeyManager(testPaths, options = {}) {
     const rotationFactory = new RotationFactory(
         generator,
         janitor,
-        activeKidStore,
+        ActiveKidCache,
         mockLockRepo,
         mockPolicyRepo,
         loader
@@ -181,9 +184,11 @@ export async function createMinimalKeyManager(testPaths) {
     const builderFactory = new BuilderFactory(builderCache, loader, cryptoEngine);
     const builder = builderFactory.create();
 
+    // Always use the test infrastructure's ActiveKidCache (in-memory)
+    const { ActiveKidCache } = createTestInfrastructure(testPaths);
     const keyResolver = new KeyResolver({
         loader,
-        kidStore: activeKidStore
+        ActiveKidCache
     });
 
     const signerFactory = new SignerFactory(signerCache, keyResolver, cryptoEngine);

@@ -49,13 +49,13 @@ describe('Integration: KeyManager scheduleRotation Method', () => {
             lockRepo: infrastructure.lockRepo,
             policyRepo: infrastructure.policyRepo,
             Cache: infrastructure.Cache,
-            activeKidStore: infrastructure.activeKidStore
+            ActiveKidCache: infrastructure.ActiveKidCache
         });
 
         keyManager = await factory.create();
 
         // Clear state
-        infrastructure.activeKidStore.clearAll();
+        infrastructure.ActiveKidCache.clearAll();
     });
 
     afterEach(async () => {

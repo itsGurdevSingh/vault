@@ -10,7 +10,7 @@ describe('MetadataBuilder', () => {
 
   describe('createMeta', () => {
     it('should create metadata with all required fields', () => {
-      const domain = 'example.com';
+      const domain = 'test.local';
       const kid = 'test-kid-123';
       const createdAt = new Date('2024-01-01T00:00:00Z');
 
@@ -18,31 +18,31 @@ describe('MetadataBuilder', () => {
 
       expect(meta).toEqual({
         kid: 'test-kid-123',
-        domain: 'example.com',
+        domain: 'test.local',
         createdAt: '2024-01-01T00:00:00.000Z',
         expiresAt: null
       });
     });
 
     it('should set expiresAt to null initially', () => {
-      const meta = builder.createMeta('domain.com', 'kid', new Date());
+      const meta = builder.createMeta('testdomain', 'kid', new Date());
       expect(meta.expiresAt).toBeNull();
     });
 
     it('should convert createdAt to ISO string', () => {
       const createdAt = new Date('2024-06-15T12:30:45Z');
-      const meta = builder.createMeta('domain.com', 'kid', createdAt);
+      const meta = builder.createMeta('testdomain', 'kid', createdAt);
       expect(meta.createdAt).toBe('2024-06-15T12:30:45.000Z');
     });
 
     it('should preserve kid value', () => {
       const kid = 'unique-kid-789';
-      const meta = builder.createMeta('domain.com', kid, new Date());
+      const meta = builder.createMeta('testdomain', kid, new Date());
       expect(meta.kid).toBe(kid);
     });
 
     it('should preserve domain value', () => {
-      const domain = 'test.subdomain.example.com';
+      const domain = 'test.subdomain.test.local';
       const meta = builder.createMeta(domain, 'kid', new Date());
       expect(meta.domain).toBe(domain);
     });
@@ -55,7 +55,7 @@ describe('MetadataBuilder', () => {
       ];
 
       dates.forEach(date => {
-        const meta = builder.createMeta('domain.com', 'kid', date);
+        const meta = builder.createMeta('testdomain', 'kid', date);
         expect(meta.createdAt).toBe(date.toISOString());
       });
     });
@@ -65,7 +65,7 @@ describe('MetadataBuilder', () => {
     it('should add expiresAt to existing metadata', () => {
       const original = {
         kid: 'test-kid',
-        domain: 'example.com',
+        domain: 'test.local',
         createdAt: '2024-01-01T00:00:00.000Z',
         expiresAt: null
       };
@@ -79,7 +79,7 @@ describe('MetadataBuilder', () => {
     it('should preserve all original fields', () => {
       const original = {
         kid: 'preserve-kid',
-        domain: 'preserve.com',
+        domain: 'preserve.local',
         createdAt: '2024-01-01T00:00:00.000Z',
         expiresAt: null
       };
@@ -95,7 +95,7 @@ describe('MetadataBuilder', () => {
     it('should not mutate original metadata', () => {
       const original = {
         kid: 'test',
-        domain: 'test.com',
+        domain: 'test.local',
         createdAt: '2024-01-01T00:00:00.000Z',
         expiresAt: null
       };
@@ -107,7 +107,7 @@ describe('MetadataBuilder', () => {
     });
 
     it('should convert expiresAt to ISO string', () => {
-      const meta = { kid: 'test', domain: 'test.com', createdAt: '2024-01-01', expiresAt: null };
+      const meta = { kid: 'test', domain: 'test.local', createdAt: '2024-01-01', expiresAt: null };
       const expiresAt = new Date('2024-06-15T12:30:45Z');
 
       const updated = builder.applyExpiry(meta, expiresAt);
@@ -118,7 +118,7 @@ describe('MetadataBuilder', () => {
     it('should overwrite existing expiresAt', () => {
       const meta = {
         kid: 'test',
-        domain: 'test.com',
+        domain: 'test.local',
         createdAt: '2024-01-01',
         expiresAt: '2024-06-01T00:00:00.000Z'
       };
@@ -130,7 +130,7 @@ describe('MetadataBuilder', () => {
     });
 
     it('should handle epoch time', () => {
-      const meta = { kid: 'test', domain: 'test.com', createdAt: '2024-01-01', expiresAt: null };
+      const meta = { kid: 'test', domain: 'test.local', createdAt: '2024-01-01', expiresAt: null };
       const updated = builder.applyExpiry(meta, new Date(0));
       expect(updated.expiresAt).toBe('1970-01-01T00:00:00.000Z');
     });
@@ -138,7 +138,7 @@ describe('MetadataBuilder', () => {
     it('should preserve extra fields if present', () => {
       const meta = {
         kid: 'test',
-        domain: 'test.com',
+        domain: 'test.local',
         createdAt: '2024-01-01',
         expiresAt: null,
         extraField: 'extra-value'
@@ -155,17 +155,17 @@ describe('MetadataBuilder', () => {
       const createdAt = new Date('2024-01-01');
       const expiresAt = new Date('2024-12-31');
 
-      const created = builder.createMeta('example.com', 'kid-123', createdAt);
+      const created = builder.createMeta('test.local', 'kid-123', createdAt);
       const withExpiry = builder.applyExpiry(created, expiresAt);
 
       expect(withExpiry.kid).toBe('kid-123');
-      expect(withExpiry.domain).toBe('example.com');
+      expect(withExpiry.domain).toBe('test.local');
       expect(withExpiry.createdAt).toBe(createdAt.toISOString());
       expect(withExpiry.expiresAt).toBe(expiresAt.toISOString());
     });
 
     it('should handle multiple expiry updates', () => {
-      const meta = builder.createMeta('domain.com', 'kid', new Date());
+      const meta = builder.createMeta('testdomain', 'kid', new Date());
       const updated1 = builder.applyExpiry(meta, new Date('2024-06-01'));
       const updated2 = builder.applyExpiry(updated1, new Date('2024-12-31'));
 

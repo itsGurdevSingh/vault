@@ -336,8 +336,9 @@ describe('RotationScheduler', () => {
       const policy = { domain: 'example.com', rotationInterval: 30 };
       mockPolicyRepo.findByDomain.mockResolvedValue(policy);
       mockPolicyRepo.getSession.mockResolvedValue(mockSession);
-      mockRotator.rotateKeys.mockImplementation(async (domain, callback) => {
-        await callback(mockSession);
+      // The callback should be called with (activeKid, session)
+      mockRotator.rotateKeys.mockImplementation(async (domain, callback, session) => {
+        await callback('new-kid', session);
         return 'new-kid';
       });
 
@@ -345,6 +346,7 @@ describe('RotationScheduler', () => {
 
       expect(mockPolicyRepo.acknowledgeSuccessfulRotation).toHaveBeenCalledWith(
         { domain: 'example.com', rotationInterval: 30 },
+        'new-kid',
         mockSession
       );
     });

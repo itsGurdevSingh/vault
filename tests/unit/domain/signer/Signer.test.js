@@ -17,7 +17,7 @@ describe('Signer', () => {
         mockCache.set = vi.fn(originalSet);
 
         mockKeyResolver = {
-            getActiveKID: vi.fn(),
+            getActiveKid: vi.fn(),
             getSigningKey: vi.fn()
         };
 
@@ -93,7 +93,7 @@ describe('Signer', () => {
         it('should not throw for valid domain and payload', () => {
             // Test: Valid inputs pass validation
             expect(() => {
-                signer._validateInput('example.com', { sub: 'user123' });
+                signer._validateInput('test.local', { sub: 'user123' });
             }).not.toThrow();
         });
 
@@ -114,21 +114,21 @@ describe('Signer', () => {
         it('should throw if payload is missing', () => {
             // Test: Payload is required
             expect(() => {
-                signer._validateInput('example.com', null);
+                signer._validateInput('test.local', null);
             }).toThrow('payload must be plain object');
         });
 
         it('should throw if payload is not an object', () => {
             // Test: Payload must be object
             expect(() => {
-                signer._validateInput('example.com', 'not-an-object');
+                signer._validateInput('test.local', 'not-an-object');
             }).toThrow('payload must be plain object');
         });
 
         it('should throw if payload is an array', () => {
             // Test: Arrays are not valid payloads
             expect(() => {
-                signer._validateInput('example.com', ['array']);
+                signer._validateInput('test.local', ['array']);
             }).toThrow('payload must be plain object');
         });
     });
@@ -166,20 +166,20 @@ describe('Signer', () => {
     describe('_getActiveKid', () => {
         it('should return active KID from resolver', async () => {
             // Test: Active KID is fetched from resolver
-            mockKeyResolver.getActiveKID.mockResolvedValue('example-20260109-133000-abc123');
+            mockKeyResolver.getActiveKid.mockResolvedValue('test-20260109-133000-abc123');
 
-            const kid = await signer._getActiveKid('example.com');
+            const kid = await signer._getActiveKid('test.local');
 
-            expect(kid).toBe('example-20260109-133000-abc123');
-            expect(mockKeyResolver.getActiveKID).toHaveBeenCalledWith('example.com');
+            expect(kid).toBe('test-20260109-133000-abc123');
+            expect(mockKeyResolver.getActiveKid).toHaveBeenCalledWith('test.local');
         });
 
         it('should throw if no active KID exists', async () => {
             // Test: Error when no active key
-            mockKeyResolver.getActiveKID.mockResolvedValue(null);
+            mockKeyResolver.getActiveKid.mockResolvedValue(null);
 
-            await expect(signer._getActiveKid('example.com')).rejects.toThrow(
-                'No active signing KID for domain "example.com"'
+            await expect(signer._getActiveKid('test.local')).rejects.toThrow(
+                'No active signing KID for domain "test.local"'
             );
         });
     });
@@ -236,7 +236,7 @@ describe('Signer', () => {
     describe('sign', () => {
         beforeEach(() => {
             // Setup default mocks for successful signing
-            mockKeyResolver.getActiveKID.mockResolvedValue('example-20260109-133000-abc123');
+            mockKeyResolver.getActiveKid.mockResolvedValue('test-20260109-133000-abc123');
             mockKeyResolver.getSigningKey.mockResolvedValue({
                 privateKey: '-----BEGIN PRIVATE KEY-----\nKEY\n-----END PRIVATE KEY-----'
             });
@@ -258,11 +258,11 @@ describe('Signer', () => {
 
         it('should use default TTL if not provided', async () => {
             // Test: Default TTL is applied
-            await signer.sign('example.com', { sub: 'user123' });
+            await signer.sign('test.local', { sub: 'user123' });
 
             expect(mockCryptoEngine.buildTokenParts).toHaveBeenCalledWith(
                 { sub: 'user123' },
-                'example-20260109-133000-abc123',
+                'test-20260109-133000-abc123',
                 expect.objectContaining({
                     ttlSeconds: 30 * 24 * 60 * 60
                 })
@@ -271,11 +271,11 @@ describe('Signer', () => {
 
         it('should use provided TTL from options', async () => {
             // Test: Custom TTL overrides default
-            await signer.sign('example.com', { sub: 'user123' }, { ttlSeconds: 3600 });
+            await signer.sign('test.local', { sub: 'user123' }, { ttlSeconds: 3600 });
 
             expect(mockCryptoEngine.buildTokenParts).toHaveBeenCalledWith(
                 { sub: 'user123' },
-                'example-20260109-133000-abc123',
+                'test-20260109-133000-abc123',
                 expect.objectContaining({
                     ttlSeconds: 3600
                 })
@@ -285,37 +285,37 @@ describe('Signer', () => {
         it('should validate custom TTL', async () => {
             // Test: Invalid TTL throws error
             await expect(
-                signer.sign('example.com', { sub: 'user' }, { ttlSeconds: -100 })
+                signer.sign('test.local', { sub: 'user' }, { ttlSeconds: -100 })
             ).rejects.toThrow('ttlSeconds must be a positive number');
         });
 
         it('should get active KID for domain', async () => {
             // Test: Active KID is resolved
-            await signer.sign('example.com', { sub: 'user123' });
+            await signer.sign('test.local', { sub: 'user123' });
 
-            expect(mockKeyResolver.getActiveKID).toHaveBeenCalledWith('example.com');
+            expect(mockKeyResolver.getActiveKid).toHaveBeenCalledWith('test.local');
         });
 
         it('should build token parts with payload and KID', async () => {
             // Test: Token parts are built correctly
             const payload = { sub: 'user123', role: 'admin' };
-            await signer.sign('example.com', payload);
+            await signer.sign('test.local', payload);
 
             expect(mockCryptoEngine.buildTokenParts).toHaveBeenCalledWith(
                 payload,
-                'example-20260109-133000-abc123',
+                'test-20260109-133000-abc123',
                 expect.any(Object)
             );
         });
 
         it('should pass additional claims to buildTokenParts', async () => {
             // Test: Additional claims are forwarded
-            const additionalClaims = { aud: 'api.example.com' };
-            await signer.sign('example.com', { sub: 'user' }, { additionalClaims });
+            const additionalClaims = { aud: 'api.test.local' };
+            await signer.sign('test.local', { sub: 'user' }, { additionalClaims });
 
             expect(mockCryptoEngine.buildTokenParts).toHaveBeenCalledWith(
                 { sub: 'user' },
-                'example-20260109-133000-abc123',
+                'test-20260109-133000-abc123',
                 expect.objectContaining({
                     additionalClaims
                 })
@@ -324,7 +324,7 @@ describe('Signer', () => {
 
         it('should get CryptoKey for signing', async () => {
             // Test: CryptoKey is retrieved (from cache or loaded)
-            await signer.sign('example.com', { sub: 'user123' });
+            await signer.sign('test.local', { sub: 'user123' });
 
             // Should check cache or load key
             expect(mockCache.get).toHaveBeenCalled();
@@ -332,7 +332,7 @@ describe('Signer', () => {
 
         it('should sign token parts with CryptoKey', async () => {
             // Test: Signing happens with correct inputs
-            await signer.sign('example.com', { sub: 'user123' });
+            await signer.sign('test.local', { sub: 'user123' });
 
             expect(mockCryptoEngine.sign).toHaveBeenCalledWith(
                 expect.any(Object),
@@ -342,15 +342,15 @@ describe('Signer', () => {
 
         it('should return complete JWT token', async () => {
             // Test: Token format is header.payload.signature
-            const token = await signer.sign('example.com', { sub: 'user123' });
+            const token = await signer.sign('test.local', { sub: 'user123' });
 
             expect(token).toBe('header.payload.signature');
         });
 
         it('should handle multiple signing requests for same domain', async () => {
             // Test: Subsequent requests use cached key
-            await signer.sign('example.com', { sub: 'user1' });
-            await signer.sign('example.com', { sub: 'user2' });
+            await signer.sign('test.local', { sub: 'user1' });
+            await signer.sign('test.local', { sub: 'user2' });
 
             // First call loads, second uses cache
             expect(mockCryptoEngine.importPrivateKey).toHaveBeenCalledTimes(1);
@@ -359,15 +359,15 @@ describe('Signer', () => {
 
         it('should handle different domains independently', async () => {
             // Test: Each domain gets its own key
-            mockKeyResolver.getActiveKID
+            mockKeyResolver.getActiveKid
                 .mockResolvedValueOnce('domain1-kid')
                 .mockResolvedValueOnce('domain2-kid');
 
-            await signer.sign('domain1.com', { sub: 'user1' });
-            await signer.sign('domain2.com', { sub: 'user2' });
+            await signer.sign('domain1.local', { sub: 'user1' });
+            await signer.sign('domain2.local', { sub: 'user2' });
 
-            expect(mockKeyResolver.getActiveKID).toHaveBeenCalledWith('domain1.com');
-            expect(mockKeyResolver.getActiveKID).toHaveBeenCalledWith('domain2.com');
+            expect(mockKeyResolver.getActiveKid).toHaveBeenCalledWith('domain1.local');
+            expect(mockKeyResolver.getActiveKid).toHaveBeenCalledWith('domain2.local');
         });
     });
 
@@ -400,7 +400,7 @@ describe('Signer', () => {
         it('should handle resolver errors gracefully', async () => {
             // Test: Resolver errors are propagated
             const error = new Error('Resolver connection failed');
-            mockKeyResolver.getActiveKID.mockRejectedValue(error);
+            mockKeyResolver.getActiveKid.mockRejectedValue(error);
 
             await expect(
                 signer.sign('example.com', { sub: 'user' })
@@ -410,7 +410,7 @@ describe('Signer', () => {
         it('should handle cryptoEngine build errors', async () => {
             // Test: Token building errors are propagated
             const error = new Error('Invalid payload format');
-            mockKeyResolver.getActiveKID.mockResolvedValue('test-kid');
+            mockKeyResolver.getActiveKid.mockResolvedValue('test-kid');
             mockCryptoEngine.buildTokenParts.mockImplementation(() => {
                 throw error;
             });
@@ -423,7 +423,7 @@ describe('Signer', () => {
         it('should handle signing errors', async () => {
             // Test: Signing errors are propagated
             const error = new Error('Signing failed');
-            mockKeyResolver.getActiveKID.mockResolvedValue('test-kid');
+            mockKeyResolver.getActiveKid.mockResolvedValue('test-kid');
             mockCache.set('test-kid', { type: 'private' });
             mockCryptoEngine.buildTokenParts.mockReturnValue({
                 encodedHeader: 'h',
@@ -441,7 +441,7 @@ describe('Signer', () => {
     describe('integration scenarios', () => {
         it('should complete full signing flow successfully', async () => {
             // Test: End-to-end token signing
-            mockKeyResolver.getActiveKID.mockResolvedValue('prod-20260109-133000-xyz');
+            mockKeyResolver.getActiveKid.mockResolvedValue('prod-20260109-133000-xyz');
             mockKeyResolver.getSigningKey.mockResolvedValue({
                 privateKey: '-----BEGIN PRIVATE KEY-----\nPROD_KEY\n-----END PRIVATE KEY-----'
             });
@@ -453,14 +453,14 @@ describe('Signer', () => {
             });
             mockCryptoEngine.sign.mockResolvedValue('signature_base64url');
 
-            const token = await signer.sign('production.com', { sub: 'user123' });
+            const token = await signer.sign('prod.local', { sub: 'user123' });
 
             expect(token).toBe('eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIn0.signature_base64url');
         });
 
         it('should handle rapid concurrent signing requests', async () => {
             // Test: Multiple parallel sign requests
-            mockKeyResolver.getActiveKID.mockResolvedValue('test-kid');
+            mockKeyResolver.getActiveKid.mockResolvedValue('test-kid');
             mockCache.set('test-kid', { type: 'private' });
             mockCryptoEngine.buildTokenParts.mockReturnValue({
                 encodedHeader: 'h',
@@ -470,9 +470,9 @@ describe('Signer', () => {
             mockCryptoEngine.sign.mockResolvedValue('sig');
 
             const tokens = await Promise.all([
-                signer.sign('example.com', { sub: 'user1' }),
-                signer.sign('example.com', { sub: 'user2' }),
-                signer.sign('example.com', { sub: 'user3' })
+                signer.sign('test.local', { sub: 'user1' }),
+                signer.sign('test.local', { sub: 'user2' }),
+                signer.sign('test.local', { sub: 'user3' })
             ]);
 
             expect(tokens).toHaveLength(3);
@@ -486,7 +486,7 @@ describe('Signer', () => {
             const minimalSigner = new Signer(
                 new Map(),
                 {
-                    getActiveKID: async () => 'minimal-kid',
+                    getActiveKid: async () => 'minimal-kid',
                     getSigningKey: async () => ({ privateKey: 'pem' })
                 },
                 {
@@ -496,7 +496,7 @@ describe('Signer', () => {
                 }
             );
 
-            const token = await minimalSigner.sign('test.com', { sub: 'user' });
+            const token = await minimalSigner.sign('test.local', { sub: 'user' });
 
             expect(token).toBe('h.p.sig');
         });

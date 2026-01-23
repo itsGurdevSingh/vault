@@ -98,30 +98,30 @@ describe('Janitor', () => {
     describe('deletePrivate (key file janitor)', () => {
         it('should delegate to fileJanitor.deletePrivate', async () => {
             // Test: Facade delegates to file janitor
-            await janitor.deletePrivate('example.com', 'test-kid');
+            await janitor.deletePrivate('test.local', 'test-kid');
 
-            expect(mockFileJanitor.deletePrivate).toHaveBeenCalledWith('example.com', 'test-kid');
+            expect(mockFileJanitor.deletePrivate).toHaveBeenCalledWith('test.local', 'test-kid');
         });
 
         it('should pass domain parameter correctly', async () => {
             // Test: Domain is forwarded
-            await janitor.deletePrivate('specific-domain.com', 'kid');
+            await janitor.deletePrivate('specificdomain', 'kid');
 
-            expect(mockFileJanitor.deletePrivate).toHaveBeenCalledWith('specific-domain.com', 'kid');
+            expect(mockFileJanitor.deletePrivate).toHaveBeenCalledWith('specificdomain', 'kid');
         });
 
         it('should pass kid parameter correctly', async () => {
             // Test: KID is forwarded
-            await janitor.deletePrivate('domain.com', 'specific-kid-789');
+            await janitor.deletePrivate('testdomain', 'specific-kid-789');
 
-            expect(mockFileJanitor.deletePrivate).toHaveBeenCalledWith('domain.com', 'specific-kid-789');
+            expect(mockFileJanitor.deletePrivate).toHaveBeenCalledWith('testdomain', 'specific-kid-789');
         });
 
         it('should return result from fileJanitor', async () => {
             // Test: Returns janitor's response
             mockFileJanitor.deletePrivate.mockResolvedValue({ deleted: true });
 
-            const result = await janitor.deletePrivate('example.com', 'test-kid');
+            const result = await janitor.deletePrivate('test.local', 'test-kid');
 
             expect(result).toEqual({ deleted: true });
         });
@@ -130,14 +130,14 @@ describe('Janitor', () => {
             // Test: File janitor errors bubble up
             mockFileJanitor.deletePrivate.mockRejectedValue(new Error('File locked'));
 
-            await expect(janitor.deletePrivate('example.com', 'test-kid'))
+            await expect(janitor.deletePrivate('test.local', 'test-kid'))
                 .rejects.toThrow('File locked');
         });
 
         it('should handle multiple deletions', async () => {
             // Test: Sequential private key deletions
-            await janitor.deletePrivate('domain1.com', 'kid1');
-            await janitor.deletePrivate('domain2.com', 'kid2');
+            await janitor.deletePrivate('domain1.local', 'kid1');
+            await janitor.deletePrivate('domain2.local', 'kid2');
 
             expect(mockFileJanitor.deletePrivate).toHaveBeenCalledTimes(2);
         });
@@ -146,30 +146,30 @@ describe('Janitor', () => {
     describe('deletePublic (key file janitor)', () => {
         it('should delegate to fileJanitor.deletePublic', async () => {
             // Test: Facade delegates to file janitor
-            await janitor.deletePublic('example.com', 'test-kid');
+            await janitor.deletePublic('test.local', 'test-kid');
 
-            expect(mockFileJanitor.deletePublic).toHaveBeenCalledWith('example.com', 'test-kid');
+            expect(mockFileJanitor.deletePublic).toHaveBeenCalledWith('test.local', 'test-kid');
         });
 
         it('should pass domain parameter correctly', async () => {
             // Test: Domain is forwarded
-            await janitor.deletePublic('public-domain.com', 'kid');
+            await janitor.deletePublic('publicdomain', 'kid');
 
-            expect(mockFileJanitor.deletePublic).toHaveBeenCalledWith('public-domain.com', 'kid');
+            expect(mockFileJanitor.deletePublic).toHaveBeenCalledWith('publicdomain', 'kid');
         });
 
         it('should pass kid parameter correctly', () => {
             // Test: KID is forwarded
-            janitor.deletePublic('domain.com', 'public-kid-456');
+            janitor.deletePublic('testdomain', 'public-kid-456');
 
-            expect(mockFileJanitor.deletePublic).toHaveBeenCalledWith('domain.com', 'public-kid-456');
+            expect(mockFileJanitor.deletePublic).toHaveBeenCalledWith('testdomain', 'public-kid-456');
         });
 
         it('should return result from fileJanitor', async () => {
             // Test: Returns janitor's response
             mockFileJanitor.deletePublic.mockResolvedValue({ success: true });
 
-            const result = await janitor.deletePublic('example.com', 'test-kid');
+            const result = await janitor.deletePublic('test.local', 'test-kid');
 
             expect(result).toEqual({ success: true });
         });
@@ -178,15 +178,15 @@ describe('Janitor', () => {
             // Test: File janitor errors bubble up
             mockFileJanitor.deletePublic.mockRejectedValue(new Error('Permission denied'));
 
-            await expect(janitor.deletePublic('example.com', 'test-kid'))
+            await expect(janitor.deletePublic('test.local', 'test-kid'))
                 .rejects.toThrow('Permission denied');
         });
 
         it('should handle multiple deletions', async () => {
             // Test: Sequential public key deletions
-            await janitor.deletePublic('domain1.com', 'kid1');
-            await janitor.deletePublic('domain2.com', 'kid2');
-            await janitor.deletePublic('domain3.com', 'kid3');
+            await janitor.deletePublic('domain1.local', 'kid1');
+            await janitor.deletePublic('domain2.local', 'kid2');
+            await janitor.deletePublic('domain3.local', 'kid3');
 
             expect(mockFileJanitor.deletePublic).toHaveBeenCalledTimes(3);
         });
@@ -195,30 +195,30 @@ describe('Janitor', () => {
     describe('deleteOriginMetadata (metadata janitor)', () => {
         it('should delegate to metadataJanitor.deleteOrigin', async () => {
             // Test: Facade delegates to metadata janitor
-            await janitor.deleteOriginMetadata('example.com', 'test-kid');
+            await janitor.deleteOriginMetadata('test.local', 'test-kid');
 
-            expect(mockMetadataJanitor.deleteOrigin).toHaveBeenCalledWith('example.com', 'test-kid');
+            expect(mockMetadataJanitor.deleteOrigin).toHaveBeenCalledWith('test.local', 'test-kid');
         });
 
         it('should pass domain parameter correctly', async () => {
             // Test: Domain is forwarded
-            await janitor.deleteOriginMetadata('origin-domain.com', 'kid');
+            await janitor.deleteOriginMetadata('origindomain', 'kid');
 
-            expect(mockMetadataJanitor.deleteOrigin).toHaveBeenCalledWith('origin-domain.com', 'kid');
+            expect(mockMetadataJanitor.deleteOrigin).toHaveBeenCalledWith('origindomain', 'kid');
         });
 
         it('should pass kid parameter correctly', async () => {
             // Test: KID is forwarded
-            await janitor.deleteOriginMetadata('domain.com', 'origin-kid-123');
+            await janitor.deleteOriginMetadata('testdomain', 'origin-kid-123');
 
-            expect(mockMetadataJanitor.deleteOrigin).toHaveBeenCalledWith('domain.com', 'origin-kid-123');
+            expect(mockMetadataJanitor.deleteOrigin).toHaveBeenCalledWith('testdomain', 'origin-kid-123');
         });
 
         it('should return result from metadataJanitor', async () => {
             // Test: Returns janitor's response
             mockMetadataJanitor.deleteOrigin.mockResolvedValue({ deleted: 1 });
 
-            const result = await janitor.deleteOriginMetadata('example.com', 'test-kid');
+            const result = await janitor.deleteOriginMetadata('test.local', 'test-kid');
 
             expect(result).toEqual({ deleted: 1 });
         });
@@ -227,7 +227,7 @@ describe('Janitor', () => {
             // Test: Metadata janitor errors bubble up
             mockMetadataJanitor.deleteOrigin.mockRejectedValue(new Error('Database error'));
 
-            await expect(janitor.deleteOriginMetadata('example.com', 'test-kid'))
+            await expect(janitor.deleteOriginMetadata('test.local', 'test-kid'))
                 .rejects.toThrow('Database error');
         });
     });
@@ -235,30 +235,30 @@ describe('Janitor', () => {
     describe('addKeyExpiry (metadata janitor)', () => {
         it('should delegate to metadataJanitor.addExpiry', async () => {
             // Test: Facade delegates to metadata janitor
-            await janitor.addKeyExpiry('example.com', 'test-kid');
+            await janitor.addKeyExpiry('test.local', 'test-kid');
 
-            expect(mockMetadataJanitor.addExpiry).toHaveBeenCalledWith('example.com', 'test-kid');
+            expect(mockMetadataJanitor.addExpiry).toHaveBeenCalledWith('test.local', 'test-kid');
         });
 
         it('should pass domain parameter correctly', async () => {
             // Test: Domain is forwarded
-            await janitor.addKeyExpiry('expiry-domain.com', 'kid');
+            await janitor.addKeyExpiry('expirydomain', 'kid');
 
-            expect(mockMetadataJanitor.addExpiry).toHaveBeenCalledWith('expiry-domain.com', 'kid');
+            expect(mockMetadataJanitor.addExpiry).toHaveBeenCalledWith('expirydomain', 'kid');
         });
 
         it('should pass kid parameter correctly', async () => {
             // Test: KID is forwarded
-            await janitor.addKeyExpiry('domain.com', 'expiry-kid-789');
+            await janitor.addKeyExpiry('testdomain', 'expiry-kid-789');
 
-            expect(mockMetadataJanitor.addExpiry).toHaveBeenCalledWith('domain.com', 'expiry-kid-789');
+            expect(mockMetadataJanitor.addExpiry).toHaveBeenCalledWith('testdomain', 'expiry-kid-789');
         });
 
         it('should return result from metadataJanitor', async () => {
             // Test: Returns janitor's response
             mockMetadataJanitor.addExpiry.mockResolvedValue({ added: true, expiresAt: new Date() });
 
-            const result = await janitor.addKeyExpiry('example.com', 'test-kid');
+            const result = await janitor.addKeyExpiry('test.local', 'test-kid');
 
             expect(result).toHaveProperty('added', true);
             expect(result).toHaveProperty('expiresAt');
@@ -268,14 +268,14 @@ describe('Janitor', () => {
             // Test: Metadata janitor errors bubble up
             mockMetadataJanitor.addExpiry.mockRejectedValue(new Error('Expiry add failed'));
 
-            await expect(janitor.addKeyExpiry('example.com', 'test-kid'))
+            await expect(janitor.addKeyExpiry('test.local', 'test-kid'))
                 .rejects.toThrow('Expiry add failed');
         });
 
         it('should handle multiple expiry additions', async () => {
             // Test: Sequential expiry additions
-            await janitor.addKeyExpiry('domain1.com', 'kid1');
-            await janitor.addKeyExpiry('domain2.com', 'kid2');
+            await janitor.addKeyExpiry('domain1.local', 'kid1');
+            await janitor.addKeyExpiry('domain2.local', 'kid2');
 
             expect(mockMetadataJanitor.addExpiry).toHaveBeenCalledTimes(2);
         });
@@ -326,11 +326,12 @@ describe('Janitor', () => {
     describe('facade pattern', () => {
         it('should provide unified interface to three sub-janitors', async () => {
             // Test: Single entry point for all cleanup operations
+
             await janitor.runCleanup();
-            await janitor.deletePrivate('domain.com', 'kid');
-            await janitor.deletePublic('domain.com', 'kid');
-            await janitor.deleteOriginMetadata('domain.com', 'kid');
-            await janitor.addKeyExpiry('domain.com', 'kid');
+            await janitor.deletePrivate('testdomain', 'kid');
+            await janitor.deletePublic('testdomain', 'kid');
+            await janitor.deleteOriginMetadata('testdomain', 'kid');
+            await janitor.addKeyExpiry('testdomain', 'kid');
             await janitor.deleteArchivedMetadata('kid');
 
             expect(mockExpiredKeyReaper.cleanup).toHaveBeenCalled();
@@ -343,7 +344,7 @@ describe('Janitor', () => {
 
         it('should delegate without modifying parameters', async () => {
             // Test: Pure delegation - no parameter transformation
-            const domain = 'unchanged.com';
+            const domain = 'unchanged.local';
             const kid = 'unchanged-kid';
 
             await janitor.deletePrivate(domain, kid);
@@ -369,9 +370,10 @@ describe('Janitor', () => {
     describe('integration scenarios', () => {
         it('should handle complete key lifecycle cleanup', async () => {
             // Test: Full cleanup workflow
-            await janitor.deletePrivate('example.com', 'old-kid');
-            await janitor.deletePublic('example.com', 'old-kid');
-            await janitor.deleteOriginMetadata('example.com', 'old-kid');
+
+            await janitor.deletePrivate('test.local', 'old-kid');
+            await janitor.deletePublic('test.local', 'old-kid');
+            await janitor.deleteOriginMetadata('test.local', 'old-kid');
             await janitor.deleteArchivedMetadata('old-kid');
 
             expect(mockFileJanitor.deletePrivate).toHaveBeenCalled();
@@ -382,8 +384,9 @@ describe('Janitor', () => {
 
         it('should handle key rotation cleanup scenario', async () => {
             // Test: Old key archived, new key active
-            await janitor.deletePrivate('domain.com', 'old-kid');
-            await janitor.addKeyExpiry('domain.com', 'old-kid');
+
+            await janitor.deletePrivate('testdomain', 'old-kid');
+            await janitor.addKeyExpiry('testdomain', 'old-kid');
 
             expect(mockFileJanitor.deletePrivate).toHaveBeenCalled();
             expect(mockMetadataJanitor.addExpiry).toHaveBeenCalled();
@@ -399,8 +402,8 @@ describe('Janitor', () => {
         it('should handle concurrent operations on different keys', async () => {
             // Test: Multiple operations in parallel
             await Promise.all([
-                janitor.deletePrivate('domain1.com', 'kid1'),
-                janitor.deletePublic('domain2.com', 'kid2'),
+                janitor.deletePrivate('domain1.local', 'kid1'),
+                janitor.deletePublic('domain2.local', 'kid2'),
                 janitor.deleteArchivedMetadata('kid3')
             ]);
 
@@ -416,7 +419,7 @@ describe('Janitor', () => {
             const specificError = new Error('Specific janitor error');
             mockFileJanitor.deletePrivate.mockRejectedValue(specificError);
 
-            await expect(janitor.deletePrivate('domain.com', 'kid'))
+            await expect(janitor.deletePrivate('testdomain', 'kid'))
                 .rejects.toBe(specificError);
         });
 
@@ -427,8 +430,8 @@ describe('Janitor', () => {
             mockMetadataJanitor.deleteOrigin.mockRejectedValue(new Error('Metadata error'));
 
             await expect(janitor.runCleanup()).rejects.toThrow('Reaper error');
-            await expect(janitor.deletePrivate('d.com', 'k')).rejects.toThrow('File error');
-            await expect(janitor.deleteOriginMetadata('d.com', 'k')).rejects.toThrow('Metadata error');
+            await expect(janitor.deletePrivate('d.local', 'k')).rejects.toThrow('File error');
+            await expect(janitor.deleteOriginMetadata('d.local', 'k')).rejects.toThrow('Metadata error');
         });
     });
 });

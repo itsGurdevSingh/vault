@@ -7,7 +7,7 @@
  * - lockRepo (Redis mock for rotation locks)
  * - policyRepo (MongoDB mock for rotation policies)
  * - Cache (constructor for cache instances)
- * - activeKidStore (state management for active KIDs)
+ * - ActiveKidCache (state management for active KIDs)
  * 
  * RULE: These are the ONLY outsider dependencies.
  * Everything else is created internally by ManagerFactory.
@@ -20,7 +20,7 @@ import { KIDFactory } from '../../../src/infrastructure/cryptoEngine/KIDFactory.
 import { TokenBuilder } from '../../../src/infrastructure/cryptoEngine/tokenBuilder.js';
 import * as cryptoUtils from '../../../src/infrastructure/cryptoEngine/utils.js';
 import { Cache } from '../../../src/utils/cache.js';
-import { activeKidStore } from '../../../src/state/ActiveKIDState.js';
+import { ActiveKidCache as ActiveKidCacheClass } from '../../../src/infrastructure/cache/adapters/activeKidCache.js';
 import { ManagerFactory } from '../../../src/domain/key-manager/index.js';
 import { MetadataFactory } from '../../../src/domain/key-manager/modules/metadata/index.js';
 import { GeneratorFactory } from '../../../src/domain/key-manager/modules/generator/index.js';
@@ -119,14 +119,27 @@ export function createTestInfrastructure(testPaths) {
             abortTransaction: async () => { },
             endSession: async () => { }
         }),
-        acknowledgeSuccessfulRotation: async (data, session) => true,
+        acknowledgeSuccessfulRotation: async (data, activeKid, session) => true,
     };
 
     // 5. CACHE CONSTRUCTOR (For creating cache instances)
     const CacheConstructor = Cache;
 
-    // 6. ACTIVE KID STORE (State management)
-    const kidStore = activeKidStore;
+    // 6. ACTIVE KID STORE (State management, in-memory only for tests)
+    const inMemoryCache = new Cache({ limit: 1000 });
+    // distributedCache is a no-op in-memory stub for tests
+    const distributedCache = {
+        set: async () => { },
+        get: async () => null,
+        del: async () => { },
+        clear: async () => { }
+    };
+    const kidStore = new ActiveKidCacheClass({
+        inMemoryCache,
+        distributedCache,
+        repository: policyRepo,
+        ttlSeconds: 2 * 3600
+    });
 
     return {
         pathService: fileSystemService,
@@ -134,6 +147,6 @@ export function createTestInfrastructure(testPaths) {
         lockRepo,
         policyRepo,
         Cache: CacheConstructor,
-        activeKidStore: kidStore
+        ActiveKidCache: kidStore,
     };
 }

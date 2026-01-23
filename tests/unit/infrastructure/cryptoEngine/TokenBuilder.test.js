@@ -22,7 +22,7 @@ describe('TokenBuilder', () => {
 
     describe('build', () => {
         it('should build token parts successfully', () => {
-            const payload = { sub: 'user123', email: 'test@example.com' };
+            const payload = { sub: 'user123', email: 'test@test.local' };
             const kid = 'test-20260109-143022-ABCD1234';
 
             const result = tokenBuilder.build(payload, kid);

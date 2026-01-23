@@ -10,7 +10,7 @@ describe('ManagerFactory', () => {
             const mockLockRepo = {};
             const mockPolicyRepo = {};
             const mockCache = vi.fn();
-            const mockState = {};
+            const mockActiveKidCache = {};
 
             const factory = new ManagerFactory({
                 pathService: mockPathsRepo,
@@ -18,7 +18,7 @@ describe('ManagerFactory', () => {
                 lockRepo: mockLockRepo,
                 policyRepo: mockPolicyRepo,
                 Cache: mockCache,
-                activeKidStore: mockState
+                ActiveKidCache: mockActiveKidCache
             });
 
             expect(factory).toBeInstanceOf(ManagerFactory);
@@ -27,7 +27,7 @@ describe('ManagerFactory', () => {
             expect(factory.lockRepository).toBe(mockLockRepo);
             expect(factory.policyRepository).toBe(mockPolicyRepo);
             expect(factory.cache).toBe(mockCache);
-            expect(factory.kidStore).toBe(mockState);
+            expect(factory.ActiveKidCache).toBe(mockActiveKidCache);
         });
 
         it('should accept undefined dependencies (no validation)', () => {
@@ -38,7 +38,7 @@ describe('ManagerFactory', () => {
             expect(factory.lockRepository).toBeUndefined();
             expect(factory.policyRepository).toBeUndefined();
             expect(factory.cache).toBeUndefined();
-            expect(factory.kidStore).toBeUndefined();
+            expect(factory.ActiveKidCache).toBeUndefined();
         });
     });
 
@@ -144,7 +144,7 @@ describe('ManagerFactory', () => {
                 lockRepository: {},
                 policyRepo: {},
                 cache: class { },
-                state: {}
+                activeKidCache: {}
             };
 
             const factory = new ManagerFactory({
@@ -153,7 +153,7 @@ describe('ManagerFactory', () => {
                 lockRepo: deps.lockRepository,
                 policyRepo: deps.policyRepo,
                 Cache: deps.cache,
-                activeKidStore: deps.state
+                ActiveKidCache: deps.activeKidCache
             });
 
             expect(factory.pathService).toBe(deps.pathService);
@@ -161,7 +161,7 @@ describe('ManagerFactory', () => {
             expect(factory.lockRepository).toBe(deps.lockRepository);
             expect(factory.policyRepository).toBe(deps.policyRepo);
             expect(factory.cache).toBe(deps.cache);
-            expect(factory.kidStore).toBe(deps.state);
+            expect(factory.ActiveKidCache).toBe(deps.activeKidCache);
         });
 
         it('should pass injected dependencies to created modules', () => {
@@ -181,7 +181,7 @@ describe('ManagerFactory', () => {
                 'lockRepository',
                 'policyRepository',
                 'cache',
-                'kidStore'
+                'ActiveKidCache'
             ];
 
             const factory = new ManagerFactory({});
