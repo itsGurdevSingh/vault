@@ -25,21 +25,32 @@ export class FileSystemKeyStore extends KeyStorePort {
   async saveKeyPair(domain, kid, { publicKey, privateKey }) {
     await this.#ensureDirs(domain);
 
+    const privFinal = this.paths.privateKey(domain, kid);
+    const pubFinal = this.paths.publicKey(domain, kid);
+
+    const privTmp = `${privFinal}.tmp`;
+    const pubTmp = `${pubFinal}.tmp`;
+
     try {
-      await writeFile(
-        this.paths.privateKey(domain, kid),
-        privateKey,
-        { mode: 0o600 }
-      );
-      await writeFile(
-        this.paths.publicKey(domain, kid),
-        publicKey,
-        { mode: 0o644 }
-      );
+      // 1. Write temp files
+      await writeFile(privTmp, privateKey, { mode: 0o600 });
+      await writeFile(pubTmp, publicKey, { mode: 0o644 });
+
+      // 2. Atomic rename (commit)
+      await rename(privTmp, privFinal);
+      await rename(pubTmp, pubFinal);
+
     } catch (err) {
+      // 3. Cleanup temp files only
+      await Promise.allSettled([
+        unlink(privTmp),
+        unlink(pubTmp)
+      ]);
+
       throw new KeyWriteError({ domain, kid, cause: err });
     }
   }
+
 
   async loadPrivateKey(domain, kid) {
     try {
