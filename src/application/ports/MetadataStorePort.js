@@ -26,4 +26,13 @@ export class MetadataStorePort {
     async readAllArchives() {
         throw new Error("Not implemented");
     }
+
+    // for snapshot building
+    async listOriginKids(domain) {
+        throw new Error("Not implemented");
+    }
+
+    async listArchivedMeta() {
+        throw new Error("Not implemented");
+    }
 }
