@@ -7,9 +7,20 @@ class RotationPolicyRepository {
         this.db = this.model.db;
     }
 
+    async getAvailableDomains() {
+        const policies = await this.model.find({}, 'domain').lean();
+        return policies.map(p => p.domain);
+    }
+
     async findByDomain(domain) {
         const d = domain.toUpperCase().trim();
         return this.model.findOne({ domain: d });
+    }
+
+    async getActiveKid(domain) {
+        const d = domain.toUpperCase().trim();
+        const policy =  await this.model.findOne({ domain: d });
+        return policy ? policy.activeKid : null;
     }
 
     async createPolicy(data) {
