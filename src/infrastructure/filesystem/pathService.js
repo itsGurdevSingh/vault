@@ -6,6 +6,17 @@ const BASE_KEYS_META_DIR = join(process.cwd(), 'storage/metadata/keys');
 export const pathService = {
 
     //====================== key file paths ======================//
+
+    /**base dir */
+    baseDir() {
+        return BASE_KEYS_DIR;
+    },
+    
+    /**base metadata dir */
+    baseMetaDir() {
+        return BASE_KEYS_META_DIR;
+    },
+
     /**base key directory */
     base(domain) {
         return join(BASE_KEYS_DIR, domain);

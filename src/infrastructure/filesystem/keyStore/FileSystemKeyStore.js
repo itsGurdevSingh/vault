@@ -5,18 +5,20 @@ import {
   KeyReadError,
   KeyDeleteError,
   KeyDirectoryError
-} from "../errors/keysErrors.js";
-import { KeyStorePort } from "../../application/ports/KeyStorePort.js";
+} from "../../errors/keysErrors.js";
+import { KeyStorePort } from "../../../application/ports/KeyStorePort.js";
 
 export class FileSystemKeyStore extends KeyStorePort {
-  constructor({ pathResolver }) {
+  constructor({ pathResolver, FsUtils }) {
+    super();
     this.paths = pathResolver;
+    this.fsUtils = FsUtils;
   }
 
   async #ensureDirs(domain) {
     try {
-      await mkdir(this.paths.privateDir(domain), { recursive: true });
-      await mkdir(this.paths.publicDir(domain), { recursive: true });
+      await this.fsUtils.ensureDir(this.paths.privateDir(domain));
+      await this.fsUtils.ensureDir(this.paths.publicDir(domain));
     } catch (err) {
       throw new KeyDirectoryError({ domain, cause: err });
     }
@@ -43,8 +45,11 @@ export class FileSystemKeyStore extends KeyStorePort {
     } catch (err) {
       // 3. Cleanup temp files only
       await Promise.allSettled([
-        unlink(privTmp),
-        unlink(pubTmp)
+        // not thorw error if file not exists
+        this.fsUtils.safeUnlink(privTmp),
+        this.fsUtils.safeUnlink(pubTmp),
+        this.fsUtils.safeUnlink(privFinal),
+        this.fsUtils.safeUnlink(pubFinal)
       ]);
 
       throw new KeyWriteError({ domain, kid, cause: err });
@@ -112,4 +117,33 @@ export class FileSystemKeyStore extends KeyStorePort {
       .map(f => f.replace(".pem", ""));
   }
 
+  /** tmp recedue cleanup (clean all .tmp resedue) */
+  async cleanTmpFiles(domain) {
+    try {
+      const privateFiles = await readdir(this.paths.privateDir(domain));
+      const publicFiles = await readdir(this.paths.publicDir(domain));
+      const tmpFiles = [...privateFiles, ...publicFiles].filter(f => f.endsWith(".tmp"));
+
+      await Promise.all(
+        tmpFiles.map(f =>
+          unlink(this.paths.tmpKey(domain, f)).catch(() => { })
+        )
+      );
+      return true;
+
+    } catch (err) {
+      // Ignore errors during cleanup
+      return false;
+    }
+  }
+
+  /** clean resdue from all domains*/
+  async cleanTmpResidue() {
+    // This method would ideally scan all domain directories.
+    const baseDir = this.paths.baseDir();
+    const domains = await readdir(baseDir);
+    await Promise.all(
+      domains.map(domain => this.cleanTmpFiles(domain))
+    );
+  }
 }

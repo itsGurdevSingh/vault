@@ -1,6 +1,5 @@
 // Wires up all dependencies for KeyManager
 import { ManagerFactory } from '../domain/key-manager/index.js';
-import { pathService } from '../infrastructure/filesystem/index.js';
 import { cryptoEngine } from '../infrastructure/cryptoEngine/index.js';
 import { rotationLockRepository } from '../infrastructure/cache/index.js';
 import { rotationPolicyRepository } from '../infrastructure/db/index.js';
@@ -9,18 +8,12 @@ import { ActiveKidCache } from '../infrastructure/cache/index.js';
 
 
 //===============================================================================================================
-//                                      key store Creation
+//                                      fs store 
 //===============================================================================================================
-import { FileSystemKeyStore } from "../infrastructure/keyStore/FileSystemKeyStore.js";
-import { pathService } from "../infrastructure/filesystem/index.js";
+import { fileSystem } from "../infrastructure/filesystem/index.js";
 
-const keyStore = new FileSystemKeyStore({ pathService });
-
-//===============================================================================================================
-//                                      Metadata Store Creation
-//===============================================================================================================
-import { MetadataFileStore } from '../infrastructure/metadataStore/MetadataFileStore.js';
-const metadataStore = new MetadataFileStore({ metaPaths: pathService });
+const keyStore = fileSystem.keyStore;
+const metadataStore = fileSystem.metaStore;
 
 
 
