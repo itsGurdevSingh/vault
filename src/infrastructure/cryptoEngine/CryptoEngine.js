@@ -1,11 +1,12 @@
 export class CryptoEngine {
 
-    constructor({ cryptoModule, config, utils, tokenBuilder, kidFactory }) {
+    constructor({ cryptoModule, config, utils, tokenBuilder, kidFactory, hashBuilder }) {
         this.crypto = cryptoModule;
         this.config = config;
         this.utils = utils;
         this.tokenBuilder = tokenBuilder;
         this.kidFactory = kidFactory;
+        this.hashBuilder = hashBuilder;
     }
 
     /**
@@ -124,5 +125,13 @@ export class CryptoEngine {
      */
     pemToArrayBuffer(pem) {
         return this.utils.pemToArrayBuffer(pem);
+    }
+
+
+    /**
+     * HASHING: Delegates to HashBuilder
+     */
+    async computeHash(data) {
+        return this.hashBuilder.computeHash(data);
     }
 }
