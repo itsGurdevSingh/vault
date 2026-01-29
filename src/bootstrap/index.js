@@ -1,15 +1,16 @@
 // Main bootstrap entrypoint
 import { connectDB } from '../infrastructure/db/index.js';
-import { createKeyManager } from './keyManager.js';
+import { createKeyManagerServices } from './keyManager.js';
 import { JwksService, SignerService, RotationService, JanitorService, AdminService } from '../application/services/index.js';
 import { startCronJobs } from './cron.js';
 import { startServers } from './servers.js';
 import { shutdown } from './shutdown.js';
+import { createGarbageServices } from './garbage.js';
 
 export async function bootstrap() {
     try {
         await connectDB();
-        const keyManager = await createKeyManager();
+        const { KeyManager: keyManager, janitor, snapshotBuilder } = await createKeyManagerServices();
         keyManager.initialSetupDomain('user');
         keyManager.initialSetupDomain('user-admin');
         keyManager.initialSetupDomain('service');
@@ -20,7 +21,10 @@ export async function bootstrap() {
         const rotationService = new RotationService({ keyManager });
         const janitorService = new JanitorService({ keyManager });
 
-        startCronJobs({ rotationService, janitorService, logger: console });
+        // garbage service = { collector, cleaner }
+        const garbageService = createGarbageServices({ snapshotBuilder, janitor, logger: console });
+
+        startCronJobs({ rotationService, janitorService, garbageService, logger: console });
         const { grpcServer, httpServer } = await startServers({ jwksService, signerService, rotatorService });
 
         process.on('SIGTERM', () => shutdown(grpcServer, httpServer));

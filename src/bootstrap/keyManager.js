@@ -19,7 +19,7 @@ import { metadataStoreAdapter as metadataStore } from '../infrastructure/adapter
 //===============================================================================================================
 
 
-export async function createKeyManager() {
+export async function createKeyManagerServices() {
     const factory = ManagerFactory.getInstance({
         keyStorePort: keyStore,
         metadataStorePort: metadataStore,
@@ -29,5 +29,6 @@ export async function createKeyManager() {
         Cache,
         ActiveKidCache
     });
+    // The factory now returns { KeyManager, janitor, snapshotBuilder }
     return await factory.create();
 }
