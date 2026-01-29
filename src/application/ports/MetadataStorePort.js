@@ -35,4 +35,9 @@ export class MetadataStorePort {
     async listArchivedMeta() {
         throw new Error("Not implemented");
     }
+
+    // for GC cleanup
+    async cleanTmpResidue(domain) {
+        throw new Error("Not implemented");
+    }
 }
