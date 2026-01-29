@@ -1,5 +1,4 @@
 import { writeFile, readFile, unlink, readdir, mkdir } from "fs/promises";
-import { MetadataStorePort } from "../../../application/ports/MetadataStorePort.js";
 import {
     MetadataStoreError,
     MetadataNotFoundError
@@ -8,7 +7,6 @@ import { Promise } from "mongoose";
 
 export class MetadataFileStore extends MetadataStorePort {
     constructor({ metaPaths, FsUtils }) {
-        super();
         if (!metaPaths) {
             throw new Error("MetadataFileStore requires metaPaths");
         }
@@ -188,7 +186,7 @@ export class MetadataFileStore extends MetadataStorePort {
     }
 
     /** tmp recedue cleanup (clean all .tmp resedue) */
-    async cleanTmpFiles(domain) {
+    async #cleanTmpFiles(domain) {
         try {
             const metaFiles = await readdir(this.paths.metaKeyFile(domain));
             const tmpFiles = metaFiles.filter(f => f.endsWith(".tmp"));
@@ -207,7 +205,7 @@ export class MetadataFileStore extends MetadataStorePort {
     }
 
     /**clean temp from archived */
-    async cleanTmpArchivedFiles() {
+    async #cleanTmpArchivedFiles() {
         try {
             const archivedFiles = await readdir(this.paths.metaArchivedDir());
             const tmpFiles = archivedFiles.filter(f => f.endsWith(".tmp"));
@@ -231,8 +229,8 @@ export class MetadataFileStore extends MetadataStorePort {
         const baseDir = this.paths.baseMetaDir();
         const domains = await readdir(baseDir);
         await Promise.all([
-            ...domains.map(domain => this.cleanTmpFiles(domain)),
-            this.cleanTmpArchivedFiles()
+            ...domains.map(domain => this.#cleanTmpFiles(domain)),
+            this.#cleanTmpArchivedFiles()
         ]);
     }
 }

@@ -11,9 +11,7 @@ import { ActiveKidCache } from '../infrastructure/cache/index.js';
 //                                      fs store 
 //===============================================================================================================
 import { keyStoreAdapter as keyStore } from '../infrastructure/adapters/index.js';
-
-const metadataStore = fileSystem.metaStore;
-
+import { metadataStoreAdapter as metadataStore } from '../infrastructure/adapters/index.js';
 
 
 //===============================================================================================================
