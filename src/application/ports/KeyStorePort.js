@@ -31,4 +31,9 @@ export class KeyStorePort {
   async listPrivateKids(domain) {
     throw new Error("Not implemented");
   }
+
+  async cleanTmpResidue(domain) {
+    throw new Error("Not implemented");
+  }
+  
 }

@@ -6,11 +6,9 @@ import {
   KeyDeleteError,
   KeyDirectoryError
 } from "../../errors/keysErrors.js";
-import { KeyStorePort } from "../../../application/ports/KeyStorePort.js";
 
-export class FileSystemKeyStore extends KeyStorePort {
+export class FileSystemKeyStore {
   constructor({ pathResolver, FsUtils }) {
-    super();
     this.paths = pathResolver;
     this.fsUtils = FsUtils;
   }
@@ -118,7 +116,7 @@ export class FileSystemKeyStore extends KeyStorePort {
   }
 
   /** tmp recedue cleanup (clean all .tmp resedue) */
-  async cleanTmpFiles(domain) {
+  async #cleanTmpFiles(domain) {
     try {
       const privateFiles = await readdir(this.paths.privateDir(domain));
       const publicFiles = await readdir(this.paths.publicDir(domain));
@@ -143,7 +141,7 @@ export class FileSystemKeyStore extends KeyStorePort {
     const baseDir = this.paths.baseDir();
     const domains = await readdir(baseDir);
     await Promise.all(
-      domains.map(domain => this.cleanTmpFiles(domain))
+      domains.map(domain => this.#cleanTmpFiles(domain))
     );
   }
 }

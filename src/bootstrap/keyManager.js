@@ -10,9 +10,8 @@ import { ActiveKidCache } from '../infrastructure/cache/index.js';
 //===============================================================================================================
 //                                      fs store 
 //===============================================================================================================
-import { fileSystem } from "../infrastructure/filesystem/index.js";
+import { keyStoreAdapter as keyStore } from '../infrastructure/adapters/index.js';
 
-const keyStore = fileSystem.keyStore;
 const metadataStore = fileSystem.metaStore;
 
 
