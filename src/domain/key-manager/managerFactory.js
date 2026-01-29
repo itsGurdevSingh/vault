@@ -16,6 +16,7 @@ import { RotationState } from "./config/RotationState.js";
 import { RotationConfig } from "./config/RotationConfig.js";
 // main manager import Public Facade
 import { KeyManager } from "./KeyManager.js";
+import { SnapshotFactory } from "./utils/snapshot/snapshotFactory.js";
 
 class ManagerFactory {
     // Infra and outsider utils 
@@ -90,17 +91,24 @@ class ManagerFactory {
         //12. intial setup of doamin .
         const domainInitializer = initializeDomain.getInstance({ state: RotationState, generator, policyRepo: this.policyRepository });
 
+        // 13. domain snapshot builder
+        const SnapshotFactory = new SnapshotFactory({ keyStore: this.keyStore, metadataStore: this.metadataStore, policyStore: this.policyRepository });
+        const snapshotBuilder = SnapshotFactory.create();
         // 13. THE AGGREGATE ROOT (The Boss)
         // We inject all the working parts into the Manager
-        return new KeyManager({
-            builder,
-            signer,
-            janitor,
-            rotationScheduler,
-            configManager,
-            domainInitializer,
-            normalizer: domainNormalizer
-        });
+        return {
+            KeyManager: new KeyManager({
+                builder,
+                signer,
+                janitor,
+                rotationScheduler,
+                configManager,
+                domainInitializer,
+                normalizer: domainNormalizer,
+            }),
+            snapshotBuilder,
+            janitor
+        };
     }
 }
 
