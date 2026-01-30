@@ -8,6 +8,3 @@ const cryptoEngine = factory.create();
 // Public exposure: export the configured engine instance
 export { cryptoEngine };
 
-// Preserve class re-exports for compatibility
-export * from './CryptoEngine.js';
-

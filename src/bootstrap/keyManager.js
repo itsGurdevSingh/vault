@@ -1,8 +1,8 @@
 // Wires up all dependencies for KeyManager
 import { ManagerFactory } from '../domain/key-manager/index.js';
-import { cryptoEngine } from '../infrastructure/cryptoEngine/index.js';
 import { Cache } from '../utils/cache.js';
 import {
+    cryptoEngineAdapter as cryptoEngine,
     rotationLockAdapter as rotationLock,
     rotationPolicyAdapter as rotationPolicy,
     activeKidStoreAdapter as ActiveKidCache
