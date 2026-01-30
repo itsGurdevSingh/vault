@@ -4,7 +4,7 @@ import { cryptoEngine } from '../infrastructure/cryptoEngine/index.js';
 import { rotationLockRepository } from '../infrastructure/cache/index.js';
 import { rotationPolicyRepository } from '../infrastructure/db/index.js';
 import { Cache } from '../utils/cache.js';
-import { ActiveKidCache } from '../infrastructure/cache/index.js';
+import { activeKidStoreAdapter as ActiveKidCache } from '../infrastructure/adapters/index.js';
 
 
 //===============================================================================================================
