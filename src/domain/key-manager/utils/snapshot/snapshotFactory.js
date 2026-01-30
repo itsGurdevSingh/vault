@@ -1,5 +1,5 @@
-import { DomainSnapshot } from "./domainSnapshot";
-import { DomainSnapshotBuilder } from "./domainSnapshotBuilder";
+import { DomainSnapshot } from "./domainSnapshot.js";
+import { DomainSnapshotBuilder } from "./domainSnapshotBuilder.js";
 
 export class SnapshotFactory {
 constructor({ keyStore, metadataStore, policyStore }) {
