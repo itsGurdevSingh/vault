@@ -1,8 +1,8 @@
 // Wires up all dependencies for KeyManager
 import { ManagerFactory } from '../domain/key-manager/index.js';
 import { cryptoEngine } from '../infrastructure/cryptoEngine/index.js';
-import { rotationLockRepository } from '../infrastructure/cache/index.js';
-import { rotationPolicyRepository } from '../infrastructure/db/index.js';
+import { rotationLockAdapter as rotationLock } from '../infrastructure/adapters/index.js';
+import { rotationPolicyAdapter as rotationPolicy } from '../infrastructure/adapters/index.js';
 import { Cache } from '../utils/cache.js';
 import { activeKidStoreAdapter as ActiveKidCache } from '../infrastructure/adapters/index.js';
 
@@ -24,8 +24,8 @@ export async function createKeyManagerServices() {
         keyStorePort: keyStore,
         metadataStorePort: metadataStore,
         cryptoEngine,
-        lockRepo: rotationLockRepository,
-        policyRepo: rotationPolicyRepository,
+        lockRepo: rotationLock,
+        policyRepo: rotationPolicy,
         Cache,
         ActiveKidCache
     });
