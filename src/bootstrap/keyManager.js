@@ -5,15 +5,10 @@ import {
     cryptoEngineAdapter as cryptoEngine,
     rotationLockAdapter as rotationLock,
     rotationPolicyAdapter as rotationPolicy,
-    activeKidStoreAdapter as ActiveKidCache
+    activeKidStoreAdapter as ActiveKidCache,
+    metadataStoreAdapter as metadataStore,
+    keyStoreAdapter as keyStore
 } from '../infrastructure/adapters/index.js';
-
-
-//===============================================================================================================
-//                                      fs store 
-//===============================================================================================================
-import { keyStoreAdapter as keyStore } from '../infrastructure/adapters/index.js';
-import { metadataStoreAdapter as metadataStore } from '../infrastructure/adapters/index.js';
 
 
 //===============================================================================================================
