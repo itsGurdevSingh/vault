@@ -5,11 +5,12 @@ export class KeyJanitor {
      * @param {SignerCache} signerCache - The Facade for the Signer's Cache
      * @param {keyStore} filesystemHandler - The Infrastructure handler
      */
-    constructor(loaderCache, builderCache, signerCache, keyStore) {
+    constructor(loaderCache, builderCache, signerCache, keyStore, jwksStore) {
         this.loaderCache = loaderCache;
         this.builderCache = builderCache; // Assuming this interface has a .delete() method
         this.signerCache = signerCache;
         this.keyStore = keyStore;
+        this.jwksStore = jwksStore;
     }
 
     async deletePrivate(domain, kid) {
@@ -41,6 +42,8 @@ export class KeyJanitor {
             if (this.builderCache) {
                 await this.builderCache.delete(kid);
             }
+            // STEP 4: Delete from JWKS Store
+            await this.jwksStore.delete(kid);
 
         } catch (error) {
             throw new Error(`Failed to delete public key for domain ${domain} and kid ${kid}: ${error.message}`);

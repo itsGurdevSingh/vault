@@ -7,16 +7,17 @@ import { ExpiredKeyReaper } from './ExpiredKeyReaper.js';
 
 class JanitorFactory {
     // in constructor we inject all outside dependencies
-    constructor({ cache: { loaderCache, builderCache, signerCache }, metadataManager, keyStore }) {
+    constructor({ cache: { loaderCache, builderCache, signerCache }, metadataManager, keyStore, jwksStore }) {
         this.loaderCache = loaderCache;
         this.builderCache = builderCache;
         this.signerCache = signerCache;
         this.metadataManager = metadataManager;
         this.keyStore = keyStore;
+        this.jwksStore = jwksStore;
     }
     create() {
         // prepare injections 
-        const keyJanitor = new KeyJanitor(this.loaderCache, this.builderCache, this.signerCache, this.keyStore);
+        const keyJanitor = new KeyJanitor(this.loaderCache, this.builderCache, this.signerCache, this.keyStore, this.jwksStore);
         const metadataJanitor = new MetadataJanitor(this.metadataManager);
         const expiredKeyReaper = new ExpiredKeyReaper(keyJanitor, metadataJanitor);
 
@@ -24,9 +25,9 @@ class JanitorFactory {
         return new Janitor(keyJanitor, metadataJanitor, expiredKeyReaper);
     }
 
-    static getInstance({ cache, metadataManager, keyStore }) {
+    static getInstance({ cache, metadataManager, keyStore, jwksStore }) {
         if (!JanitorFactory.instance) {
-            JanitorFactory.instance = new JanitorFactory({ cache, metadataManager, keyStore });
+            JanitorFactory.instance = new JanitorFactory({ cache, metadataManager, keyStore, jwksStore });
         }
         return JanitorFactory.instance;
     }

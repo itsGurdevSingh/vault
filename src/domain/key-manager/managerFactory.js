@@ -20,9 +20,10 @@ import { SnapshotFactory } from "./utils/snapshot/snapshotFactory.js";
 
 class ManagerFactory {
     // Infra and outsider utils 
-    constructor({ keyStorePort, metadataStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
+    constructor({ keyStorePort, metadataStorePort, jwksStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
         this.keyStore = keyStorePort;
         this.metadataStore = metadataStorePort;
+        this.jwksStore = jwksStorePort;
         this.cryptoEngine = cryptoEngine;
         this.lockRepository = lockRepo;
         this.policyRepository = policyRepo;
@@ -67,11 +68,11 @@ class ManagerFactory {
         const generator = generatorFactory.create();
 
         // 7. SUB-DOMAIN: JANITOR (Cleanup)
-        const janitorFactory = JanitorFactory.getInstance({ cache: { loaderCache, builderCache, signerCache }, metadataManager, keyStore: this.keyStore });
+        const janitorFactory = JanitorFactory.getInstance({ cache: { loaderCache, builderCache, signerCache }, metadataManager, keyStore: this.keyStore, jwksStore: this.jwksStore });
         const janitor = janitorFactory.create();
 
         // 8. SUB-DOMAIN: BUILDER (Construction)
-        const builderFactory = BuilderFactory.getInstance({ cache: builderCache, loader, cryptoEngine });
+        const builderFactory = BuilderFactory.getInstance({ cache: builderCache, jwksStore: this.jwksStore, loader, cryptoEngine });
         const builder = builderFactory.create();
 
         // 9. SUB-DOMAIN: SIGNER (Usage)
