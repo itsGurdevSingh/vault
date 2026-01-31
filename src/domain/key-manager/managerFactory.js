@@ -11,16 +11,14 @@ import { SignerFactory } from "./modules/signer/index.js";
 import { RotationFactory } from "./modules/keyRotator/index.js";
 // domain init import
 import { initializeDomain } from "./init/initlizeDomain.js";
-// state and config imports
-import { RotationState } from "./config/RotationState.js";
-import { RotationConfig } from "./config/RotationConfig.js";
+
 // main manager import Public Facade
 import { KeyManager } from "./KeyManager.js";
-import { SnapshotFactory } from "./utils/snapshot/snapshotFactory.js";
+import { SnapshotFactory } from "./utils/snapshot/index.js";
 
 class ManagerFactory {
     // Infra and outsider utils 
-    constructor({ keyStorePort, metadataStorePort, jwksStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
+    constructor({ keyStorePort, metadataStorePort, jwksStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache, configManager }) {
         this.keyStore = keyStorePort;
         this.metadataStore = metadataStorePort;
         this.jwksStore = jwksStorePort;
@@ -29,11 +27,12 @@ class ManagerFactory {
         this.policyRepository = policyRepo;
         this.cache = Cache;
         this.ActiveKidCache = ActiveKidCache;
+        this.RotationState = configManager;
     }
 
-    static getInstance({ keyStorePort, metadataStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache }) {
+    static getInstance(dipendencies) {
         if (!this._instance) {
-            this._instance = new ManagerFactory({ keyStorePort, metadataStorePort, cryptoEngine, lockRepo, policyRepo, Cache, ActiveKidCache });
+            this._instance = new ManagerFactory(dipendencies);
         }
         return this._instance;
     }
@@ -79,22 +78,18 @@ class ManagerFactory {
         const signerFactory = SignerFactory.getInstance({ cache: signerCache, keyResolver, cryptoEngine });
         const signer = signerFactory.create();
 
-        //10. sub-DOMAIN: Rotation scheduler (Key Rotation)
+        //10. sub-DOMAIN: Rotation keyRotator (The Surgeon)
         const rotationFactory = RotationFactory.getInstance(
             { keyGenerator: generator, keyJanitor: janitor, keyResolver, metadataManager, lockRepository: this.lockRepository },
-            { state: RotationState, policyRepo: this.policyRepository }
         );
-        const rotationScheduler = rotationFactory.create();
-
-        // 11. config manager 
-        const configManager = RotationConfig.getInstance({ state: RotationState });
+        const keyRotator = rotationFactory.create();
 
         //12. intial setup of doamin .
-        const domainInitializer = initializeDomain.getInstance({ state: RotationState, generator, policyRepo: this.policyRepository });
+        const domainInitializer = initializeDomain.getInstance({ state: this.RotationState, generator, policyRepo: this.policyRepository });
 
         // 13. domain snapshot builder
-        const SnapshotFactory = new SnapshotFactory({ keyStore: this.keyStore, metadataStore: this.metadataStore, policyStore: this.policyRepository });
-        const snapshotBuilder = SnapshotFactory.create();
+        const snapshotFactory = new SnapshotFactory({ keyStore: this.keyStore, metadataStore: this.metadataStore, policyStore: this.policyRepository });
+        const snapshotBuilder = snapshotFactory.create();
         // 13. THE AGGREGATE ROOT (The Boss)
         // We inject all the working parts into the Manager
         return {
@@ -102,13 +97,12 @@ class ManagerFactory {
                 builder,
                 signer,
                 janitor,
-                rotationScheduler,
-                configManager,
+                keyRotator,
                 domainInitializer,
                 normalizer: domainNormalizer,
             }),
             snapshotBuilder,
-            janitor
+            janitor,
         };
     }
 }

@@ -17,7 +17,7 @@ export class initializeDomain {
         const newKid = await this.generator.generate(domain);
 
         // 2. Determine rotation interval
-        const rotationIntervalDays = policyOpts.rotationInterval || this.state.rotationIntervalMs ;
+        const rotationIntervalDays = policyOpts.rotationInterval || this.state.getConfig().rotationIntervalMs ;
 
         // 3. Create Rotation Policy 
         const policyData = {

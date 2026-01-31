@@ -1,15 +1,13 @@
 export class KeyManager {
     constructor({
         builder, signer, janitor, // Workers
-        rotationScheduler, // Orchestrators
-        configManager, // The Config Object
+        keyRotator, // Orchestrators
         domainInitializer, // Domain Setup
         normalizer
     }) {
         this.builder = builder; // for jwks building
         this.signer = signer; // for signing
-        this.scheduler = rotationScheduler; // for scheduling rotations
-        this.config = configManager; // for configuration management
+        this.rotator = keyRotator; // for scheduling rotations
         this.janitor = janitor; // for cleaning up expired keys
         this.domainInitializer = domainInitializer; // for initial domain setup
         this.normalizer = normalizer; // for domain normalization
@@ -38,34 +36,15 @@ export class KeyManager {
     }
 
     /**
-     * Manual/Admin trigger to force rotation NOW.
+     * Triggers key rotation for a specific domain.(the sergeon)
      */
-    //remaining rotation
-    async rotate() {
-        return this.scheduler.triggerImmediateRotation();
-    }
-
-    // domain sepecific rotation
-    async rotateDomain(domain) {
+    async rotateKeys(domain, updateRotationDatesCallback, session) {
         const d = this.normalizer.normalizeDomain(domain);
-        // Delegates to the Scheduler
-        return this.scheduler.triggerDomainRotation(d);
+        return await this.rotator.rotateKeys(d, updateRotationDatesCallback, session) ;
     }
 
-    /**
-     * Cron Job Entry Point.
-     */
-    async scheduleRotation() {
-        // Delegates to the Policy Manager
-        return this.scheduler.runScheduledRotation();
-    }
 
     async cleanupExpiredKeys() {
         return this.janitor.runCleanup();
-    }
-
-    // --- 3. CONFIGURATION ---
-    configure(opts) {
-        this.config.configure(opts);
     }
 }
