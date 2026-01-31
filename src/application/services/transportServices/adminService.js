@@ -1,16 +1,18 @@
 export class AdminService {
-    constructor({ adminRepository }) {
+    constructor({ adminRepository , rotationScheduler, configManager}) {
         this.adminRepository = adminRepository;
+        this.scheduler = rotationScheduler;
+        this.configManager = configManager;
     }
 
     // rotate all remaining domains
     async rotateAllDomains() {
-        return this.adminRepository.rotate();
+        return await this.scheduler.triggerImmediateRotation();
     }
 
     // rotate specific domain
     async rotateDomain(domain) {
-        return this.adminRepository.rotateDomain(domain);
+        return await this.scheduler.triggerDomainRotation(domain);;
     }
 
     // itial setup for a domain
@@ -20,7 +22,7 @@ export class AdminService {
 
     // configure rotation settings
     async configureRotationSettings(settings) {
-        return this.adminRepository.configure(settings);
+        return this.configManager.configure(settings);
     }
 
 }

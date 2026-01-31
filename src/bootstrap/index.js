@@ -6,19 +6,23 @@ import { startCronJobs } from './cron.js';
 import { startServers } from './servers.js';
 import { shutdown } from './shutdown.js';
 import { createGarbageServices } from './garbage.js';
+import { createRotationSchedulerServices } from './rotatonScheduler.js';
+const {configManager} = await import('../application/config/index.js');
 
 export async function bootstrap() {
     try {
         await connectDB();
-        const { KeyManager: keyManager, janitor, snapshotBuilder } = await createKeyManagerServices();
+        const { KeyManager: keyManager, janitor, snapshotBuilder} = await createKeyManagerServices(configManager);
         keyManager.initialSetupDomain('user');
         keyManager.initialSetupDomain('user-admin');
         keyManager.initialSetupDomain('service');
 
+        const rotationScheduler = createRotationSchedulerServices(keyManager, configManager);
+
         const jwksService = new JwksService({ keyManager });
         const signerService = new SignerService({ keyManager });
-        const rotatorService = new AdminService({ keyManager });
-        const rotationService = new RotationService({ keyManager });
+        const rotatorService = new AdminService({ adminRepository: keyManager, rotationScheduler, configManager  });
+        const rotationService = new RotationService({ rotationScheduler });
         const janitorService = new JanitorService({ keyManager });
 
         // garbage service = { collector, cleaner }

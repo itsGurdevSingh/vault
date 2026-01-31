@@ -16,7 +16,7 @@ import {
 //===============================================================================================================
 
 
-export async function createKeyManagerServices() {
+export async function createKeyManagerServices( configManager ) {
     const factory = ManagerFactory.getInstance({
         keyStorePort: keyStore,
         metadataStorePort: metadataStore,
@@ -24,7 +24,8 @@ export async function createKeyManagerServices() {
         lockRepo: rotationLock,
         policyRepo: rotationPolicy,
         Cache,
-        ActiveKidCache
+        ActiveKidCache,
+        configManager
     });
     // The factory now returns { KeyManager, janitor, snapshotBuilder }
     return await factory.create();

@@ -1,4 +1,4 @@
-import { defaultRotationConfig, developerRotationConfig } from "../../../config/rotationConfig.js";
+import { defaultRotationConfig, developerRotationConfig } from "../../../../config/rotationConfig.js";
 
 const RotationState = {
     // MUTABLE: These change at runtime via Admin API

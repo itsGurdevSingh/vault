@@ -25,6 +25,14 @@ class RotationConfig {
         if (rotationIntervalMs != null) this._setRotationInterval(rotationIntervalMs);
     }
 
+    getConfig() {
+        return {
+            retryIntervalMs: this.state.retryIntervalMs,
+            maxRetries: this.state.maxRetries,
+            rotationIntervalMs: this.state.rotationIntervalMs
+        };
+    }
+
     // --- INTERNAL VALIDATION LOGIC ---
 
     _validateIntegrity() {

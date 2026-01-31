@@ -1,8 +1,8 @@
 export class RotationService {
-    constructor({ keyManager }) {
-        this.keyManager = keyManager;
+    constructor({ rotationScheduler }) {
+        this.scheduler = rotationScheduler;
     }
     async runScheduled() {
-        return this.keyManager.scheduleRotation();
+        return await this.scheduler.runScheduledRotation();
     }
 }
