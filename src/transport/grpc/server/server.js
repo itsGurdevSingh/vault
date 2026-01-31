@@ -54,7 +54,7 @@ export function startGrpcServer({ certDir, port = 50051, services: { jwksService
     server.addService(proto.VaultSigner.service, {
       Health: healthHandler,
       Sign: authInterceptor(signHandler),
-      jwks: authInterceptor(jwksHandler),
+      Jwks: authInterceptor(jwksHandler),
       RotateAll: authInterceptor(rotateAllHandler),
       RotateDomain: authInterceptor(rotateDomainHandler)
     });

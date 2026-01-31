@@ -13,7 +13,7 @@ service VaultSigner {
   rpc Sign (SignRequest) returns (SignResponse);
 
   // JWKS retrieves the JSON Web Key Set for the specified domain.
-  rpc jwks (JWKSRequest) returns (JWKSResponse);
+  rpc Jwks (JWKSRequest) returns (JWKSResponse);
 
   // RotateAll rotates all domain keys across the vault.
   // This operation regenerates keys for all configured domains.
