@@ -52,13 +52,19 @@ class Rotator {
             await session.commitTransaction();
 
             // commit rotation ( it will helps in cleanup of old private keys and metadata not throw error )
-            const newActiveKid = await this.#commitRotation(domain);
+            try {
+                await this.#commitRotation(domain);
+            } catch (error) {
+                console.error(`Error during commit rotation for domain "${domain}":`, error);
+            }
 
 
-            return newActiveKid;
+            return newKid;
 
         } catch (err) {
 
+            // only console/log the error here not throw error its cleanup process
+            // recedue handled by our gc we not stop the rotation process on cleanup failure
             // rollback rotation on error (cleanup of new generated keys and metadata)
             const activeKid = await this.#rollbackRotation(domain);
 
