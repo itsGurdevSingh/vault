@@ -1,9 +1,9 @@
-import { KEY_GRACE_MS, KEY_PUBLIC_TTL_MS } from "../../../../config/keys.js";
-
 export class MetadataJanitor {
 
-    constructor(metadataManager) {
+    constructor(metadataManager, keyPublicTtlMs, keyGraceMs) {
         this.metadataManager = metadataManager;
+        this.keyPublicTtlMs = keyPublicTtlMs;
+        this.keyGraceMs = keyGraceMs;
     }
 
     async deleteOrigin(domain, kid) {
@@ -17,7 +17,7 @@ export class MetadataJanitor {
     /** add archive meta with TTL for public keys*/
     async addExpiry(domain, kid) {
 
-        const expirationDate = new Date(Date.now() + KEY_PUBLIC_TTL_MS + KEY_GRACE_MS);
+        const expirationDate = new Date(Date.now() + this.keyPublicTtlMs + this.keyGraceMs);
 
         return await this.metadataManager.addExpiry(domain, kid, expirationDate);
     }
@@ -25,6 +25,6 @@ export class MetadataJanitor {
     async getExpiredKeys(currentDate = new Date()) {
         const expiredMetadata = await this.metadataManager.getExpiredMetadata(currentDate);
         // filter only array of {domain, kid}
-        return expiredMetadata.map(meta => ({ domain: meta.domain, kid: meta.kid }) );
+        return expiredMetadata.map(meta => ({ domain: meta.domain, kid: meta.kid }));
     }
 }

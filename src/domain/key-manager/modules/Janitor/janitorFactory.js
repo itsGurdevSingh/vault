@@ -1,3 +1,6 @@
+// config imports
+import { KEY_GRACE_MS, KEY_PUBLIC_TTL_MS } from '../../../../config/keys.js';
+
 // sibling imports 
 import { Janitor } from './janitor.js';
 import { KeyJanitor } from './KeysJanitor.js';
@@ -18,7 +21,7 @@ class JanitorFactory {
     create() {
         // prepare injections 
         const keyJanitor = new KeyJanitor(this.loaderCache, this.builderCache, this.signerCache, this.keyStore, this.jwksStore);
-        const metadataJanitor = new MetadataJanitor(this.metadataManager);
+        const metadataJanitor = new MetadataJanitor(this.metadataManager, KEY_PUBLIC_TTL_MS, KEY_GRACE_MS);
         const expiredKeyReaper = new ExpiredKeyReaper(keyJanitor, metadataJanitor);
 
         // create main janitor instance
