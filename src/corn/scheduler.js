@@ -1,6 +1,7 @@
 export class CronScheduler {
   constructor(logger = console) {
     this.jobs = [];
+    this.intervalIds = [];
     this.logger = logger;
   }
 
@@ -10,9 +11,9 @@ export class CronScheduler {
 
   start() {
     for (const job of this.jobs) {
-      this.logger.info?.(`Starting cron job: ${job.name}`);
+      this.logger.info?.(`Starting cron job: ${job.name} with interval ${job.intervalMs}ms (${(job.intervalMs / 1000 / 60 / 60).toFixed(2)} hours)`);
 
-      setInterval(async () => {
+      const intervalId = setInterval(async () => {
         try {
           await job.task();
         } catch (err) {
@@ -22,6 +23,16 @@ export class CronScheduler {
           );
         }
       }, job.intervalMs);
+
+      this.intervalIds.push(intervalId);
     }
+  }
+
+  stop() {
+    this.logger.info?.('Stopping all cron jobs...');
+    for (const intervalId of this.intervalIds) {
+      clearInterval(intervalId);
+    }
+    this.intervalIds = [];
   }
 }

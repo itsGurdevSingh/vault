@@ -1,4 +1,4 @@
-import { RotationPolicyPort } from "../../application/ports/RotationPolicyPort";
+import { RotationPolicyPort } from "../../application/ports/RotationPolicyPort.js";
 
 export class RotationPloicyAdapter extends RotationPolicyPort {
     constructor(repository) {
@@ -25,9 +25,9 @@ export class RotationPloicyAdapter extends RotationPolicyPort {
     async acknowledgeSuccessfulRotation(policy, newKid, session) {
         return this.repo.acknowledgeSuccessfulRotation(policy, newKid, session);
     }
-    
+
     // for snapshot building
-    
+
     async getAvailableDomains() {
         return this.repo.getAvailableDomains();
     }

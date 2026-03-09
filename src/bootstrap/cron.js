@@ -2,5 +2,6 @@
 import { startCron } from '../corn/index.js';
 
 export function startCronJobs({ rotationService, janitorService, garbageService, logger }) {
-    startCron({ rotationService, janitorService, garbageService, logger });
+    const scheduler = startCron({ rotationService, janitorService, garbageService, logger });
+    return scheduler;
 }

@@ -1,7 +1,7 @@
 import { FileSystemKeyStore } from './keyStore/FileSystemKeyStore.js';
 import { MetadataFileStore } from './metadataStore/MetadataFileStore.js';
 import { pathService } from './pathService.js';
-import { FsUtils } from './fileUtils.js';
+import { FsUtils } from './utils.js';
 
 const fileUtils = new FsUtils();
 

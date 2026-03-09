@@ -17,14 +17,14 @@ class EngineFactory {
         // Instantiate dependencies with injections
         const tokenBuilder = new TokenBuilder(utils);
         const kidFactory = new KIDFactory(this.cryptoModule);
-        const HashBuilder = new HashBuilder({ crypto: this.cryptoModule });
+        const hashBuilder = new HashBuilder({ crypto: this.cryptoModule });
         return new CryptoEngine({
             cryptoModule: this.cryptoModule,
             config,
             utils,
             tokenBuilder,
             kidFactory,
-            hashBuilder: HashBuilder
+            hashBuilder
         });
     }
 

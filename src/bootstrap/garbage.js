@@ -1,5 +1,4 @@
 import {
-    RotationLockRepository,
     keyStoreAdapter,
     metadataStoreAdapter,
     garbageStoreAdapter,
@@ -7,12 +6,12 @@ import {
     cryptoEngineAdapter as cryptoEngine
 } from "../infrastructure/adapters/index.js";
 
+import { rotationLockRepository } from "../infrastructure/cache/index.js";
 
 import { GarbageManagerFactory } from "../application/services/garbageService/garbageManagerFactory.js";
 
 export async function createGarbageServices({ snapshotBuilder, janitor, logger = console }) {
     const garbagePort = garbageStoreAdapter;
-    const rotationLockRepository = RotationLockRepository;
     const stores = [keyStoreAdapter, metadataStoreAdapter];
     const factory = GarbageManagerFactory.getInstance({
         snapshotBuilder,

@@ -9,7 +9,7 @@ class MetadataFactory {
     }
 
     create() {
-        return new Metadata(this.metadataStore, MetadataBuilder, isExpired);
+        return new Metadata(this.metadataStore, new MetadataBuilder(), isExpired);
     }
 
     static getInstance({ metadataStore }) {

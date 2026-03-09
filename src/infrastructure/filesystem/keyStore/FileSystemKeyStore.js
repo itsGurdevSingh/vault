@@ -1,4 +1,4 @@
-import { mkdir, writeFile, readFile, unlink, readdir } from "fs/promises";
+import { mkdir, writeFile, readFile, unlink, readdir, rename } from "fs/promises";
 
 import {
   KeyWriteError,

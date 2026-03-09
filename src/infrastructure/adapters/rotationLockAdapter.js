@@ -1,4 +1,4 @@
-import { RotationLockPort } from "../../application/ports/rotationLockPort";
+import { RotationLockPort } from "../../application/ports/rotationLockPort.js";
 
 export class RotationLockAdapter extends RotationLockPort {
     constructor({ cache }) {

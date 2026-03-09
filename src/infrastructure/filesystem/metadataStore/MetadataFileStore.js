@@ -1,12 +1,13 @@
-import { writeFile, readFile, unlink, readdir, mkdir } from "fs/promises";
+import { writeFile, readFile, unlink, readdir, mkdir, rename } from "fs/promises";
 import {
     MetadataStoreError,
     MetadataNotFoundError
 } from "../../errors/metadataErrors.js";
-import { Promise } from "mongoose";
+import { MetadataStorePort } from "../../../application/ports/MetadataStorePort.js";
 
 export class MetadataFileStore extends MetadataStorePort {
     constructor({ metaPaths, FsUtils }) {
+        super();
         if (!metaPaths) {
             throw new Error("MetadataFileStore requires metaPaths");
         }
@@ -16,7 +17,7 @@ export class MetadataFileStore extends MetadataStorePort {
 
     async writeOrigin(domain, kid, meta) {
 
-        await this.fsUtils.ensureDir(this.paths.metaDir(domain));
+        await this.fsUtils.ensureDir(this.paths.metaKeyDir(domain));
 
         const file = this.paths.metaKeyFile(domain, kid);
         const tempFile = `${file}.tmp`;
@@ -147,7 +148,7 @@ export class MetadataFileStore extends MetadataStorePort {
     // for snapshort builds
     async listOriginKids(domain) {
         try {
-            const dir = this.paths.metaDir(domain);
+            const dir = this.paths.metaKeyDir(domain);
             const files = await readdir(dir).catch(e =>
                 e.code === "ENOENT" ? [] : Promise.reject(e)
             );

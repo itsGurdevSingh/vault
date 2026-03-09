@@ -1,4 +1,4 @@
-import { ActiveKidStorePort } from "../../application/ports/activeKidStorePort";
+import { ActiveKidStorePort } from "../../application/ports/activeKidStorePort.js";
 
 export class ActiveKidStoreAdapter extends ActiveKidStorePort {
     constructor({ cache }) {

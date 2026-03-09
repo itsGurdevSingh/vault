@@ -1,4 +1,4 @@
-import { MetadataStorePort } from "../../../application/ports/MetadataStorePort.js";
+import { MetadataStorePort } from "../../application/ports/MetadataStorePort.js";
 
 
 export class MetadataStoreAdapter extends MetadataStorePort {
@@ -20,7 +20,7 @@ export class MetadataStoreAdapter extends MetadataStorePort {
         return await this.repo.deleteOrigin(domain, kid);
     }
 
-    
+
     async writeArchived(kid, meta) {
         return await this.repo.writeArchived(kid, meta);
     }
@@ -31,7 +31,7 @@ export class MetadataStoreAdapter extends MetadataStorePort {
         return await this.repo.readAllArchived();
     }
     async listArchivedMeta() {
-        return await this.repo.listArchivedKids();
+        return await this.repo.listArchivedMeta();
     }
     async deleteArchived(kid) {
         return await this.repo.deleteArchived(kid);

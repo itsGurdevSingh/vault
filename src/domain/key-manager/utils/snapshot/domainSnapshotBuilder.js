@@ -18,7 +18,7 @@ export class DomainSnapshotBuilder {
       this.keyStore.listPrivateKids(domain),
       this.keyStore.listPublicKids(domain),
       this.metadataStore.listOriginKids(domain),
-      this.metadataStore.listArchivedMetas(domain)
+      this.metadataStore.listArchivedMeta(domain)
     ]);
 
     return new this.domainSnapshot({

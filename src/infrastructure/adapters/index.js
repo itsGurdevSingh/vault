@@ -9,15 +9,15 @@ import { KeyStoreAdapter } from "./keyStoreAdapter.js";
 
 import { GarbageRepository, rotationPolicyRepository } from "../db/index.js";
 import { ActiveKidCache, rotationLockRepository } from "../cache/index.js";
-import { rotationLockRepository } from "../cache/index.js";
 import { cryptoEngine } from "../cryptoEngine/index.js";
-import { fileSystem } from "../filesystem/index.js";
+import fileSystem from "../filesystem/index.js";
+import { GarbageRecordModel } from "../db/models/garbageRecord.model.js";
 
 
 const keyStoreAdapter = new KeyStoreAdapter(fileSystem.keyStore);
 const metadataStoreAdapter = new MetadataStoreAdapter(fileSystem.metaStore);
 
-const garbageRepository = new GarbageRepository();
+const garbageRepository = new GarbageRepository({ model: GarbageRecordModel });
 const garbageStoreAdapter = new GarbageStoreAdapter(garbageRepository);
 const rotationPolicyAdapter = new RotationPloicyAdapter(rotationPolicyRepository);
 

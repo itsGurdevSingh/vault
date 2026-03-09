@@ -10,6 +10,8 @@ export function startCron({
 }) {
   const scheduler = new CronScheduler(logger);
 
+  const isDev = process.env.NODE_ENV !== 'production';
+
   scheduler.register({
     name: "key-rotation",
     intervalMs: 24 * 60 * 60 * 1000, // every 24 hours
@@ -22,21 +24,28 @@ export function startCron({
     task: createCleanupJob({ janitorService })
   });
 
+  // In development, run garbage collection much less frequently to avoid log spam
+  const gcIntervalMs = isDev
+    ? 24 * 60 * 60 * 1000  // every 24 hours in dev
+    : 4 * 30 * 24 * 60 * 60 * 1000; // every 4 months in prod
+
   scheduler.register({
     name: "garbage-collection",
-    intervalMs: 4 * 30 * 24 * 60 * 60 * 1000, // every 4 months
+    intervalMs: gcIntervalMs,
     task: async () => {
-      await garbageService.collector.collect();
+      await garbageService.collector.run();
     }
   });
 
   scheduler.register({
     name: "garbage-cleaning",
-    intervalMs: 4 * 30 * 24 * (60 * 60 * 1000 )+ (60 * 60 * 1000), // every 4 months + 1 hour
+    intervalMs: gcIntervalMs + (60 * 60 * 1000), // GC interval + 1 hour
     task: async () => {
-      await garbageService.cleaner.clean();
+      await garbageService.cleaner.run();
     }
   });
 
   scheduler.start();
+
+  return scheduler;
 }

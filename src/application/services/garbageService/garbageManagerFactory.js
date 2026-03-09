@@ -1,6 +1,6 @@
 import { GarbageCollector } from "./garbageCollector.js";
 import { GarbageCleaner } from "./garbageCleaner.js";
-import { utils } from "./utils.js";
+import * as utils from "./utils.js";
 
 export class GarbageManagerFactory {
     constructor({ snapshotBuilder, garbagePort, rotationPolicyPort, cryptoEngine, rotationLockRepository, janitor, stores, logger = console }) {
@@ -30,7 +30,7 @@ export class GarbageManagerFactory {
             domainSnapshotBuilder: this.domainSnapshotBuilder,
             garbagePort: this.garbagePort,
             janitor: this.janitor,
-            Stores: this.Stores,
+            Stores: this.stores,
             utils,
             logger: this.logger
         });

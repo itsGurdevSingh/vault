@@ -1,4 +1,4 @@
-import { JwksStorePort } from "../../application/ports/jwksStorePort";
+import { JwksStorePort } from "../../application/ports/jwksStorePort.js";
 
 export class JwksStoreAdapter extends JwksStorePort {
     constructor({ repository }) {

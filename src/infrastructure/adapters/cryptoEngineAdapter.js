@@ -1,4 +1,4 @@
-import { CryptoEnginePort } from "../../application/ports/cryptoEnginePort";
+import { CryptoEnginePort } from "../../application/ports/cryptoEnginePort.js";
 
 export class CryptoEngineAdapter extends CryptoEnginePort {
     constructor(cryptoEngine) {
@@ -18,8 +18,8 @@ export class CryptoEngineAdapter extends CryptoEnginePort {
     async sign(privateKey, data) {
         return this.cryptoEngine.sign(privateKey, data);
     }
-    generateKid(domain) {
-        return this.cryptoEngine.generateKid(domain);
+    generateKID(domain) {
+        return this.cryptoEngine.generateKID(domain);
     }
     getInfo(kid) {
         return this.cryptoEngine.getInfo(kid);
